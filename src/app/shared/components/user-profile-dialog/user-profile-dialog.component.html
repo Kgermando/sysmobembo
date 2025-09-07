@@ -1,0 +1,268 @@
+<div class="user-profile-dialog">
+  <div class="dialog-header">
+    <h2 mat-dialog-title class="dialog-title">
+      <i class="ti ti-user-circle me-2"></i>
+      Profil Utilisateur
+    </h2>
+    <button mat-icon-button class="close-button" (click)="onClose()">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+
+  <mat-dialog-content class="dialog-content">
+    <!-- Navigation par onglets -->
+    <div class="tabs-navigation mb-4">
+      <button 
+        type="button" 
+        class="tab-button"
+        [class.active]="activeTab === 'profile'"
+        (click)="setActiveTab('profile')">
+        <i class="ti ti-user me-2"></i>
+        Informations
+      </button>
+      <button 
+        type="button" 
+        class="tab-button"
+        [class.active]="activeTab === 'password'"
+        (click)="setActiveTab('password')">
+        <i class="ti ti-lock me-2"></i>
+        Mot de passe
+      </button>
+    </div>
+
+    <!-- Contenu des onglets -->
+    <div class="tab-content">
+      <!-- Onglet Profil -->
+      <div *ngIf="activeTab === 'profile'" class="profile-tab">
+        <!-- Header du profil -->
+        <div class="profile-header mb-4">
+          <div class="avatar-section">
+            <div class="user-avatar">
+              <!-- Note: photoUrl property doesn't exist in IUser interface, removing conditional display -->
+              <div class="avatar-placeholder">
+                {{ getUserInitials() }}
+              </div>
+            </div>
+            <div class="user-status">
+              <span 
+                class="status-badge"
+                [class.online]="data.user.status"
+                [class.offline]="!data.user.status">
+                {{ data.user.status ? 'Actif' : 'Inactif' }}
+              </span>
+            </div>
+          </div>
+          <div class="user-basic-info">
+            <h3 class="user-name">{{ getFullName() }}</h3>
+            <p class="user-role">
+              <i class="ti ti-shield-check me-1"></i>
+              <span class="role-badge">{{ data.user.role }}</span>
+            </p>
+            <p class="user-matricule">
+              <i class="ti ti-id me-1"></i>
+              UUID: <span class="matricule-value">{{ data.user.uuid || 'Non défini' }}</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Informations détaillées -->
+        <div class="profile-details">
+          <!-- Informations personnelles -->
+          <div class="info-section">
+            <h4 class="section-title">
+              <i class="ti ti-user me-2"></i>
+              Informations personnelles
+            </h4>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Nom complet</label>
+                <span class="info-value">{{ data.user.fullname }}</span>
+              </div>
+              <div class="info-item">
+                <label>Email</label>
+                <span class="info-value">
+                  <i class="ti ti-mail me-1 text-primary"></i>
+                  {{ data.user.email }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Téléphone</label>
+                <span class="info-value">
+                  <i class="ti ti-phone me-1 text-success"></i>
+                  {{ data.user.telephone }}
+                </span>
+              </div>
+              <!-- Note: Additional personal info like adresse, sexe, dateNaissance not available in IUser interface -->
+            </div>
+          </div>
+
+          <!-- Informations professionnelles -->
+          <div class="info-section">
+            <h4 class="section-title">
+              <i class="ti ti-briefcase me-2"></i>
+              Informations professionnelles
+            </h4>
+            <div class="info-grid">
+              <div class="info-item">
+                <label>Rôle</label>
+                <span class="info-value">{{ data.user.role || 'Non défini' }}</span>
+              </div>
+              <div class="info-item">
+                <label>Permission</label>
+                <span class="info-value">
+                  <i class="ti ti-key me-1 text-primary"></i>
+                  {{ data.user.permission }}
+                </span>
+              </div>
+              <div class="info-item">
+                <label>Statut du compte</label>
+                <span class="info-value">
+                  <span 
+                    class="status-badge"
+                    [class.online]="data.user.status"
+                    [class.offline]="!data.user.status">
+                    {{ data.user.status ? 'Actif' : 'Inactif' }}
+                  </span>
+                </span>
+              </div>
+              <!-- Note: Professional info like departement, poste, dateEmbauche, typeContrat, salaireBase not available in IUser interface -->
+            </div>
+          </div>
+
+          <!-- Informations système -->
+          <div class="info-section">
+            <h4 class="section-title">
+              <i class="ti ti-settings me-2"></i>
+              Informations système
+            </h4>
+            <div class="info-grid">
+              <div class="info-item" *ngIf="data.user.createdAt">
+                <label>Date de création</label>
+                <span class="info-value">
+                  <i class="ti ti-calendar-plus me-1 text-info"></i>
+                  {{ formatDate(data.user.createdAt) }}
+                </span>
+              </div>
+              <div class="info-item" *ngIf="data.user.updatedAt">
+                <label>Dernière mise à jour</label>
+                <span class="info-value">
+                  <i class="ti ti-calendar-event me-1 text-warning"></i>
+                  {{ formatDate(data.user.updatedAt) }}
+                </span>
+              </div>  
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglet Changement de mot de passe -->
+      <div *ngIf="activeTab === 'password'" class="password-tab">
+        <div class="password-header mb-4">
+          <div class="alert alert-info">
+            <i class="ti ti-info-circle me-2"></i>
+            Pour des raisons de sécurité, veuillez entrer votre mot de passe actuel pour le modifier.
+          </div>
+        </div>
+
+        <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()">
+          <div class="form-group mb-3">
+            <label class="form-label">
+              <i class="ti ti-lock me-1"></i>
+              Mot de passe actuel *
+            </label>
+            <div class="password-input-group">
+              <input
+                [type]="passwordFieldTypes.current"
+                formControlName="currentPassword"
+                class="form-control"
+                [class.is-invalid]="currentPassword?.invalid && currentPassword?.touched"
+                placeholder="Entrez votre mot de passe actuel"
+                autocomplete="current-password">
+              <button
+                type="button"
+                class="password-toggle-btn"
+                (click)="togglePasswordVisibility('current')">
+                <i [class]="passwordFieldTypes.current === 'password' ? 'ti ti-eye-off' : 'ti ti-eye'"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback" *ngIf="currentPassword?.invalid && currentPassword?.touched">
+              <div *ngIf="currentPassword?.errors?.['required']">Le mot de passe actuel est requis</div>
+              <div *ngIf="currentPassword?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</div>
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="form-label">
+              <i class="ti ti-lock-plus me-1"></i>
+              Nouveau mot de passe *
+            </label>
+            <div class="password-input-group">
+              <input
+                [type]="passwordFieldTypes.new"
+                formControlName="newPassword"
+                class="form-control"
+                [class.is-invalid]="newPassword?.invalid && newPassword?.touched"
+                placeholder="Entrez votre nouveau mot de passe"
+                autocomplete="new-password">
+              <button
+                type="button"
+                class="password-toggle-btn"
+                (click)="togglePasswordVisibility('new')">
+                <i [class]="passwordFieldTypes.new === 'password' ? 'ti ti-eye-off' : 'ti ti-eye'"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback" *ngIf="newPassword?.invalid && newPassword?.touched">
+              <div *ngIf="newPassword?.errors?.['required']">Le nouveau mot de passe est requis</div>
+              <div *ngIf="newPassword?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</div>
+            </div>
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="form-label">
+              <i class="ti ti-lock-check me-1"></i>
+              Confirmer le nouveau mot de passe *
+            </label>
+            <div class="password-input-group">
+              <input
+                [type]="passwordFieldTypes.confirm"
+                formControlName="confirmPassword"
+                class="form-control"
+                [class.is-invalid]="confirmPassword?.invalid && confirmPassword?.touched"
+                placeholder="Confirmez votre nouveau mot de passe"
+                autocomplete="new-password">
+              <button
+                type="button"
+                class="password-toggle-btn"
+                (click)="togglePasswordVisibility('confirm')">
+                <i [class]="passwordFieldTypes.confirm === 'password' ? 'ti ti-eye-off' : 'ti ti-eye'"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback" *ngIf="confirmPassword?.invalid && confirmPassword?.touched">
+              <div *ngIf="confirmPassword?.errors?.['required']">La confirmation du mot de passe est requise</div>
+              <div *ngIf="confirmPassword?.errors?.['passwordMismatch']">Les mots de passe ne correspondent pas</div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-outline-secondary me-2"
+              (click)="setActiveTab('profile')"
+              [disabled]="isLoading">
+              <i class="ti ti-arrow-left me-1"></i>
+              Retour
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="changePasswordForm.invalid || isLoading">
+              <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+              <i *ngIf="!isLoading" class="ti ti-device-floppy me-1"></i>
+              {{ isLoading ? 'Modification...' : 'Modifier le mot de passe' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </mat-dialog-content>
+</div>

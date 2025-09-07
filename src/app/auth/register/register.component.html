@@ -1,0 +1,196 @@
+<div class="account-content">
+    <div class="d-flex flex-wrap w-100 vh-100 overflow-hidden account-bg-01">
+        <div
+            class="d-flex align-items-center justify-content-center flex-wrap vh-100 overflow-auto p-4 w-50 bg-backdrop">
+            <form [formGroup]="formGroup" (ngSubmit)="onSubmit()" class="flex-fill">
+                <div class="mx-auto mw-450">
+                    <div class="text-center mb-4">
+                        <img src="img/logo.png" class="img-fluid" alt="Logo">
+                    </div>
+                    <div class="mb-4">
+                        <h4 class="mb-2 fs-20">Inscription</h4>
+                        <p class="text-justify">
+                            Créez votre compte pour accéder à l'application.
+                            Un administrateur devra activer votre compte avant que vous puissiez vous connecter.
+                        </p>
+                    </div>
+                    <div>
+                        <!-- Informations personnelles -->
+                        <div class="mb-3">
+                            <label class="col-form-label" for="fullname">Nom complet <span class="text-danger">*</span></label>
+                            <input type="text" 
+                                   id="fullname"
+                                   formControlName="fullname" 
+                                   class="form-control"
+                                   [class.is-invalid]="fullname?.invalid && fullname?.touched"
+                                   placeholder="Entrez votre nom complet">
+                            <div class="invalid-feedback" *ngIf="fullname?.invalid && fullname?.touched">
+                                <div *ngIf="fullname?.errors?.['required']">Le nom complet est requis</div>
+                                <div *ngIf="fullname?.errors?.['minlength']">Le nom complet doit contenir au moins 2 caractères</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="col-form-label" for="email">Email <span class="text-danger">*</span></label>
+                                    <input type="email" 
+                                           id="email"
+                                           formControlName="email" 
+                                           class="form-control"
+                                           [class.is-invalid]="email?.invalid && email?.touched"
+                                           placeholder="Entrez votre email">
+                                    <div class="invalid-feedback" *ngIf="email?.invalid && email?.touched">
+                                        <div *ngIf="email?.errors?.['required']">L'email est requis</div>
+                                        <div *ngIf="email?.errors?.['email']">Format d'email invalide</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="col-form-label" for="telephone">Téléphone <span class="text-danger">*</span></label>
+                                    <input type="tel" 
+                                           id="telephone"
+                                           formControlName="telephone" 
+                                           class="form-control"
+                                           [class.is-invalid]="telephone?.invalid && telephone?.touched"
+                                           placeholder="Entrez votre téléphone">
+                                    <div class="invalid-feedback" *ngIf="telephone?.invalid && telephone?.touched">
+                                        <div *ngIf="telephone?.errors?.['required']">Le téléphone est requis</div>
+                                        <div *ngIf="telephone?.errors?.['pattern']">Format de téléphone invalide</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rôle et Permission -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="col-form-label" for="role">Rôle <span class="text-danger">*</span></label>
+                                    <select id="role"
+                                            formControlName="role" 
+                                            class="form-select"
+                                            [class.is-invalid]="role?.invalid && role?.touched">
+                                        <option value="">Sélectionnez un rôle</option>
+                                        <option value="Agent">Agent</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="Supervisor">Supervisor</option>
+                                        <option value="Administrator">Administrator</option>
+                                    </select>
+                                    <div class="invalid-feedback" *ngIf="role?.invalid && role?.touched">
+                                        <div *ngIf="role?.errors?.['required']">Le rôle est requis</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="col-form-label" for="permission">Permission <span class="text-danger">*</span></label>
+                                    <select id="permission"
+                                            formControlName="permission" 
+                                            class="form-select"
+                                            [class.is-invalid]="permission?.invalid && permission?.touched">
+                                        <option value="">Sélectionnez une permission</option>
+                                        <option value="read">Lecture</option>
+                                        <option value="write">Écriture</option>
+                                        <option value="admin">Administration</option>
+                                    </select>
+                                    <div class="invalid-feedback" *ngIf="permission?.invalid && permission?.touched">
+                                        <div *ngIf="permission?.errors?.['required']">La permission est requise</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Signature (optionnel) -->
+                        <div class="mb-3">
+                            <label class="col-form-label" for="signature">Signature</label>
+                            <textarea id="signature"
+                                      formControlName="signature" 
+                                      class="form-control"
+                                      rows="3"
+                                      placeholder="Entrez votre signature (optionnel)"></textarea>
+                        </div>
+
+                        <!-- Mots de passe -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="col-form-label" for="password">Mot de passe <span class="text-danger">*</span></label>
+                                    <div class="position-relative">
+                                        <input [type]="passwordFieldType" 
+                                               id="password"
+                                               formControlName="password" 
+                                               class="form-control"
+                                               [class.is-invalid]="passwordControl?.invalid && passwordControl?.touched"
+                                               placeholder="Entrez votre mot de passe">
+                                        <button type="button" 
+                                                class="btn position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent"
+                                                (click)="togglePasswordVisibility('password')">
+                                            <i [class]="passwordFieldType === 'password' ? 'ti ti-eye-off' : 'ti ti-eye'"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback" *ngIf="passwordControl?.invalid && passwordControl?.touched">
+                                        <div *ngIf="passwordControl?.errors?.['required']">Le mot de passe est requis</div>
+                                        <div *ngIf="passwordControl?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="col-form-label" for="password_confirm">Confirmer le mot de passe <span class="text-danger">*</span></label>
+                                    <div class="position-relative">
+                                        <input [type]="confirmPasswordFieldType" 
+                                               id="password_confirm"
+                                               formControlName="password_confirm" 
+                                               class="form-control"
+                                               [class.is-invalid]="passwordConfirmation?.invalid && passwordConfirmation?.touched"
+                                               placeholder="Confirmez votre mot de passe">
+                                        <button type="button" 
+                                                class="btn position-absolute end-0 top-50 translate-middle-y border-0 bg-transparent"
+                                                (click)="togglePasswordVisibility('confirmPassword')">
+                                            <i [class]="confirmPasswordFieldType === 'password' ? 'ti ti-eye-off' : 'ti ti-eye'"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback" *ngIf="passwordConfirmation?.invalid && passwordConfirmation?.touched">
+                                        <div *ngIf="passwordConfirmation?.errors?.['required']">La confirmation du mot de passe est requise</div>
+                                        <div *ngIf="passwordConfirmation?.errors?.['minlength']">La confirmation doit contenir au moins 6 caractères</div>
+                                    </div>
+                                    <div class="invalid-feedback" *ngIf="formGroup.errors?.['mismatch'] && passwordConfirmation?.touched">
+                                        Les mots de passe ne correspondent pas
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        @if (isLoading) {
+                            <button type="button" class="btn btn-primary w-100" disabled>
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                Création en cours...
+                            </button>
+                        }
+                        @if (!isLoading) {
+                            <button type="submit" 
+                                    class="btn btn-primary w-100"
+                                    [disabled]="formGroup.invalid">
+                                <i class="ti ti-user-plus me-2"></i>
+                                Créer le compte
+                            </button>
+                        }
+                    </div>
+                    <div class="mb-3">
+                        <h6>Vous avez déjà un compte ? 
+                            <a [routerLink]="routes.login" class="text-purple link-hover">Se connecter</a>.
+                        </h6>
+                    </div>
+                    <div class="text-center">
+                        <p class="fw-medium text-gray">Copyright &copy; {{ dateY }} </p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

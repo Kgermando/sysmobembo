@@ -1,0 +1,33 @@
+<div 
+  *ngIf="updateInfo && updateInfo.available" 
+  class="pwa-update-notification"
+>
+  <div class="notification-content">
+    <div class="notification-icon">
+      <i class="bi bi-download"></i>
+    </div>
+    <div class="notification-text">
+      <h4>Mise à jour disponible</h4>
+      <p>Une nouvelle version d'OKAPI ERP est prête à être installée</p>
+    </div>
+    <div class="notification-actions">
+      <button 
+        class="btn btn-outline-light btn-sm me-2"
+        (click)="dismissUpdate()"
+      >
+        Plus tard
+      </button>
+      <button 
+        class="btn btn-light btn-sm"
+        (click)="installUpdate()"
+        [disabled]="isUpdating"
+      >
+        <span *ngIf="!isUpdating">Installer</span>
+        <span *ngIf="isUpdating">
+          <i class="bi bi-arrow-clockwise spin"></i>
+          Installation...
+        </span>
+      </button>
+    </div>
+  </div>
+</div>

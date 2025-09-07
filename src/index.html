@@ -1,13 +1,96 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
+
 <head>
-  <meta charset="utf-8">
-  <title>Sysmobembo</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <meta charset="utf-8">
+    <title>Sys Mobembo</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com;"> -->
+
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png">
+    <link rel="shortcut icon" href="img/favicon.png" type="image/x-icon">
+
+    <style class="site-preloader-style">
+        @keyframes site-preloader-animation {
+            from {
+                transform: rotateZ(0deg);
+            }
+
+            to {
+                transform: rotateZ(360deg);
+            }
+        }
+
+        body {
+            overflow: hidden !important;
+            overflow-y: scroll !important;
+            height: 100% !important;
+        }        .site-preloader {
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 99999;
+            opacity: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .site-preloader::before {
+            box-sizing: border-box;
+            content: '';
+            display: block;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            animation: site-preloader-animation 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .site-preloader::after {
+            content: 'Chargement...';
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .site-preloader__fade {
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+    </style>
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1976d2">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#1976d2">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest">
 </head>
+
 <body>
-  <app-root></app-root>
+    <div class="site-preloader"></div>
+    <app-root></app-root>
+  <noscript>Please enable JavaScript to continue using this application.</noscript>
 </body>
+
 </html>

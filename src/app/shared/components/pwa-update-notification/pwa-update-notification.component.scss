@@ -1,0 +1,105 @@
+.pwa-update-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  max-width: 400px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.notification-icon {
+  font-size: 24px;
+  color: #fff;
+}
+
+.notification-text {
+  flex: 1;
+}
+
+.notification-text h4 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.notification-text p {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.notification-actions {
+  display: flex;
+  align-items: center;
+}
+
+.btn-outline-light {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  background: transparent;
+}
+
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-light {
+  background: white;
+  color: #333;
+  border: none;
+}
+
+.btn-light:hover {
+  background: #f8f9fa;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .pwa-update-notification {
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .notification-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .notification-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

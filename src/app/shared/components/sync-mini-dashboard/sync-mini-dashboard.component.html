@@ -1,0 +1,257 @@
+<!-- Sync Mini Dashboard -->
+<div class="sync-mini-dashboard" [ngClass]="cssClass">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h6 class="card-title mb-0">
+        <i class="ti ti-cloud me-2"></i>
+        État de synchronisation
+      </h6>      <div class="header-actions">
+        <button type="button" 
+                class="btn btn-success btn-sm me-2"
+                (click)="syncAll()"
+                title="Forcer la synchronisation complète">
+          <i class="ti ti-cloud-upload me-1"></i>
+          Sync
+        </button>
+        <button type="button" 
+                class="btn btn-outline-primary btn-sm me-2"
+                (click)="refreshStatus()"
+                [disabled]="isRefreshing">
+          <i class="ti ti-refresh" [ngClass]="{'spinning': isRefreshing}"></i>
+        </button>
+        <button type="button" 
+                class="btn btn-outline-secondary btn-sm"
+                (click)="toggleExpanded()">
+          <i class="ti" [ngClass]="isExpanded ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Vue globale -->
+      <div class="sync-overview mb-3">
+        <div class="row">
+          <div class="col-md-3 col-6">
+            <div class="sync-stat">
+              <div class="stat-icon bg-primary">
+                <i class="ti ti-database"></i>
+              </div>
+              <div class="stat-content">
+                <h6 class="stat-title">Tables</h6>
+                <div class="stat-value">{{ totalTables }}</div>
+                <small class="text-muted">surveillées</small>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 col-6">
+            <div class="sync-stat">
+              <div class="stat-icon" [ngClass]="{
+                'bg-success': activeSyncs === 0,
+                'bg-warning': activeSyncs > 0
+              }">
+                <i class="ti ti-activity"></i>
+              </div>
+              <div class="stat-content">
+                <h6 class="stat-title">Actives</h6>
+                <div class="stat-value">{{ activeSyncs }}</div>
+                <small class="text-muted">synchronisations</small>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 col-6">
+            <div class="sync-stat">
+              <div class="stat-icon bg-success">
+                <i class="ti ti-check"></i>
+              </div>
+              <div class="stat-content">
+                <h6 class="stat-title">Succès</h6>
+                <div class="stat-value">{{ successCount }}</div>
+                <small class="text-muted">dernières 24h</small>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 col-6">
+            <div class="sync-stat">
+              <div class="stat-icon" [ngClass]="{
+                'bg-secondary': errorCount === 0,
+                'bg-danger': errorCount > 0
+              }">
+                <i class="ti ti-alert-circle"></i>
+              </div>
+              <div class="stat-content">
+                <h6 class="stat-title">Erreurs</h6>
+                <div class="stat-value">{{ errorCount }}</div>
+                <small class="text-muted">dernières 24h</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Synchronisations actives -->
+      @if (activeSyncs > 0) {
+        <div class="active-syncs mb-3">
+          <h6 class="section-title">
+            <i class="ti ti-loader me-2 spinning"></i>
+            Synchronisations en cours
+          </h6>
+          <div class="active-sync-list">
+            @for (sync of activeSyncList; track sync.tableName) {
+              <div class="active-sync-item">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="sync-info">
+                    <span class="fw-medium">{{ sync.entityName }}</span>
+                    <small class="text-muted d-block">{{ sync.tableName }}</small>
+                  </div>
+                  <div class="sync-progress-info text-end">
+                    <div class="progress progress-sm mb-1" style="width: 100px;">
+                      <div class="progress-bar" 
+                           [ngClass]="{
+                             'bg-warning': sync.state === 'uploading',
+                             'bg-info': sync.state === 'downloading'
+                           }"
+                           [style.width.%]="sync.progress">
+                      </div>
+                    </div>
+                    <small class="text-muted">{{ sync.progress }}%</small>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Vue détaillée (expandable) -->
+      @if (isExpanded) {
+        <div class="sync-details-expanded">
+          <h6 class="section-title">
+            <i class="ti ti-list me-2"></i>
+            Détails par table
+          </h6>
+          
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Table</th>
+                  <th>État</th>
+                  <th>Dernière sync</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (table of tableStatuses; track table.tableName) {
+                  <tr>
+                    <td>
+                      <div>
+                        <span class="fw-medium">{{ table.entityName }}</span>
+                        <small class="text-muted d-block">{{ table.tableName }}</small>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge badge-sm" 
+                            [ngClass]="{
+                              'bg-secondary': !table.isActive,
+                              'bg-warning': table.isActive && table.state === 'uploading',
+                              'bg-info': table.isActive && table.state === 'downloading',
+                              'bg-success': !table.isActive && table.lastSyncSuccess,
+                              'bg-danger': !table.isActive && table.lastError
+                            }">
+                        @if (table.isActive) {
+                          {{ table.state === 'uploading' ? 'Upload' : 'Download' }}
+                        } @else if (table.lastSyncSuccess && !table.lastError) {
+                          Synchronisée
+                        } @else if (table.lastError) {
+                          Erreur
+                        } @else {
+                          En attente
+                        }
+                      </span>
+                    </td>
+                    <td>
+                      @if (table.lastSyncTime) {
+                        <small>{{ table.lastSyncTime | date:'dd/MM HH:mm' }}</small>
+                      } @else {
+                        <small class="text-muted">Jamais</small>
+                      }
+                    </td>
+                    <td>
+                      @if (table.isActive) {
+                        <div class="d-flex align-items-center">
+                          <div class="progress progress-xs me-2" style="width: 60px;">
+                            <div class="progress-bar" 
+                                 [ngClass]="{
+                                   'bg-warning': table.state === 'uploading',
+                                   'bg-info': table.state === 'downloading'
+                                 }"
+                                 [style.width.%]="table.progress">
+                            </div>
+                          </div>
+                          <small>{{ table.progress }}%</small>
+                        </div>
+                      } @else if (table.lastError) {
+                        <small class="text-danger" [title]="table.lastError">
+                          <i class="ti ti-alert-circle me-1"></i>
+                          Erreur
+                        </small>
+                      } @else if (table.lastSyncSuccess) {
+                        <small class="text-success">
+                          <i class="ti ti-check me-1"></i>
+                          OK
+                        </small>
+                      } @else {
+                        <small class="text-muted">-</small>
+                      }
+                    </td>
+                    <td>
+                      <button type="button" 
+                              class="btn btn-outline-primary btn-xs"
+                              [disabled]="table.isActive"
+                              (click)="triggerSync(table.tableName)">
+                        <i class="ti ti-refresh"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- Actions globales -->
+      <div class="global-actions mt-3 pt-3 border-top">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <button type="button" 
+                    class="btn btn-primary btn-sm me-2"
+                    [disabled]="activeSyncs > 0"
+                    (click)="syncAll()">
+              <i class="ti ti-refresh me-1"></i>
+              Synchroniser tout
+            </button>
+            @if (errorCount > 0) {
+              <button type="button" 
+                      class="btn btn-warning btn-sm"
+                      (click)="retryErrors()">
+                <i class="ti ti-repeat me-1"></i>
+                Réessayer les erreurs
+              </button>
+            }
+          </div>
+          
+          <div class="sync-info">
+            <small class="text-muted">
+              Dernière mise à jour: {{ lastUpdate | date:'HH:mm:ss' }}
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

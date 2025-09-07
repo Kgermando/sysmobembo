@@ -1,0 +1,94 @@
+<!-- Sync Progress Indicator with Badge, Toast, and Details -->
+<div class="sync-progress-container d-inline-flex align-items-center" [ngClass]="cssClass">
+  <!-- Badge d'état toujours visible -->
+  <div class="sync-badge-wrapper position-relative">
+    <span class="badge sync-badge" 
+          [ngClass]="{
+            'bg-primary': !isActive,
+            'bg-warning': isActive && currentState === 'uploading',
+            'bg-info': isActive && currentState === 'downloading', 
+            'bg-success': isActive && currentState === 'success',
+            'bg-danger': isActive && currentState === 'error'
+          }"
+          [title]="badgeTooltip"
+          (click)="toggleDetails()">
+      <i class="icon" 
+         [ngClass]="{
+           'ti ti-cloud': !isActive,
+           'ti ti-cloud-upload': isActive && currentState === 'uploading',
+           'ti ti-cloud-download': isActive && currentState === 'downloading',
+           'ti ti-check': isActive && currentState === 'success',
+           'ti ti-x': isActive && currentState === 'error'
+         }"></i>
+      @if (isActive && currentProgress > 0) {
+        <span class="ms-1">{{ currentProgress }}%</span>
+      }
+    </span>
+    
+    <!-- Animation de pulsation pendant la synchronisation -->
+    @if (isActive && (currentState === 'uploading' || currentState === 'downloading')) {
+      <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle">
+        <span class="visually-hidden">Sync in progress</span>
+      </span>
+    }
+  </div>
+
+  <!-- Barre de progression circulaire (visible seulement pendant la synchro) -->
+  @if (isActive && showProgressBar && currentProgress > 0) {
+    <div class="circular-progress ms-2">
+      <svg class="progress-ring" width="24" height="24">
+        <circle class="progress-ring-circle" 
+                cx="12" cy="12" r="10" 
+                stroke="currentColor" 
+                stroke-width="2" 
+                fill="transparent"
+                [style.stroke-dasharray]="circumference"
+                [style.stroke-dashoffset]="strokeDashoffset">
+        </circle>
+      </svg>
+      <span class="progress-text">{{ currentProgress }}%</span>
+    </div>
+  }
+
+  <!-- Détails étendus (toggle) -->
+  @if (showDetails) {
+    <div class="sync-details ms-3 p-2 border rounded bg-light">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <small class="text-muted">{{ entityName }} - {{ tableName }}</small>
+        <button type="button" class="btn-close btn-sm" (click)="toggleDetails()"></button>
+      </div>
+      
+      @if (isActive) {
+        <div class="progress mb-1" style="height: 4px;">
+          <div class="progress-bar" 
+               [ngClass]="{
+                 'bg-warning': currentState === 'uploading',
+                 'bg-info': currentState === 'downloading',
+                 'bg-success': currentState === 'success',
+                 'bg-danger': currentState === 'error'
+               }"
+               [style.width.%]="currentProgress">
+          </div>
+        </div>
+        
+        <div class="sync-status-text">
+          <small class="text-muted">{{ statusText }}</small>
+          @if (currentCount > 0 && totalCount > 0) {
+            <small class="d-block">{{ currentCount }} / {{ totalCount }} éléments</small>
+          }
+          @if (estimatedTimeRemaining && estimatedTimeRemaining > 0) {
+            <small class="d-block text-info">Temps restant: {{ estimatedTimeRemaining }}s</small>
+          }
+        </div>
+      } @else {
+        <small class="text-muted">{{ getLastSyncText() }}</small>
+      }
+
+      @if (lastError) {
+        <div class="alert alert-danger alert-sm mt-1 mb-0">
+          <small>{{ lastError }}</small>
+        </div>
+      }
+    </div>
+  }
+</div>

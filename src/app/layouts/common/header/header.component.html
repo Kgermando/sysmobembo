@@ -1,0 +1,148 @@
+<!-- Header -->
+<div class="header" (mouseover)="miniSideBarMouseHover('over')" (mouseout)="miniSideBarMouseHover('out')"
+    (focus)="miniSideBarMouseHover('over')" (blur)="miniSideBarMouseHover('out')" tabindex="0">
+
+    <!-- Logo -->
+    @if (currentUser) {
+    <div class="header-left active">
+        <a [routerLink]="routes.dashboard" class="logo logo-normal">
+            <img src="img/logo.png" alt="Logo">
+            <img src="img/white-logo.svg" class="white-logo" alt="Logo">
+        </a>
+        <a [routerLink]="routes.dashboard" class="logo-small">
+            <img src="img/logo-small.svg" alt="Logo">
+        </a>
+        <a id="toggle_btn" href="javascript:void(0);" (click)="toggleSidebar()">
+            <i class="ti ti-arrow-bar-to-left"></i>
+        </a>
+    </div>
+    }
+    <!-- /Logo -->
+
+    <a id="mobile_btn" class="mobile_btn" href="javascript:void(0);" (click)="togglesMobileSideBar()">
+        <span class="bar-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+        </span>
+    </a>
+    <a id="mobile_btn" class="mobile_btn btn btn-icon btn-outline-primary rounded-pill d-md-none"
+        href="javascript:void(0);" (click)="goBack()"
+        style="margin-left: 55px; margin-top: 15px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; padding: 0; vertical-align: middle;">
+        <i class="fa-solid fa-arrow-left" style="font-size: 14px;"></i>
+    </a>
+
+    <div class="header-user">
+        <ul class="nav user-menu">
+            <li>
+                <button class="btn btn-icon btn-outline-primary rounded-pill" (click)="goBack()">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </button>
+            </li>
+            <!-- Search -->
+            <li class="nav-item nav-search-inputs me-auto">
+                <div class="top-nav-search">
+                    <a href="javascript:void(0);" class="responsive-search">
+                        <i class="fa fa-search"></i>
+                    </a>
+                    <form action="#" class="dropdown">
+                        <div class="searchinputs" id="dropdownMenuClickable">
+                            <input type="text" placeholder="Search">
+                            <div class="search-addon">
+                                <button type="submit"><i class="ti ti-command"></i></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </li>
+            <!-- /Search -->
+
+            <!-- Nav List -->
+            <li class="nav-item nav-list">
+                <ul class="nav">
+                    <li class="dark-mode-list">
+                        <a href="javascript:void(0);" id="dark-mode-toggle" class="dark-mode-toggle">
+                            <i class="ti ti-sun light-mode " [ngClass]="{'active': themeMode === 'light_mode'}"
+                                (click)="changeThemeMode('light_mode')" (keydown.enter)="changeThemeMode('light_mode')"
+                                (keydown.space)="changeThemeMode('light_mode')" tabindex="0"></i>
+                            <i class="ti ti-moon dark-mode" [ngClass]="{'active': themeMode === 'dark_mode'}"
+                                (click)="changeThemeMode('dark_mode')" (keydown.enter)="changeThemeMode('dark_mode')"
+                                (keydown.space)="changeThemeMode('dark_mode')"
+                                (keydown.space)="changeThemeMode('dark_mode')" tabindex="0"></i>
+                        </a>
+
+                    </li>
+                </ul>
+            </li>
+            <!-- /Nav List -->
+
+            <!-- Profile Dropdown -->
+            <li class="nav-item dropdown has-arrow main-drop">
+                <a href="javascript:void(0);" class="nav-link userset" data-bs-toggle="dropdown">
+                    @if (currentUser) {
+                    <span class="user-info">
+                        <span class="user-letter">
+                            <img src="img/profiles/avatar-20.jpg" alt="Profile">
+                        </span>
+                        @if (onLine) {
+                        <span class="badge badge-success rounded-pill"></span>
+                        }@else {
+                        <span class="badge badge-danger rounded-pill"></span>
+                        }
+                    </span>
+                    }
+                </a>
+                <div class="dropdown-menu menu-drop-user">
+                    <div class="profilename">
+                        <!-- <a class="dropdown-item" [routerLink] = "routes.msposDashboard">
+                            <i class="ti ti-layout-2"></i> Dashboard
+                        </a> --> 
+                        <a class="dropdown-item" (click)="openProfileDialog()">
+                            <i class="ti ti-user-pin"></i> My Profil
+                        </a> 
+                        @if (isLoading) {
+                        <div class="dropdown-item d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            Déconnexion...
+                        </div>
+                        } @else {
+                        <a class="dropdown-item" (click)="logout()">
+                            <i class="ti ti-lock"></i> Logout
+                        </a>
+                        }
+                    </div>
+                </div>
+            </li>
+            <!-- /Profile Dropdown -->
+
+        </ul>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="dropdown mobile-user-menu">
+        <a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa fa-ellipsis-v"></i></a>
+        <div class="dropdown-menu">
+            <!-- <a class="dropdown-item" [routerLink] = "routes.msposDashboard">  
+                <i class="ti ti-layout-2"></i> Dashboard
+            </a> -->
+            <a class="dropdown-item" (click)="openProfileDialog()">
+                <i class="ti ti-user-pin"></i> My Profil
+            </a> 
+            @if (isLoading) {
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            } @else {
+            <a class="dropdown-item" (click)="logout()">
+                <i class="ti ti-lock"></i> Logout
+            </a>
+            }
+        </div>
+    </div>
+    <!-- /Mobile Menu -->
+
+</div>
+<!-- /Header -->

@@ -1,0 +1,625 @@
+<!-- Page Wrapper -->
+<div class="page-wrapper">
+  <div class="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="row">
+        <div class="col-sm-12">
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a [routerLink]="'/web/dashboard'">Tableau de bord</a></li>
+            <li class="breadcrumb-item active">Gestion des Utilisateurs</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- /Page Header -->
+
+    <!-- Enterprise Info Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info border-0 mb-0">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i class="ti ti-users fs-3"></i>
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-1">Gestion des Utilisateurs</h6>
+                        <small class="text-muted">Administration et gestion des comptes utilisateurs</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Enterprise Info Section -->
+
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            <div class="row align-items-center">
+              <div class="col">
+                <h4 class="card-title">Liste des Utilisateurs</h4>
+              </div>
+              <div class="col-auto" *ngIf="canCreateUser()">
+                <a href="javascript:void(0);" class="btn btn-primary" 
+                  (click)="prepareNewUser(); openAddOffcanvas()">
+                  <i class="ti ti-plus me-2"></i>Ajouter un utilisateur
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Search & Filters -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Rechercher :</label>
+                        <input type="text" class="form-control" placeholder="Nom, email, téléphone..."
+                          [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange($event)">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Rôle :</label>
+                        <select class="form-control" [(ngModel)]="selectedRole" (change)="applyFilters()">
+                          <option value="">Tous les rôles</option>
+                          <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Statut :</label>
+                        <select class="form-control" [(ngModel)]="selectedStatus" (change)="applyFilters()">
+                          <option value="">Tous les statuts</option>
+                          <option value="true">Actif</option>
+                          <option value="false">Inactif</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                          <button class="btn btn-outline-secondary" (click)="resetFilters()">
+                            <i class="ti ti-refresh"></i>
+                          </button>
+                          <button class="btn btn-primary" (click)="search()">
+                            <i class="ti ti-search"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- /Search & Filters -->
+
+            <!-- Table -->
+            <div class="table-responsive custom-table">
+              <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
+                class="mat-elevation-z2 table tasks-activity tasks">
+
+                <!-- Nom complet Column -->
+                <ng-container matColumnDef="fullname">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Nom complet </th>
+                  <td mat-cell *matCellDef="let element">
+                    <div class="d-flex align-items-center">
+                      <div class="avatar avatar-sm me-2">
+                        <span class="avatar-title bg-primary text-white rounded-circle">
+                          {{ element.fullname.charAt(0).toUpperCase() }}
+                        </span>
+                      </div>
+                      <div>
+                        <strong>{{ element.fullname }}</strong>
+                        <div class="text-muted small" *ngIf="element.signature">
+                          Signature: {{ element.signature | slice:0:30 }}{{ element.signature && element.signature.length > 30 ? '...' : '' }}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Email Column -->
+                <ng-container matColumnDef="email">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Email </th>
+                  <td mat-cell *matCellDef="let element">
+                    <a [href]="'mailto:' + element.email" class="text-decoration-none">
+                      {{ element.email }}
+                    </a>
+                  </td>
+                </ng-container>
+
+                <!-- Téléphone Column -->
+                <ng-container matColumnDef="telephone">
+                  <th mat-header-cell *matHeaderCellDef> Téléphone </th>
+                  <td mat-cell *matCellDef="let element">
+                    <a [href]="'tel:' + element.telephone" class="text-decoration-none">
+                      {{ element.telephone }}
+                    </a>
+                  </td>
+                </ng-container>
+
+                <!-- Rôle Column -->
+                <ng-container matColumnDef="role">
+                  <th mat-header-cell *matHeaderCellDef> Rôle </th>
+                  <td mat-cell *matCellDef="let element">
+                    <span [class]="getRoleBadgeClass(element.role)">
+                      {{ element.role }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Permission Column -->
+                <ng-container matColumnDef="permission">
+                  <th mat-header-cell *matHeaderCellDef> Permissions </th>
+                  <td mat-cell *matCellDef="let element">
+                    <span [class]="getPermissionBadgeClass(element.permission)">
+                      {{ element.permission }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Statut Column -->
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef> Statut </th>
+                  <td mat-cell *matCellDef="let element">
+                    <span [class]="getStatusBadgeClass(element.status)">
+                      {{ element.status ? 'Actif' : 'Inactif' }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef> Actions </th>
+                  <td mat-cell *matCellDef="let element">
+                    <div class="btn-group" role="group">
+                      <button type="button" class="btn btn-sm btn-outline-info"
+                        (click)="viewUser(element)" title="Voir détails">
+                        <i class="ti ti-eye"></i>
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-primary"
+                        (click)="editUser(element)"
+                        *ngIf="canEditUser()"
+                        title="Modifier">
+                        <i class="ti ti-edit"></i>
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-danger"
+                        (click)="deleteUser(element)"
+                        *ngIf="canDeleteUser()"
+                        title="Supprimer">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              </table>
+
+              <!-- Pagination -->
+              <mat-paginator [pageSizeOptions]="[10, 15, 25, 50]" [showFirstLastButtons]="true"
+                (page)="onPageChange($event)" [length]="total_records" [pageSize]="page_size"
+                [pageIndex]="current_page - 1">
+              </mat-paginator>
+
+              <!-- Loading State -->
+              @if (isLoadingData) {
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+              </div>
+              }
+
+              <!-- Empty State -->
+              @if (!isLoadingData && dataList.length === 0) {
+              <div class="text-center p-4">
+                <i class="ti ti-users display-4 text-muted mb-3"></i>
+                <h4>Aucun utilisateur trouvé</h4>
+                <p class="text-muted">Commencez par créer le premier utilisateur.</p>
+                <button class="btn btn-primary" 
+                        (click)="prepareNewUser(); openAddOffcanvas()" *ngIf="canCreateUser()">
+                  <i class="ti ti-plus me-2"></i>Créer un utilisateur
+                </button>
+              </div>
+              }
+            </div>
+            <!-- /Table -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /Page Wrapper -->
+
+<!-- User Form Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas_add">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">
+      <i class="ti ti-user-plus me-2"></i>
+      {{ editingUser ? 'Modifier l\'Utilisateur' : 'Nouvel Utilisateur' }}
+    </h5>
+    <button type="button" class="btn-close" (click)="closeAddOffcanvas()"></button>
+  </div>
+
+  <div class="offcanvas-body">
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+
+      <!-- Nom complet -->
+      <div class="mb-3">
+        <label for="fullname" class="form-label">Nom complet *</label>
+        <input type="text" id="fullname" class="form-control" formControlName="fullname" 
+               placeholder="Ex: Jean Dupont">
+        <div *ngIf="userForm.get('fullname')?.invalid && userForm.get('fullname')?.touched" class="text-danger small">
+          <div *ngIf="userForm.get('fullname')?.errors?.['required']">Le nom complet est requis</div>
+          <div *ngIf="userForm.get('fullname')?.errors?.['minlength']">Le nom doit contenir au moins 2 caractères</div>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label for="email" class="form-label">Email *</label>
+        <input type="email" id="email" class="form-control" formControlName="email"
+          placeholder="Ex: jean.dupont@example.com">
+        <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="text-danger small">
+          <div *ngIf="userForm.get('email')?.errors?.['required']">L'email est requis</div>
+          <div *ngIf="userForm.get('email')?.errors?.['email']">L'email n'est pas valide</div>
+        </div>
+      </div>
+
+      <!-- Téléphone -->
+      <div class="mb-3">
+        <label for="telephone" class="form-label">Téléphone *</label>
+        <input type="tel" id="telephone" class="form-control" formControlName="telephone"
+          placeholder="Ex: +243 900 000 000">
+        <div *ngIf="userForm.get('telephone')?.invalid && userForm.get('telephone')?.touched" class="text-danger small">
+          <div *ngIf="userForm.get('telephone')?.errors?.['required']">Le téléphone est requis</div>
+          <div *ngIf="userForm.get('telephone')?.errors?.['minlength']">Le téléphone doit contenir au moins 8 caractères</div>
+        </div>
+      </div>
+
+      <!-- Rôle et Permission -->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="role" class="form-label">Rôle *</label>
+            <select id="role" class="form-select" formControlName="role">
+              <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="permission" class="form-label">Permissions *</label>
+            <select id="permission" class="form-select" formControlName="permission">
+              <option *ngFor="let perm of permissions" [value]="perm.value">{{ perm.label }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statut -->
+      <div class="mb-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="status" formControlName="status">
+          <label class="form-check-label" for="status">
+            Utilisateur actif
+          </label>
+        </div>
+      </div>
+
+      <!-- Signature -->
+      <div class="mb-3">
+        <label for="signature" class="form-label">Signature</label>
+        <textarea id="signature" class="form-control" formControlName="signature" rows="3"
+          placeholder="Signature de l'utilisateur..."></textarea>
+      </div>
+
+      <!-- Mots de passe (seulement pour création) -->
+      <div *ngIf="!editingUser">
+        <div class="mb-3">
+          <label for="password" class="form-label">Mot de passe *</label>
+          <input type="password" id="password" class="form-control" formControlName="password"
+            placeholder="Minimum 6 caractères">
+          <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched" class="text-danger small">
+            <div *ngIf="userForm.get('password')?.errors?.['required']">Le mot de passe est requis</div>
+            <div *ngIf="userForm.get('password')?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="password_confirm" class="form-label">Confirmer le mot de passe *</label>
+          <input type="password" id="password_confirm" class="form-control" formControlName="password_confirm"
+            placeholder="Confirmer le mot de passe">
+          <div *ngIf="userForm.get('password_confirm')?.invalid && userForm.get('password_confirm')?.touched" class="text-danger small">
+            <div *ngIf="userForm.get('password_confirm')?.errors?.['required']">La confirmation est requise</div>
+            <div *ngIf="userForm.get('password_confirm')?.errors?.['passwordMismatch']">Les mots de passe ne correspondent pas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary" [disabled]="isSaving || userForm.invalid">
+          <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isSaving" class="ti ti-device-floppy me-2"></i>
+          {{ isSaving ? 'Enregistrement...' : (editingUser ? 'Modifier' : 'Créer') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="closeAddOffcanvas()">
+          <i class="ti ti-x me-2"></i>Annuler
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- /User Form Offcanvas -->
+
+<!-- Edit User Form Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas_edit">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">
+      <i class="ti ti-user-edit me-2"></i>
+      Modifier l'Utilisateur
+    </h5>
+    <button type="button" class="btn-close" (click)="closeEditOffcanvas()"></button>
+  </div>
+
+  <div class="offcanvas-body">
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+
+      <!-- Nom complet -->
+      <div class="mb-3">
+        <label for="edit_fullname" class="form-label">Nom complet *</label>
+        <input type="text" id="edit_fullname" class="form-control" formControlName="fullname" 
+               placeholder="Ex: Jean Dupont">
+        <div *ngIf="userForm.get('fullname')?.invalid && userForm.get('fullname')?.touched" class="text-danger small">
+          <div *ngIf="userForm.get('fullname')?.errors?.['required']">Le nom complet est requis</div>
+          <div *ngIf="userForm.get('fullname')?.errors?.['minlength']">Le nom doit contenir au moins 2 caractères</div>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label for="edit_email" class="form-label">Email *</label>
+        <input type="email" id="edit_email" class="form-control" formControlName="email"
+          placeholder="Ex: jean.dupont@example.com">
+        <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="text-danger small">
+          <div *ngIf="userForm.get('email')?.errors?.['required']">L'email est requis</div>
+          <div *ngIf="userForm.get('email')?.errors?.['email']">L'email n'est pas valide</div>
+        </div>
+      </div>
+
+      <!-- Téléphone -->
+      <div class="mb-3">
+        <label for="edit_telephone" class="form-label">Téléphone *</label>
+        <input type="tel" id="edit_telephone" class="form-control" formControlName="telephone"
+          placeholder="Ex: +243 900 000 000">
+        <div *ngIf="userForm.get('telephone')?.invalid && userForm.get('telephone')?.touched" class="text-danger small">
+          <div *ngIf="userForm.get('telephone')?.errors?.['required']">Le téléphone est requis</div>
+          <div *ngIf="userForm.get('telephone')?.errors?.['minlength']">Le téléphone doit contenir au moins 8 caractères</div>
+        </div>
+      </div>
+
+      <!-- Rôle et Permission -->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="edit_role" class="form-label">Rôle *</label>
+            <select id="edit_role" class="form-select" formControlName="role">
+              <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="edit_permission" class="form-label">Permissions *</label>
+            <select id="edit_permission" class="form-select" formControlName="permission">
+              <option *ngFor="let perm of permissions" [value]="perm.value">{{ perm.label }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statut -->
+      <div class="mb-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="edit_status" formControlName="status">
+          <label class="form-check-label" for="edit_status">
+            Utilisateur actif
+          </label>
+        </div>
+      </div>
+
+      <!-- Signature -->
+      <div class="mb-3">
+        <label for="edit_signature" class="form-label">Signature</label>
+        <textarea id="edit_signature" class="form-control" formControlName="signature" rows="3"
+          placeholder="Signature de l'utilisateur..."></textarea>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary" [disabled]="isSaving || userForm.invalid">
+          <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isSaving" class="ti ti-device-floppy me-2"></i>
+          {{ isSaving ? 'Enregistrement...' : 'Modifier' }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="closeEditOffcanvas()">
+          <i class="ti ti-x me-2"></i>Annuler
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- /Edit User Form Offcanvas -->
+
+<!-- View User Details Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas_view">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">
+      <i class="ti ti-user me-2"></i>
+      Détails de l'Utilisateur
+    </h5>
+    <button type="button" class="btn-close" (click)="closeViewOffcanvas()"></button>
+  </div>
+
+  <div class="offcanvas-body" *ngIf="viewingUser">
+    <div class="card border-0">
+      <!-- Avatar et nom -->
+      <div class="text-center mb-4">
+        <div class="avatar avatar-xl mx-auto mb-3">
+          <span class="avatar-title bg-primary text-white rounded-circle fs-2">
+            {{ viewingUser.fullname.charAt(0).toUpperCase() }}
+          </span>
+        </div>
+        <h4 class="mb-1">{{ viewingUser.fullname }}</h4>
+        <span [class]="getRoleBadgeClass(viewingUser.role)">
+          {{ viewingUser.role }}
+        </span>
+      </div>
+
+      <!-- Informations personnelles -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-user me-2"></i>Informations personnelles
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-12 mb-3">
+              <label class="form-label text-muted">Email</label>
+              <div class="fw-medium">
+                <a [href]="'mailto:' + viewingUser.email" class="text-decoration-none">
+                  <i class="ti ti-mail me-2"></i>{{ viewingUser.email }}
+                </a>
+              </div>
+            </div>
+            <div class="col-12 mb-3">
+              <label class="form-label text-muted">Téléphone</label>
+              <div class="fw-medium">
+                <a [href]="'tel:' + viewingUser.telephone" class="text-decoration-none">
+                  <i class="ti ti-phone me-2"></i>{{ viewingUser.telephone }}
+                </a>
+              </div>
+            </div>
+            <div class="col-12 mb-3">
+              <label class="form-label text-muted">Statut</label>
+              <div>
+                <span [class]="getStatusBadgeClass(viewingUser.status)">
+                  <i class="ti ti-circle-check me-1" *ngIf="viewingUser.status"></i>
+                  <i class="ti ti-circle-x me-1" *ngIf="!viewingUser.status"></i>
+                  {{ viewingUser.status ? 'Actif' : 'Inactif' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Permissions et accès -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-shield-check me-2"></i>Permissions et accès
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-12 mb-3">
+              <label class="form-label text-muted">Rôle</label>
+              <div>
+                <span [class]="getRoleBadgeClass(viewingUser.role)">
+                  {{ viewingUser.role }}
+                </span>
+              </div>
+            </div>
+            <div class="col-12 mb-3">
+              <label class="form-label text-muted">Permissions</label>
+              <div>
+                <span [class]="getPermissionBadgeClass(viewingUser.permission)">
+                  {{ viewingUser.permission }}
+                </span>
+              </div>
+            </div>
+            <div class="col-12 mb-3" *ngIf="getPermissionDescription(viewingUser.permission)">
+              <label class="form-label text-muted">Description des permissions</label>
+              <div class="text-muted small">
+                {{ getPermissionDescription(viewingUser.permission) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Signature -->
+      <div class="card border mb-3" *ngIf="viewingUser.signature">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-signature me-2"></i>Signature
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="p-3 bg-light rounded">
+            {{ viewingUser.signature }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Informations système -->
+      <div class="card border mb-3" *ngIf="viewingUser.createdAt || viewingUser.updatedAt">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-info-circle me-2"></i>Informations système
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-12 mb-2" *ngIf="viewingUser.createdAt">
+              <label class="form-label text-muted">Créé le</label>
+              <div class="small">
+                <i class="ti ti-calendar me-2"></i>
+                {{ viewingUser.createdAt | date:'dd/MM/yyyy à HH:mm' }}
+              </div>
+            </div>
+            <div class="col-12 mb-2" *ngIf="viewingUser.updatedAt">
+              <label class="form-label text-muted">Dernière modification</label>
+              <div class="small">
+                <i class="ti ti-calendar-event me-2"></i>
+                {{ viewingUser.updatedAt | date:'dd/MM/yyyy à HH:mm' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-grid gap-2">
+        <button type="button" class="btn btn-primary" 
+                (click)="editUser(viewingUser); closeViewOffcanvas()"
+                *ngIf="canEditUser()">
+          <i class="ti ti-edit me-2"></i>Modifier cet utilisateur
+        </button>
+        <button type="button" class="btn btn-outline-danger" 
+                (click)="deleteUser(viewingUser); closeViewOffcanvas()"
+                *ngIf="canDeleteUser()">
+          <i class="ti ti-trash me-2"></i>Supprimer cet utilisateur
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="closeViewOffcanvas()">
+          <i class="ti ti-x me-2"></i>Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /View User Details Offcanvas -->

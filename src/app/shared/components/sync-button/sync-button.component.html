@@ -1,0 +1,127 @@
+<!-- Sync Button with Integrated Progress -->
+<div class="sync-button-container" [ngClass]="cssClass">
+  <button type="button" 
+          class="btn sync-button" 
+          [ngClass]="buttonClass"
+          [disabled]="isDisabled || isActive"
+          (click)="onSyncClick()"
+          [title]="buttonTooltip">
+    
+    <!-- Icon et state -->
+    <span class="button-content d-flex align-items-center">
+      @if (isActive && showSpinner) {
+        <span class="spinner-border spinner-border-sm me-2" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </span>
+      } @else {
+        <i class="icon me-2" 
+           [ngClass]="{
+             'ti ti-refresh': !isActive && !lastSyncSuccess,
+             'ti ti-cloud-upload': isActive && currentState === 'uploading',
+             'ti ti-cloud-download': isActive && currentState === 'downloading',
+             'ti ti-check': !isActive && lastSyncSuccess && !lastError,
+             'ti ti-x': !isActive && lastError
+           }"></i>
+      }
+      
+      <span class="button-text">{{ buttonText }}</span>
+      
+      @if (isActive && currentProgress > 0 && showProgress) {
+        <span class="ms-2 badge bg-light text-dark">{{ currentProgress }}%</span>
+      }
+    </span>
+
+    <!-- Barre de progression intégrée -->
+    @if (isActive && showProgress && currentProgress > 0) {
+      <div class="progress-overlay">
+        <div class="progress-bar-inline" 
+             [style.width.%]="currentProgress"
+             [ngClass]="{
+               'bg-warning': currentState === 'uploading',
+               'bg-info': currentState === 'downloading',
+               'bg-success': currentState === 'success',
+               'bg-danger': currentState === 'error'
+             }">
+        </div>
+      </div>
+    }
+  </button>
+
+  <!-- Badge d'état externe (optionnel) -->
+  @if (showExternalBadge) {
+    <span class="external-badge position-relative">
+      <span class="badge" 
+            [ngClass]="{
+              'bg-secondary': !isActive && !lastSyncSuccess && !lastError,
+              'bg-success': !isActive && lastSyncSuccess && !lastError,
+              'bg-danger': !isActive && lastError,
+              'bg-warning': isActive && currentState === 'uploading',
+              'bg-info': isActive && currentState === 'downloading'
+            }">
+        <i class="icon-sm" 
+           [ngClass]="{
+             'ti ti-cloud': !isActive && !lastSyncSuccess && !lastError,
+             'ti ti-cloud-check': !isActive && lastSyncSuccess && !lastError,
+             'ti ti-cloud-x': !isActive && lastError,
+             'ti ti-cloud-upload': isActive && currentState === 'uploading',
+             'ti ti-cloud-download': isActive && currentState === 'downloading'
+           }"></i>
+      </span>
+      
+      @if (isActive) {
+        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle pulse">
+        </span>
+      }
+    </span>
+  }
+
+  <!-- Dropdown avec détails (optionnel) -->
+  @if (showDropdown) {
+    <div class="dropdown d-inline-block ms-1">
+      <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+              type="button" 
+              data-bs-toggle="dropdown">
+        <i class="ti ti-info-circle"></i>
+      </button>
+      <div class="dropdown-menu dropdown-menu-end">
+        <div class="dropdown-header">État de synchronisation</div>
+        <div class="dropdown-item-text">
+          <small class="text-muted">{{ entityName }} - {{ tableName }}</small>
+        </div>
+        <div class="dropdown-divider"></div>
+        
+        @if (isActive) {
+          <div class="dropdown-item-text">
+            <div class="d-flex justify-content-between">
+              <small>Progression:</small>
+              <small><strong>{{ currentProgress }}%</strong></small>
+            </div>
+            @if (currentCount > 0 && totalCount > 0) {
+              <div class="d-flex justify-content-between">
+                <small>Éléments:</small>
+                <small>{{ currentCount }} / {{ totalCount }}</small>
+              </div>
+            }
+            @if (estimatedTimeRemaining && estimatedTimeRemaining > 0) {
+              <div class="d-flex justify-content-between">
+                <small>Temps restant:</small>
+                <small>{{ estimatedTimeRemaining }}s</small>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="dropdown-item-text">
+            <small>{{ getLastSyncText() }}</small>
+          </div>
+        }
+        
+        @if (lastError) {
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item-text text-danger">
+            <small>{{ lastError }}</small>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
