@@ -1,470 +1,447 @@
-<div class="trajectory-analysis">
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h4 class="mb-1">
-            <i class="la la-route me-2"></i>
-            Trajectory Analysis Dashboard
-          </h4>
-          <p class="text-muted mb-0">Movement patterns, anomaly detection, and trajectory insights</p>
-        </div>
-        <div class="d-flex gap-2">
-          <!-- Time Range Filter -->
-          <div class="dropdown">
-            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
-                    data-bs-toggle="dropdown">
-              <i class="la la-clock me-1"></i>
-              {{ selectedTimeRange === '1d' ? 'Last 24h' : selectedTimeRange === '7d' ? 'Last 7 days' : 'Last 30 days' }}
-            </button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#" (click)="onTimeRangeChange('1d')">Last 24 hours</a></li>
-              <li><a class="dropdown-item" href="#" (click)="onTimeRangeChange('7d')">Last 7 days</a></li>
-              <li><a class="dropdown-item" href="#" (click)="onTimeRangeChange('30d')">Last 30 days</a></li>
-            </ul>
-          </div>
+<div class="page-wrapper">
+  <div class="content">
 
-          <button class="btn btn-outline-primary btn-sm" (click)="refreshData()" [disabled]="loading">
-            <i class="la la-refresh me-1"></i>
-            Refresh
-          </button>
-
-          <div class="dropdown">
-            <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
-                    data-bs-toggle="dropdown">
-              <i class="la la-download me-1"></i>
-              Export
-            </button>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#" (click)="exportTrajectoryData()">
-                <i class="la la-file-csv me-2"></i>Trajectory Data
-              </a></li>
-              <li><a class="dropdown-item" href="#" (click)="exportAnomalyData()">
-                <i class="la la-file-csv me-2"></i>Anomaly Data
-              </a></li>
-              <li><a class="dropdown-item" href="#" (click)="exportPatternData()">
-                <i class="la la-file-csv me-2"></i>Pattern Data
-              </a></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="mt-3 text-muted">Loading trajectory analysis data...</p>
-  </div>
-
-  <!-- Main Content -->
-  <div *ngIf="!loading">
-    <!-- Key Metrics -->
-    <div class="row mb-4">
-      <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card metric-card">
-          <div class="card-body">
-            <div class="d-flex align-items-center">
-              <div class="metric-icon bg-primary">
-                <i class="la la-route"></i>
+    <div class="trajectory-analysis">
+      <!-- Header -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h4 class="mb-1">
+                <i class="la la-route me-2"></i>
+                Trajectory Analysis Dashboard
+              </h4>
+              <p class="text-muted mb-0">Movement patterns, anomaly detection, and trajectory insights</p>
+            </div>
+            <div class="d-flex gap-2">
+              <!-- Time Range Filter -->
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown">
+                  <i class="la la-clock me-1"></i>
+                  {{ selectedTimeRange === '1d' ? 'Last 24h' : selectedTimeRange === '7d' ? 'Last 7 days' : 'Last 30
+                  days' }}
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#" (click)="onTimeRangeChange('1d')">Last 24 hours</a></li>
+                  <li><a class="dropdown-item" href="#" (click)="onTimeRangeChange('7d')">Last 7 days</a></li>
+                  <li><a class="dropdown-item" href="#" (click)="onTimeRangeChange('30d')">Last 30 days</a></li>
+                </ul>
               </div>
-              <div class="ms-3">
-                <h6 class="metric-label">Active Trajectories</h6>
-                <div class="metric-value">{{ trajectoryMetrics.activeTrajectories || 0 }}</div>
-                <small class="text-success">
-                  <i class="la la-arrow-up"></i>
-                  +{{ trajectoryMetrics.trajectoryGrowth || 0 }}% vs last period
-                </small>
+
+              <button class="btn btn-outline-primary btn-sm" (click)="refreshData()" [disabled]="loading">
+                <i class="la la-refresh me-1"></i>
+                Refresh
+              </button>
+
+              <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown">
+                  <i class="la la-download me-1"></i>
+                  Export
+                </button>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="#" (click)="exportTrajectoryData()">
+                      <i class="la la-file-csv me-2"></i>Trajectory Data
+                    </a></li>
+                  <li><a class="dropdown-item" href="#" (click)="exportAnomalyData()">
+                      <i class="la la-file-csv me-2"></i>Anomaly Data
+                    </a></li>
+                  <li><a class="dropdown-item" href="#" (click)="exportPatternData()">
+                      <i class="la la-file-csv me-2"></i>Pattern Data
+                    </a></li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card metric-card">
-          <div class="card-body">
-            <div class="d-flex align-items-center">
-              <div class="metric-icon bg-warning">
-                <i class="la la-exclamation-triangle"></i>
-              </div>
-              <div class="ms-3">
-                <h6 class="metric-label">Anomalies Detected</h6>
-                <div class="metric-value">{{ trajectoryMetrics.anomaliesDetected || 0 }}</div>
-                <small class="text-warning">
-                  <i class="la la-clock"></i>
-                  {{ trajectoryMetrics.lastAnomalyTime || 'None recent' }}
-                </small>
-              </div>
-            </div>
-          </div>
+      <!-- Loading State -->
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
         </div>
+        <p class="mt-3 text-muted">Loading trajectory analysis data...</p>
       </div>
 
-      <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card metric-card">
-          <div class="card-body">
-            <div class="d-flex align-items-center">
-              <div class="metric-icon bg-success">
-                <i class="la la-tachometer-alt"></i>
-              </div>
-              <div class="ms-3">
-                <h6 class="metric-label">Avg Speed</h6>
-                <div class="metric-value">{{ trajectoryMetrics.avgSpeed || 0 | number:'1.1-1' }}</div>
-                <small class="text-muted">km/h</small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-3 col-md-6 mb-3">
-        <div class="card metric-card">
-          <div class="card-body">
-            <div class="d-flex align-items-center">
-              <div class="metric-icon bg-info">
-                <i class="la la-expand-arrows-alt"></i>
-              </div>
-              <div class="ms-3">
-                <h6 class="metric-label">Total Distance</h6>
-                <div class="metric-value">{{ trajectoryMetrics.totalDistance || 0 | number:'1.1-1' }}</div>
-                <small class="text-muted">km tracked</small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Analysis Tabs -->
-    <div class="row">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <ul class="nav nav-tabs trajectory-tabs" role="tablist">
-              <li class="nav-item" role="presentation">
-                <button class="nav-link" 
-                        [class.active]="activeTab === 'trajectories'"
-                        (click)="onTabChange('trajectories')"
-                        type="button">
-                  <i class="la la-route"></i>
-                  <span>Trajectory Paths</span>
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link"
-                        [class.active]="activeTab === 'speed'"
-                        (click)="onTabChange('speed')"
-                        type="button">
-                  <i class="la la-tachometer-alt"></i>
-                  <span>Speed Analysis</span>
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link"
-                        [class.active]="activeTab === 'anomalies'"
-                        (click)="onTabChange('anomalies')"
-                        type="button">
-                  <i class="la la-exclamation-triangle"></i>
-                  <span>Anomaly Detection</span>
-                </button>
-              </li>
-              <li class="nav-item" role="presentation">
-                <button class="nav-link"
-                        [class.active]="activeTab === 'patterns'"
-                        (click)="onTabChange('patterns')"
-                        type="button">
-                  <i class="la la-puzzle-piece"></i>
-                  <span>Movement Patterns</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          <div class="card-body p-0">
-            <!-- Trajectory Paths Tab -->
-            <div *ngIf="activeTab === 'trajectories'" class="tab-content p-4">
-              <div class="row">
-                <div class="col-lg-8">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">
-                        <i class="la la-chart-line me-2"></i>
-                        Trajectory Distance Over Time
-                      </h6>
-                    </div>
-                    <div class="card-body">
-                      <apx-chart [series]="trajectoryChartOptions.series"
-                                [chart]="trajectoryChartOptions.chart"
-                                [xaxis]="trajectoryChartOptions.xaxis"
-                                [yaxis]="trajectoryChartOptions.yaxis"
-                                [stroke]="trajectoryChartOptions.stroke"
-                                [dataLabels]="trajectoryChartOptions.dataLabels"
-                                [legend]="trajectoryChartOptions.legend"
-                                [colors]="trajectoryChartOptions.colors"
-                                [tooltip]="trajectoryChartOptions.tooltip"
-                                [grid]="trajectoryChartOptions.grid">
-                      </apx-chart>
-                    </div>
+      <!-- Main Content -->
+      <div *ngIf="!loading">
+        <!-- Key Metrics -->
+        <div class="row mb-4">
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card metric-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="metric-icon bg-primary">
+                    <i class="la la-route"></i>
+                  </div>
+                  <div class="ms-3">
+                    <h6 class="metric-label">Active Trajectories</h6>
+                    <div class="metric-value">{{ trajectoryMetrics.activeTrajectories || 0 }}</div>
+                    <small class="text-success">
+                      <i class="la la-arrow-up"></i>
+                      +{{ trajectoryMetrics.trajectoryGrowth || 0 }}% vs last period
+                    </small>
                   </div>
                 </div>
-                <div class="col-lg-4">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">Active Trajectories</h6>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card metric-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="metric-icon bg-warning">
+                    <i class="la la-exclamation-triangle"></i>
+                  </div>
+                  <div class="ms-3">
+                    <h6 class="metric-label">Anomalies Detected</h6>
+                    <div class="metric-value">{{ trajectoryMetrics.anomaliesDetected || 0 }}</div>
+                    <small class="text-warning">
+                      <i class="la la-clock"></i>
+                      {{ trajectoryMetrics.lastAnomalyTime || 'None recent' }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card metric-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="metric-icon bg-success">
+                    <i class="la la-tachometer-alt"></i>
+                  </div>
+                  <div class="ms-3">
+                    <h6 class="metric-label">Avg Speed</h6>
+                    <div class="metric-value">{{ trajectoryMetrics.avgSpeed || 0 | number:'1.1-1' }}</div>
+                    <small class="text-muted">km/h</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card metric-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center">
+                  <div class="metric-icon bg-info">
+                    <i class="la la-expand-arrows-alt"></i>
+                  </div>
+                  <div class="ms-3">
+                    <h6 class="metric-label">Total Distance</h6>
+                    <div class="metric-value">{{ trajectoryMetrics.totalDistance || 0 | number:'1.1-1' }}</div>
+                    <small class="text-muted">km tracked</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analysis Tabs -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <ul class="nav nav-tabs trajectory-tabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" [class.active]="activeTab === 'trajectories'"
+                      (click)="onTabChange('trajectories')" type="button">
+                      <i class="la la-route"></i>
+                      <span>Trajectory Paths</span>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" [class.active]="activeTab === 'speed'" (click)="onTabChange('speed')"
+                      type="button">
+                      <i class="la la-tachometer-alt"></i>
+                      <span>Speed Analysis</span>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" [class.active]="activeTab === 'anomalies'"
+                      (click)="onTabChange('anomalies')" type="button">
+                      <i class="la la-exclamation-triangle"></i>
+                      <span>Anomaly Detection</span>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" [class.active]="activeTab === 'patterns'" (click)="onTabChange('patterns')"
+                      type="button">
+                      <i class="la la-puzzle-piece"></i>
+                      <span>Movement Patterns</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="card-body p-0">
+                <!-- Trajectory Paths Tab -->
+                <div *ngIf="activeTab === 'trajectories'" class="tab-content p-4">
+                  <div class="row">
+                    <div class="col-lg-8">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">
+                            <i class="la la-chart-line me-2"></i>
+                            Trajectory Distance Over Time
+                          </h6>
+                        </div>
+                        <div class="card-body">
+                          <apx-chart [series]="trajectoryChartOptions.series" [chart]="trajectoryChartOptions.chart"
+                            [xaxis]="trajectoryChartOptions.xaxis" [yaxis]="trajectoryChartOptions.yaxis"
+                            [stroke]="trajectoryChartOptions.stroke" [dataLabels]="trajectoryChartOptions.dataLabels"
+                            [legend]="trajectoryChartOptions.legend" [colors]="trajectoryChartOptions.colors"
+                            [tooltip]="trajectoryChartOptions.tooltip" [grid]="trajectoryChartOptions.grid">
+                          </apx-chart>
+                        </div>
+                      </div>
                     </div>
-                    <div class="card-body p-0">
-                      <div class="trajectories-list">
-                        <div *ngFor="let trajectory of trajectoryData.slice(0, 10)" class="trajectory-item">
-                          <div class="trajectory-info">
-                            <h6>Trajectory {{ trajectory.id }}</h6>
-                            <small class="text-muted">{{ trajectory.type }}</small>
-                          </div>
-                          <div class="trajectory-stats">
-                            <div class="distance">
-                              <strong>{{ formatDistance(trajectory.totalDistance) }}</strong>
-                              <small class="text-muted d-block">Distance</small>
-                            </div>
-                            <div class="duration">
-                              <strong>{{ formatDuration(trajectory.duration) }}</strong>
-                              <small class="text-muted d-block">Duration</small>
-                            </div>
-                          </div>
-                          <div class="trajectory-status">
-                            <span class="badge" 
-                                  [class]="trajectory.status === 'active' ? 'bg-success' : 
+                    <div class="col-lg-4">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">Active Trajectories</h6>
+                        </div>
+                        <div class="card-body p-0">
+                          <div class="trajectories-list">
+                            <div *ngFor="let trajectory of trajectoryData.slice(0, 10)" class="trajectory-item">
+                              <div class="trajectory-info">
+                                <h6>Trajectory {{ trajectory.id }}</h6>
+                                <small class="text-muted">{{ trajectory.type }}</small>
+                              </div>
+                              <div class="trajectory-stats">
+                                <div class="distance">
+                                  <strong>{{ formatDistance(trajectory.totalDistance) }}</strong>
+                                  <small class="text-muted d-block">Distance</small>
+                                </div>
+                                <div class="duration">
+                                  <strong>{{ formatDuration(trajectory.duration) }}</strong>
+                                  <small class="text-muted d-block">Duration</small>
+                                </div>
+                              </div>
+                              <div class="trajectory-status">
+                                <span class="badge" [class]="trajectory.status === 'active' ? 'bg-success' : 
                                           trajectory.status === 'completed' ? 'bg-primary' : 'bg-secondary'">
-                              {{ trajectory.status }}
-                            </span>
+                                  {{ trajectory.status }}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <!-- Speed Analysis Tab -->
-            <div *ngIf="activeTab === 'speed'" class="tab-content p-4">
-              <div class="row">
-                <div class="col-lg-8">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">
-                        <i class="la la-chart-area me-2"></i>
-                        Speed Profile Analysis
-                      </h6>
-                    </div>
-                    <div class="card-body">
-                      <apx-chart [series]="speedChartOptions.series"
-                                [chart]="speedChartOptions.chart"
-                                [xaxis]="speedChartOptions.xaxis"
-                                [yaxis]="speedChartOptions.yaxis"
-                                [stroke]="speedChartOptions.stroke"
-                                [fill]="speedChartOptions.fill"
-                                [dataLabels]="speedChartOptions.dataLabels"
-                                [colors]="speedChartOptions.colors"
-                                [tooltip]="speedChartOptions.tooltip">
-                      </apx-chart>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-4">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">Speed Statistics</h6>
-                    </div>
-                    <div class="card-body">
-                      <div class="speed-stats">
-                        <div class="stat-item">
-                          <div class="stat-label">Average Speed</div>
-                          <div class="stat-value">{{ formatSpeed(trajectoryMetrics.avgSpeed || 0) }}</div>
+                <!-- Speed Analysis Tab -->
+                <div *ngIf="activeTab === 'speed'" class="tab-content p-4">
+                  <div class="row">
+                    <div class="col-lg-8">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">
+                            <i class="la la-chart-area me-2"></i>
+                            Speed Profile Analysis
+                          </h6>
                         </div>
-                        <div class="stat-item">
-                          <div class="stat-label">Maximum Speed</div>
-                          <div class="stat-value">{{ formatSpeed(trajectoryMetrics.maxSpeed || 0) }}</div>
-                        </div>
-                        <div class="stat-item">
-                          <div class="stat-label">Minimum Speed</div>
-                          <div class="stat-value">{{ formatSpeed(trajectoryMetrics.minSpeed || 0) }}</div>
-                        </div>
-                        <div class="stat-item">
-                          <div class="stat-label">Speed Variance</div>
-                          <div class="stat-value">{{ formatSpeed(trajectoryMetrics.speedVariance || 0) }}</div>
+                        <div class="card-body">
+                          <apx-chart [series]="speedChartOptions.series" [chart]="speedChartOptions.chart"
+                            [xaxis]="speedChartOptions.xaxis" [yaxis]="speedChartOptions.yaxis"
+                            [stroke]="speedChartOptions.stroke" [fill]="speedChartOptions.fill"
+                            [dataLabels]="speedChartOptions.dataLabels" [colors]="speedChartOptions.colors"
+                            [tooltip]="speedChartOptions.tooltip">
+                          </apx-chart>
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div class="card mt-3">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">Speed Anomalies</h6>
-                    </div>
-                    <div class="card-body p-0">
-                      <div class="speed-anomalies-list">
-                        <div *ngFor="let anomaly of speedAnomalies.slice(0, 5)" class="speed-anomaly-item">
-                          <div class="anomaly-info">
-                            <h6>{{ anomaly.description }}</h6>
-                            <small class="text-muted">{{ anomaly.timestamp | date:'short' }}</small>
+                    <div class="col-lg-4">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">Speed Statistics</h6>
+                        </div>
+                        <div class="card-body">
+                          <div class="speed-stats">
+                            <div class="stat-item">
+                              <div class="stat-label">Average Speed</div>
+                              <div class="stat-value">{{ formatSpeed(trajectoryMetrics.avgSpeed || 0) }}</div>
+                            </div>
+                            <div class="stat-item">
+                              <div class="stat-label">Maximum Speed</div>
+                              <div class="stat-value">{{ formatSpeed(trajectoryMetrics.maxSpeed || 0) }}</div>
+                            </div>
+                            <div class="stat-item">
+                              <div class="stat-label">Minimum Speed</div>
+                              <div class="stat-value">{{ formatSpeed(trajectoryMetrics.minSpeed || 0) }}</div>
+                            </div>
+                            <div class="stat-item">
+                              <div class="stat-label">Speed Variance</div>
+                              <div class="stat-value">{{ formatSpeed(trajectoryMetrics.speedVariance || 0) }}</div>
+                            </div>
                           </div>
-                          <div class="anomaly-severity">
-                            <span class="badge" 
-                                  [class]="anomaly.severity === 'critical' ? 'bg-danger' : 
+                        </div>
+                      </div>
+
+                      <div class="card mt-3">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">Speed Anomalies</h6>
+                        </div>
+                        <div class="card-body p-0">
+                          <div class="speed-anomalies-list">
+                            <div *ngFor="let anomaly of speedAnomalies.slice(0, 5)" class="speed-anomaly-item">
+                              <div class="anomaly-info">
+                                <h6>{{ anomaly.description }}</h6>
+                                <small class="text-muted">{{ anomaly.timestamp | date:'short' }}</small>
+                              </div>
+                              <div class="anomaly-severity">
+                                <span class="badge" [class]="anomaly.severity === 'critical' ? 'bg-danger' : 
                                           anomaly.severity === 'high' ? 'bg-warning' : 'bg-info'">
-                              {{ anomaly.severity }}
-                            </span>
+                                  {{ anomaly.severity }}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <!-- Anomaly Detection Tab -->
-            <div *ngIf="activeTab === 'anomalies'" class="tab-content p-4">
-              <div class="row">
-                <div class="col-lg-8">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">
-                        <i class="la la-chart-scatter me-2"></i>
-                        Anomaly Detection Scatter Plot
-                      </h6>
+                <!-- Anomaly Detection Tab -->
+                <div *ngIf="activeTab === 'anomalies'" class="tab-content p-4">
+                  <div class="row">
+                    <div class="col-lg-8">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">
+                            <i class="la la-chart-scatter me-2"></i>
+                            Anomaly Detection Scatter Plot
+                          </h6>
+                        </div>
+                        <div class="card-body">
+                          <apx-chart [series]="anomalyChartOptions.series" [chart]="anomalyChartOptions.chart"
+                            [xaxis]="anomalyChartOptions.xaxis" [yaxis]="anomalyChartOptions.yaxis"
+                            [colors]="anomalyChartOptions.colors" [markers]="anomalyChartOptions.markers"
+                            [tooltip]="anomalyChartOptions.tooltip">
+                          </apx-chart>
+                        </div>
+                      </div>
                     </div>
-                    <div class="card-body">
-                      <apx-chart [series]="anomalyChartOptions.series"
-                                [chart]="anomalyChartOptions.chart"
-                                [xaxis]="anomalyChartOptions.xaxis"
-                                [yaxis]="anomalyChartOptions.yaxis"
-                                [colors]="anomalyChartOptions.colors"
-                                [markers]="anomalyChartOptions.markers"
-                                [tooltip]="anomalyChartOptions.tooltip">
-                      </apx-chart>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-lg-4">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">Detected Anomalies</h6>
-                    </div>
-                    <div class="card-body p-0">
-                      <div class="anomalies-list">
-                        <div *ngFor="let anomaly of anomalyData.slice(0, 10)" 
-                             class="anomaly-item"
-                             [class]="getAnomalyTypeClass(anomaly.type)">
-                          <div class="anomaly-info">
-                            <h6>{{ anomaly.description }}</h6>
-                            <small class="text-muted">{{ anomaly.timestamp | date:'short' }}</small>
-                          </div>
-                          <div class="anomaly-details">
-                            <div class="severity">
-                              <strong>{{ getAnomalySeverity(anomaly.score) }}</strong>
-                              <small class="text-muted d-block">Severity</small>
-                            </div>
-                            <div class="confidence">
-                              <strong>{{ formatConfidence(anomaly.confidence) }}</strong>
-                              <small class="text-muted d-block">Confidence</small>
-                            </div>
-                          </div>
-                          <div class="anomaly-type">
-                            <span class="badge" 
-                                  [class]="anomaly.type === 'speed' ? 'bg-warning' : 
+                    <div class="col-lg-4">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">Detected Anomalies</h6>
+                        </div>
+                        <div class="card-body p-0">
+                          <div class="anomalies-list">
+                            <div *ngFor="let anomaly of anomalyData.slice(0, 10)" class="anomaly-item"
+                              [class]="getAnomalyTypeClass(anomaly.type)">
+                              <div class="anomaly-info">
+                                <h6>{{ anomaly.description }}</h6>
+                                <small class="text-muted">{{ anomaly.timestamp | date:'short' }}</small>
+                              </div>
+                              <div class="anomaly-details">
+                                <div class="severity">
+                                  <strong>{{ getAnomalySeverity(anomaly.score) }}</strong>
+                                  <small class="text-muted d-block">Severity</small>
+                                </div>
+                                <div class="confidence">
+                                  <strong>{{ formatConfidence(anomaly.confidence) }}</strong>
+                                  <small class="text-muted d-block">Confidence</small>
+                                </div>
+                              </div>
+                              <div class="anomaly-type">
+                                <span class="badge" [class]="anomaly.type === 'speed' ? 'bg-warning' : 
                                           anomaly.type === 'direction' ? 'bg-info' : 'bg-secondary'">
-                              {{ anomaly.type }}
-                            </span>
+                                  {{ anomaly.type }}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <!-- Movement Patterns Tab -->
-            <div *ngIf="activeTab === 'patterns'" class="tab-content p-4">
-              <div class="row">
-                <div class="col-lg-6">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">
-                        <i class="la la-chart-pie me-2"></i>
-                        Pattern Distribution
-                      </h6>
+                <!-- Movement Patterns Tab -->
+                <div *ngIf="activeTab === 'patterns'" class="tab-content p-4">
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">
+                            <i class="la la-chart-pie me-2"></i>
+                            Pattern Distribution
+                          </h6>
+                        </div>
+                        <div class="card-body">
+                          <apx-chart [series]="patternChartOptions.series" [chart]="patternChartOptions.chart"
+                            [labels]="patternChartOptions.labels" [colors]="patternChartOptions.colors"
+                            [legend]="patternChartOptions.legend" [plotOptions]="patternChartOptions.plotOptions"
+                            [tooltip]="patternChartOptions.tooltip">
+                          </apx-chart>
+                        </div>
+                      </div>
                     </div>
-                    <div class="card-body">
-                      <apx-chart [series]="patternChartOptions.series"
-                                [chart]="patternChartOptions.chart"
-                                [labels]="patternChartOptions.labels"
-                                [colors]="patternChartOptions.colors"
-                                [legend]="patternChartOptions.legend"
-                                [plotOptions]="patternChartOptions.plotOptions"
-                                [tooltip]="patternChartOptions.tooltip">
-                      </apx-chart>
+                    <div class="col-lg-6">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">
+                            <i class="la la-fire me-2"></i>
+                            Temporal Patterns
+                          </h6>
+                        </div>
+                        <div class="card-body">
+                          <apx-chart [series]="temporalChartOptions.series" [chart]="temporalChartOptions.chart"
+                            [dataLabels]="temporalChartOptions.dataLabels"
+                            [plotOptions]="temporalChartOptions.plotOptions" [xaxis]="temporalChartOptions.xaxis"
+                            [colors]="temporalChartOptions.colors">
+                          </apx-chart>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="col-lg-6">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">
-                        <i class="la la-fire me-2"></i>
-                        Temporal Patterns
-                      </h6>
-                    </div>
-                    <div class="card-body">
-                      <apx-chart [series]="temporalChartOptions.series"
-                                [chart]="temporalChartOptions.chart"
-                                [dataLabels]="temporalChartOptions.dataLabels"
-                                [plotOptions]="temporalChartOptions.plotOptions"
-                                [xaxis]="temporalChartOptions.xaxis"
-                                [colors]="temporalChartOptions.colors">
-                      </apx-chart>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div class="row mt-4">
-                <div class="col-12">
-                  <div class="card">
-                    <div class="card-header">
-                      <h6 class="card-title mb-0">Pattern Details</h6>
-                    </div>
-                    <div class="card-body p-0">
-                      <div class="patterns-list">
-                        <div *ngFor="let pattern of movementPatterns" class="pattern-item">
-                          <div class="pattern-info">
-                            <h6>{{ pattern.type }}</h6>
-                            <small class="text-muted">{{ pattern.description }}</small>
-                          </div>
-                          <div class="pattern-stats">
-                            <div class="frequency">
-                              <strong>{{ pattern.frequency }}</strong>
-                              <small class="text-muted d-block">Occurrences</small>
+                  <div class="row mt-4">
+                    <div class="col-12">
+                      <div class="card">
+                        <div class="card-header">
+                          <h6 class="card-title mb-0">Pattern Details</h6>
+                        </div>
+                        <div class="card-body p-0">
+                          <div class="patterns-list">
+                            <div *ngFor="let pattern of movementPatterns" class="pattern-item">
+                              <div class="pattern-info">
+                                <h6>{{ pattern.type }}</h6>
+                                <small class="text-muted">{{ pattern.description }}</small>
+                              </div>
+                              <div class="pattern-stats">
+                                <div class="frequency">
+                                  <strong>{{ pattern.frequency }}</strong>
+                                  <small class="text-muted d-block">Occurrences</small>
+                                </div>
+                                <div class="complexity">
+                                  <strong>{{ getPatternComplexity(pattern) }}</strong>
+                                  <small class="text-muted d-block">Complexity</small>
+                                </div>
+                                <div class="confidence">
+                                  <strong>{{ formatConfidence(pattern.confidence) }}</strong>
+                                  <small class="text-muted d-block">Confidence</small>
+                                </div>
+                              </div>
+                              <div class="pattern-metrics">
+                                <small class="text-muted">
+                                  Duration: {{ formatDuration(pattern.avgDuration) }} |
+                                  Distance: {{ formatDistance(pattern.avgDistance) }}
+                                </small>
+                              </div>
                             </div>
-                            <div class="complexity">
-                              <strong>{{ getPatternComplexity(pattern) }}</strong>
-                              <small class="text-muted d-block">Complexity</small>
-                            </div>
-                            <div class="confidence">
-                              <strong>{{ formatConfidence(pattern.confidence) }}</strong>
-                              <small class="text-muted d-block">Confidence</small>
-                            </div>
-                          </div>
-                          <div class="pattern-metrics">
-                            <small class="text-muted">
-                              Duration: {{ formatDuration(pattern.avgDuration) }} | 
-                              Distance: {{ formatDistance(pattern.avgDistance) }}
-                            </small>
                           </div>
                         </div>
                       </div>
@@ -477,5 +454,6 @@
         </div>
       </div>
     </div>
+
   </div>
 </div>

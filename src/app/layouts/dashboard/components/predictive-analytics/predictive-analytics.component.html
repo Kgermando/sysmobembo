@@ -1,119 +1,335 @@
-<div class="predictive-analytics">
-  <!-- Header with controls -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="card-title mb-0">
-            <i class="material-icons me-2">analytics</i>
-            Analyse Prédictive
-          </h5>
-          
-          <div class="d-flex gap-2">
-            <button 
-              class="btn btn-outline-primary btn-sm"
-              (click)="updateFilters()"
-              [disabled]="isLoading">
-              <i class="material-icons me-1">refresh</i>
-              Actualiser
-            </button>
-            
-            <button 
-              class="btn btn-outline-success btn-sm"
-              (click)="exportPredictiveData()">
-              <i class="material-icons me-1">download</i>
-              Exporter
-            </button>
-          </div>
-        </div>
-        
-        <!-- Filters -->
-        <div class="card-body py-2">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label">Période d'analyse</label>
-              <select 
-                class="form-select" 
-                [(ngModel)]="filterParams.periode_days"
-                (change)="updateFilters()">
-                <option [value]="7">7 derniers jours</option>
-                <option [value]="30">30 derniers jours</option>
-                <option [value]="60">60 derniers jours</option>
-                <option [value]="90">90 derniers jours</option>
-              </select>
+<div class="page-wrapper">
+  <div class="content">
+    <div class="predictive-analytics">
+      <!-- Header with controls -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="card-title mb-0">
+                <i class="material-icons me-2">analytics</i>
+                Analyse Prédictive
+              </h5>
+
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" (click)="updateFilters()" [disabled]="isLoading">
+                  <i class="material-icons me-1">refresh</i>
+                  Actualiser
+                </button>
+
+                <button class="btn btn-outline-success btn-sm" (click)="exportPredictiveData()">
+                  <i class="material-icons me-1">download</i>
+                  Exporter
+                </button>
+              </div>
             </div>
-            
-            <div class="col-md-4">
-              <label class="form-label">Pays d'origine</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                [(ngModel)]="filterParams.pays_origine"
-                placeholder="Tous les pays"
-                (blur)="updateFilters()">
-            </div>
-            
-            <div class="col-md-4">
-              <label class="form-label">Pays de destination</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                [(ngModel)]="filterParams.pays_destination"
-                placeholder="Tous les pays"
-                (blur)="updateFilters()">
+
+            <!-- Filters -->
+            <div class="card-body py-2">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Période d'analyse</label>
+                  <select class="form-select" [(ngModel)]="filterParams.periode_days" (change)="updateFilters()">
+                    <option [value]="7">7 derniers jours</option>
+                    <option [value]="30">30 derniers jours</option>
+                    <option [value]="60">60 derniers jours</option>
+                    <option [value]="90">90 derniers jours</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Pays d'origine</label>
+                  <input type="text" class="form-control" [(ngModel)]="filterParams.pays_origine"
+                    placeholder="Tous les pays" (blur)="updateFilters()">
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">Pays de destination</label>
+                  <input type="text" class="form-control" [(ngModel)]="filterParams.pays_destination"
+                    placeholder="Tous les pays" (blur)="updateFilters()">
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Loading state -->
-  <div *ngIf="isLoading" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Chargement...</span>
-    </div>
-    <p class="mt-2 text-muted">Génération des analyses prédictives...</p>
-  </div>
+      <!-- Loading state -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mt-2 text-muted">Génération des analyses prédictives...</p>
+      </div>
 
-  <!-- Error state -->
-  <div *ngIf="error" class="alert alert-danger" role="alert">
-    <i class="material-icons me-2">error</i>
-    {{ error }}
-  </div>
+      <!-- Error state -->
+      <div *ngIf="error" class="alert alert-danger" role="alert">
+        <i class="material-icons me-2">error</i>
+        {{ error }}
+      </div>
 
-  <!-- Main content -->
-  <div *ngIf="!isLoading && !error">
-    <!-- Insights overview -->
-    <div class="row mb-4" *ngIf="insights.length > 0">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <h6 class="card-title mb-0">
-              <i class="material-icons me-2">lightbulb</i>
-              Insights Prédictifs
-            </h6>
-          </div>
-          <div class="card-body">
-            <div class="row g-3">
-              <div 
-                *ngFor="let insight of insights; trackBy: trackByInsightTitle"
-                class="col-md-6 col-lg-3">
-                <div class="insight-card" [attr.data-type]="insight.type">
-                  <div class="insight-icon">
-                    <i 
-                      class="material-icons"
-                      [style.color]="getInsightColor(insight.type)">
-                      {{ getInsightIcon(insight.type) }}
-                    </i>
-                  </div>
-                  <div class="insight-content">
-                    <h6>{{ insight.title }}</h6>
-                    <p>{{ insight.description }}</p>
-                    <div class="confidence-bar">
-                      <div class="confidence-fill" [style.width.%]="insight.confidence"></div>
+      <!-- Main content -->
+      <div *ngIf="!isLoading && !error">
+        <!-- Insights overview -->
+        <div class="row mb-4" *ngIf="insights.length > 0">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="material-icons me-2">lightbulb</i>
+                  Insights Prédictifs
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div *ngFor="let insight of insights; trackBy: trackByInsightTitle" class="col-md-6 col-lg-3">
+                    <div class="insight-card" [attr.data-type]="insight.type">
+                      <div class="insight-icon">
+                        <i class="material-icons" [style.color]="getInsightColor(insight.type)">
+                          {{ getInsightIcon(insight.type) }}
+                        </i>
+                      </div>
+                      <div class="insight-content">
+                        <h6>{{ insight.title }}</h6>
+                        <p>{{ insight.description }}</p>
+                        <div class="confidence-bar">
+                          <div class="confidence-fill" [style.width.%]="insight.confidence"></div>
+                        </div>
+                        <small class="text-muted">Confiance: {{ insight.confidence }}%</small>
+                      </div>
                     </div>
-                    <small class="text-muted">Confiance: {{ insight.confidence }}%</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation tabs -->
+        <div class="row mb-3">
+          <div class="col-12">
+            <ul class="nav nav-pills nav-justified prediction-tabs">
+              <li class="nav-item">
+                <button class="nav-link" [class.active]="activeTab === 'migration-flow'"
+                  (click)="setActiveTab('migration-flow')">
+                  <i class="material-icons">trending_up</i>
+                  Flux Migratoires
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" [class.active]="activeTab === 'risk-analysis'"
+                  (click)="setActiveTab('risk-analysis')">
+                  <i class="material-icons">security</i>
+                  Analyse des Risques
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" [class.active]="activeTab === 'demographic'"
+                  (click)="setActiveTab('demographic')">
+                  <i class="material-icons">groups</i>
+                  Démographie
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" [class.active]="activeTab === 'movement-patterns'"
+                  (click)="setActiveTab('movement-patterns')">
+                  <i class="material-icons">route</i>
+                  Patterns de Mouvement
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Migration Flow Tab -->
+        <div *ngIf="activeTab === 'migration-flow'" class="row">
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="material-icons me-2">show_chart</i>
+                  Prédiction des Flux Migratoires
+                </h6>
+              </div>
+              <div class="card-body">
+                <apx-chart #migrationFlowChart [series]="migrationFlowChartOptions.series!"
+                  [chart]="migrationFlowChartOptions.chart!" [xaxis]="migrationFlowChartOptions.xaxis!"
+                  [yaxis]="migrationFlowChartOptions.yaxis!" [colors]="migrationFlowChartOptions.colors!"
+                  [title]="migrationFlowChartOptions.title!" [stroke]="migrationFlowChartOptions.stroke!"
+                  [legend]="migrationFlowChartOptions.legend!" [dataLabels]="migrationFlowChartOptions.dataLabels!">
+                </apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="card" *ngIf="migrationFlowData">
+              <div class="card-header">
+                <h6 class="card-title mb-0">Métriques de Prédiction</h6>
+              </div>
+              <div class="card-body">
+                <div class="metric-item">
+                  <div class="metric-label">Moyenne historique</div>
+                  <div class="metric-value">{{ migrationFlowData.base_average | number:'1.0-0' }}</div>
+                </div>
+
+                <div class="metric-item">
+                  <div class="metric-label">Période d'analyse</div>
+                  <div class="metric-value">{{ migrationFlowData.analysis_period }} jours</div>
+                </div>
+
+                <div class="metric-item" *ngIf="migrationFlowData.predictions.length > 0">
+                  <div class="metric-label">Prochaine prédiction</div>
+                  <div class="metric-value">{{ migrationFlowData.predictions[0].predicted_count | number:'1.0-0' }}
+                  </div>
+                  <div class="metric-trend">
+                    <span class="badge badge-info">{{ migrationFlowData.predictions[0].confidence }}% confiance</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Analysis Tab -->
+        <div *ngIf="activeTab === 'risk-analysis'" class="row">
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="material-icons me-2">radar</i>
+                  Analyse des Zones à Risque
+                </h6>
+              </div>
+              <div class="card-body">
+                <apx-chart #riskAnalysisChart [series]="riskAnalysisChartOptions.series!"
+                  [chart]="riskAnalysisChartOptions.chart!" [xaxis]="riskAnalysisChartOptions.xaxis!"
+                  [colors]="riskAnalysisChartOptions.colors!" [title]="riskAnalysisChartOptions.title!"
+                  [plotOptions]="riskAnalysisChartOptions.plotOptions!"
+                  [dataLabels]="riskAnalysisChartOptions.dataLabels!">
+                </apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="card" *ngIf="riskAnalysisData">
+              <div class="card-header">
+                <h6 class="card-title mb-0">Top Zones à Risque</h6>
+              </div>
+              <div class="card-body p-0">
+                <div class="risk-zones-list">
+                  <div *ngFor="let zone of riskAnalysisData.zone_risks.slice(0, 5); trackBy: trackByZoneName"
+                    class="risk-zone-item" [class.high-risk]="zone.risk_score > 50"
+                    [class.medium-risk]="zone.risk_score > 25 && zone.risk_score <= 50">
+
+                    <div class="zone-info">
+                      <h6>{{ zone.ville }}</h6>
+                      <small class="text-muted">{{ zone.pays }}</small>
+                    </div>
+
+                    <div class="risk-score">
+                      <div class="score-circle" [attr.data-score]="zone.risk_score">
+                        {{ zone.risk_score | number:'1.0-0' }}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Demographic Tab -->
+        <div *ngIf="activeTab === 'demographic'" class="row">
+          <div class="col-lg-6">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="material-icons me-2">donut_small</i>
+                  Répartition Démographique
+                </h6>
+              </div>
+              <div class="card-body">
+                <apx-chart #demographicChart [series]="demographicChartOptions.series!"
+                  [chart]="demographicChartOptions.chart!" [labels]="demographicChartOptions.labels!"
+                  [colors]="demographicChartOptions.colors!" [title]="demographicChartOptions.title!"
+                  [legend]="demographicChartOptions.legend!" [dataLabels]="demographicChartOptions.dataLabels!">
+                </apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="card" *ngIf="demographicData">
+              <div class="card-header">
+                <h6 class="card-title mb-0">Tendances par Nationalité</h6>
+              </div>
+              <div class="card-body p-0">
+                <div class="nationality-trends">
+                  <div *ngFor="let trend of demographicData.nationality_trends.slice(0, 6); trackBy: trackByNationality"
+                    class="nationality-item">
+
+                    <div class="nationality-info">
+                      <h6>{{ trend.nationalite }}</h6>
+                      <small class="text-muted">{{ trend.current_count }} migrants actuels</small>
+                    </div>
+
+                    <div class="growth-indicator">
+                      <span class="growth-badge" [class.positive]="trend.monthly_growth > 0"
+                        [class.negative]="trend.monthly_growth < 0">
+                        <i class="material-icons">
+                          {{ trend.monthly_growth > 0 ? 'trending_up' : trend.monthly_growth < 0 ? 'trending_down'
+                            : 'trending_flat' }} </i>
+                            {{ trend.monthly_growth | number:'1.1-1' }}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Movement Patterns Tab -->
+        <div *ngIf="activeTab === 'movement-patterns'" class="row">
+          <div class="col-lg-8">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="material-icons me-2">calendar_view_month</i>
+                  Analyse Saisonnière
+                </h6>
+              </div>
+              <div class="card-body">
+                <apx-chart #seasonalChart [series]="seasonalChartOptions.series!" [chart]="seasonalChartOptions.chart!"
+                  [xaxis]="seasonalChartOptions.xaxis!" [colors]="seasonalChartOptions.colors!"
+                  [title]="seasonalChartOptions.title!" [dataLabels]="seasonalChartOptions.dataLabels!">
+                </apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="card" *ngIf="movementPatternData">
+              <div class="card-header">
+                <h6 class="card-title mb-0">Routes Principales</h6>
+              </div>
+              <div class="card-body p-0">
+                <div class="migration-routes">
+                  <div *ngFor="let route of movementPatternData.migration_routes.slice(0, 5); trackBy: trackByRouteId"
+                    class="route-item">
+
+                    <div class="route-path">
+                      <span class="origin">{{ route.pays_origine }}</span>
+                      <i class="material-icons text-muted">arrow_forward</i>
+                      <span class="destination">{{ route.pays_destination }}</span>
+                    </div>
+
+                    <div class="route-stats">
+                      <div class="migrant-count">{{ route.count }} migrants</div>
+                      <div class="percentage">{{ route.pourcentage_total | number:'1.1-1' }}%</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -123,269 +339,5 @@
       </div>
     </div>
 
-    <!-- Navigation tabs -->
-    <div class="row mb-3">
-      <div class="col-12">
-        <ul class="nav nav-pills nav-justified prediction-tabs">
-          <li class="nav-item">
-            <button 
-              class="nav-link"
-              [class.active]="activeTab === 'migration-flow'"
-              (click)="setActiveTab('migration-flow')">
-              <i class="material-icons">trending_up</i>
-              Flux Migratoires
-            </button>
-          </li>
-          <li class="nav-item">
-            <button 
-              class="nav-link"
-              [class.active]="activeTab === 'risk-analysis'"
-              (click)="setActiveTab('risk-analysis')">
-              <i class="material-icons">security</i>
-              Analyse des Risques
-            </button>
-          </li>
-          <li class="nav-item">
-            <button 
-              class="nav-link"
-              [class.active]="activeTab === 'demographic'"
-              (click)="setActiveTab('demographic')">
-              <i class="material-icons">groups</i>
-              Démographie
-            </button>
-          </li>
-          <li class="nav-item">
-            <button 
-              class="nav-link"
-              [class.active]="activeTab === 'movement-patterns'"
-              (click)="setActiveTab('movement-patterns')">
-              <i class="material-icons">route</i>
-              Patterns de Mouvement
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- Migration Flow Tab -->
-    <div *ngIf="activeTab === 'migration-flow'" class="row">
-      <div class="col-lg-8">
-        <div class="card">
-          <div class="card-header">
-            <h6 class="card-title mb-0">
-              <i class="material-icons me-2">show_chart</i>
-              Prédiction des Flux Migratoires
-            </h6>
-          </div>
-          <div class="card-body">
-            <apx-chart
-              #migrationFlowChart
-              [series]="migrationFlowChartOptions.series!"
-              [chart]="migrationFlowChartOptions.chart!"
-              [xaxis]="migrationFlowChartOptions.xaxis!"
-              [yaxis]="migrationFlowChartOptions.yaxis!"
-              [colors]="migrationFlowChartOptions.colors!"
-              [title]="migrationFlowChartOptions.title!"
-              [stroke]="migrationFlowChartOptions.stroke!"
-              [legend]="migrationFlowChartOptions.legend!"
-              [dataLabels]="migrationFlowChartOptions.dataLabels!">
-            </apx-chart>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-lg-4">
-        <div class="card" *ngIf="migrationFlowData">
-          <div class="card-header">
-            <h6 class="card-title mb-0">Métriques de Prédiction</h6>
-          </div>
-          <div class="card-body">
-            <div class="metric-item">
-              <div class="metric-label">Moyenne historique</div>
-              <div class="metric-value">{{ migrationFlowData.base_average | number:'1.0-0' }}</div>
-            </div>
-            
-            <div class="metric-item">
-              <div class="metric-label">Période d'analyse</div>
-              <div class="metric-value">{{ migrationFlowData.analysis_period }} jours</div>
-            </div>
-            
-            <div class="metric-item" *ngIf="migrationFlowData.predictions.length > 0">
-              <div class="metric-label">Prochaine prédiction</div>
-              <div class="metric-value">{{ migrationFlowData.predictions[0].predicted_count | number:'1.0-0' }}</div>
-              <div class="metric-trend">
-                <span class="badge badge-info">{{ migrationFlowData.predictions[0].confidence }}% confiance</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Risk Analysis Tab -->
-    <div *ngIf="activeTab === 'risk-analysis'" class="row">
-      <div class="col-lg-8">
-        <div class="card">
-          <div class="card-header">
-            <h6 class="card-title mb-0">
-              <i class="material-icons me-2">radar</i>
-              Analyse des Zones à Risque
-            </h6>
-          </div>
-          <div class="card-body">
-            <apx-chart
-              #riskAnalysisChart
-              [series]="riskAnalysisChartOptions.series!"
-              [chart]="riskAnalysisChartOptions.chart!"
-              [xaxis]="riskAnalysisChartOptions.xaxis!"
-              [colors]="riskAnalysisChartOptions.colors!"
-              [title]="riskAnalysisChartOptions.title!"
-              [plotOptions]="riskAnalysisChartOptions.plotOptions!"
-              [dataLabels]="riskAnalysisChartOptions.dataLabels!">
-            </apx-chart>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-lg-4">
-        <div class="card" *ngIf="riskAnalysisData">
-          <div class="card-header">
-            <h6 class="card-title mb-0">Top Zones à Risque</h6>
-          </div>
-          <div class="card-body p-0">
-            <div class="risk-zones-list">
-              <div 
-                *ngFor="let zone of riskAnalysisData.zone_risks.slice(0, 5); trackBy: trackByZoneName"
-                class="risk-zone-item"
-                [class.high-risk]="zone.risk_score > 50"
-                [class.medium-risk]="zone.risk_score > 25 && zone.risk_score <= 50">
-                
-                <div class="zone-info">
-                  <h6>{{ zone.ville }}</h6>
-                  <small class="text-muted">{{ zone.pays }}</small>
-                </div>
-                
-                <div class="risk-score">
-                  <div class="score-circle" [attr.data-score]="zone.risk_score">
-                    {{ zone.risk_score | number:'1.0-0' }}%
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Demographic Tab -->
-    <div *ngIf="activeTab === 'demographic'" class="row">
-      <div class="col-lg-6">
-        <div class="card">
-          <div class="card-header">
-            <h6 class="card-title mb-0">
-              <i class="material-icons me-2">donut_small</i>
-              Répartition Démographique
-            </h6>
-          </div>
-          <div class="card-body">
-            <apx-chart
-              #demographicChart
-              [series]="demographicChartOptions.series!"
-              [chart]="demographicChartOptions.chart!"
-              [labels]="demographicChartOptions.labels!"
-              [colors]="demographicChartOptions.colors!"
-              [title]="demographicChartOptions.title!"
-              [legend]="demographicChartOptions.legend!"
-              [dataLabels]="demographicChartOptions.dataLabels!">
-            </apx-chart>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-lg-6">
-        <div class="card" *ngIf="demographicData">
-          <div class="card-header">
-            <h6 class="card-title mb-0">Tendances par Nationalité</h6>
-          </div>
-          <div class="card-body p-0">
-            <div class="nationality-trends">
-              <div 
-                *ngFor="let trend of demographicData.nationality_trends.slice(0, 6); trackBy: trackByNationality"
-                class="nationality-item">
-                
-                <div class="nationality-info">
-                  <h6>{{ trend.nationalite }}</h6>
-                  <small class="text-muted">{{ trend.current_count }} migrants actuels</small>
-                </div>
-                
-                <div class="growth-indicator">
-                  <span 
-                    class="growth-badge"
-                    [class.positive]="trend.monthly_growth > 0"
-                    [class.negative]="trend.monthly_growth < 0">
-                    <i class="material-icons">
-                      {{ trend.monthly_growth > 0 ? 'trending_up' : trend.monthly_growth < 0 ? 'trending_down' : 'trending_flat' }}
-                    </i>
-                    {{ trend.monthly_growth | number:'1.1-1' }}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Movement Patterns Tab -->
-    <div *ngIf="activeTab === 'movement-patterns'" class="row">
-      <div class="col-lg-8">
-        <div class="card">
-          <div class="card-header">
-            <h6 class="card-title mb-0">
-              <i class="material-icons me-2">calendar_view_month</i>
-              Analyse Saisonnière
-            </h6>
-          </div>
-          <div class="card-body">
-            <apx-chart
-              #seasonalChart
-              [series]="seasonalChartOptions.series!"
-              [chart]="seasonalChartOptions.chart!"
-              [xaxis]="seasonalChartOptions.xaxis!"
-              [colors]="seasonalChartOptions.colors!"
-              [title]="seasonalChartOptions.title!"
-              [dataLabels]="seasonalChartOptions.dataLabels!">
-            </apx-chart>
-          </div>
-        </div>
-      </div>
-      
-      <div class="col-lg-4">
-        <div class="card" *ngIf="movementPatternData">
-          <div class="card-header">
-            <h6 class="card-title mb-0">Routes Principales</h6>
-          </div>
-          <div class="card-body p-0">
-            <div class="migration-routes">
-              <div 
-                *ngFor="let route of movementPatternData.migration_routes.slice(0, 5); trackBy: trackByRouteId"
-                class="route-item">
-                
-                <div class="route-path">
-                  <span class="origin">{{ route.pays_origine }}</span>
-                  <i class="material-icons text-muted">arrow_forward</i>
-                  <span class="destination">{{ route.pays_destination }}</span>
-                </div>
-                
-                <div class="route-stats">
-                  <div class="migrant-count">{{ route.count }} migrants</div>
-                  <div class="percentage">{{ route.pourcentage_total | number:'1.1-1' }}%</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
