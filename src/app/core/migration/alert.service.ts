@@ -4,8 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
   IAlert, 
-  IPaginationResponse, 
-  IApiResponse 
+  IBackendPaginationResponse, 
+  IBackendApiResponse 
 } from '../../shared/models/migrant.model';
 
 export interface IAlertFormData {
@@ -38,85 +38,87 @@ export class AlertService {
     migrantUuid?: string,
     typeAlerte?: string,
     niveauGravite?: string,
-    statut?: string
-  ): Observable<IPaginationResponse<IAlert>> {
+    statut?: string,
+    search?: string
+  ): Observable<IBackendPaginationResponse<IAlert>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
 
     if (migrantUuid) params = params.set('migrant_uuid', migrantUuid);
     if (typeAlerte) params = params.set('type_alerte', typeAlerte);
-    if (niveauGravite) params = params.set('niveau_gravite', niveauGravite);
+    if (niveauGravite) params = params.set('gravite', niveauGravite); // Match backend parameter name
     if (statut) params = params.set('statut', statut);
+    if (search) params = params.set('search', search);
 
-    return this.http.get<IPaginationResponse<IAlert>>(`${this.apiUrl}/paginate`, { params });
+    return this.http.get<IBackendPaginationResponse<IAlert>>(`${this.apiUrl}/paginate`, { params });
   }
 
   // Get all alerts
-  getAllAlerts(): Observable<IApiResponse<IAlert[]>> {
-    return this.http.get<IApiResponse<IAlert[]>>(`${this.apiUrl}/all`);
+  getAllAlerts(): Observable<IBackendApiResponse<IAlert[]>> {
+    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/all`);
   }
 
   // Get one alert
-  getAlert(uuid: string): Observable<IApiResponse<IAlert>> {
-    return this.http.get<IApiResponse<IAlert>>(`${this.apiUrl}/get/${uuid}`);
+  getAlert(uuid: string): Observable<IBackendApiResponse<IAlert>> {
+    return this.http.get<IBackendApiResponse<IAlert>>(`${this.apiUrl}/get/${uuid}`);
   }
 
   // Get alerts by migrant
-  getAlertsByMigrant(migrantUuid: string): Observable<IApiResponse<IAlert[]>> {
-    return this.http.get<IApiResponse<IAlert[]>>(`${this.apiUrl}/migrant/${migrantUuid}`);
+  getAlertsByMigrant(migrantUuid: string): Observable<IBackendApiResponse<IAlert[]>> {
+    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/migrant/${migrantUuid}`);
   }
 
   // Get active alerts
-  getActiveAlerts(): Observable<IApiResponse<IAlert[]>> {
-    return this.http.get<IApiResponse<IAlert[]>>(`${this.apiUrl}/active`);
+  getActiveAlerts(): Observable<IBackendApiResponse<IAlert[]>> {
+    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/active`);
   }
 
   // Get critical alerts
-  getCriticalAlerts(): Observable<IApiResponse<IAlert[]>> {
-    return this.http.get<IApiResponse<IAlert[]>>(`${this.apiUrl}/critical`);
+  getCriticalAlerts(): Observable<IBackendApiResponse<IAlert[]>> {
+    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/critical`);
   }
 
   // Create alert
-  createAlert(alertData: IAlertFormData): Observable<IApiResponse<IAlert>> {
-    return this.http.post<IApiResponse<IAlert>>(`${this.apiUrl}/create`, alertData);
+  createAlert(alertData: IAlertFormData): Observable<IBackendApiResponse<IAlert>> {
+    return this.http.post<IBackendApiResponse<IAlert>>(`${this.apiUrl}/create`, alertData);
   }
 
   // Update alert
-  updateAlert(uuid: string, alertData: Partial<IAlertFormData>): Observable<IApiResponse<IAlert>> {
-    return this.http.put<IApiResponse<IAlert>>(`${this.apiUrl}/update/${uuid}`, alertData);
+  updateAlert(uuid: string, alertData: Partial<IAlertFormData>): Observable<IBackendApiResponse<IAlert>> {
+    return this.http.put<IBackendApiResponse<IAlert>>(`${this.apiUrl}/update/${uuid}`, alertData);
   }
 
   // Resolve alert
   resolveAlert(uuid: string, resolutionData: {
     commentaire_resolution: string;
-  }): Observable<IApiResponse<IAlert>> {
-    return this.http.put<IApiResponse<IAlert>>(`${this.apiUrl}/resolve/${uuid}`, resolutionData);
+  }): Observable<IBackendApiResponse<IAlert>> {
+    return this.http.put<IBackendApiResponse<IAlert>>(`${this.apiUrl}/resolve/${uuid}`, resolutionData);
   }
 
   // Delete alert
-  deleteAlert(uuid: string): Observable<IApiResponse<null>> {
-    return this.http.delete<IApiResponse<null>>(`${this.apiUrl}/delete/${uuid}`);
+  deleteAlert(uuid: string): Observable<IBackendApiResponse<null>> {
+    return this.http.delete<IBackendApiResponse<null>>(`${this.apiUrl}/delete/${uuid}`);
   }
 
   // Get alerts statistics
-  getAlertsStats(): Observable<IApiResponse<any>> {
-    return this.http.get<IApiResponse<any>>(`${this.apiUrl}/stats`);
+  getAlertsStats(): Observable<IBackendApiResponse<any>> {
+    return this.http.get<IBackendApiResponse<any>>(`${this.apiUrl}/stats`);
   }
 
   // Get alerts dashboard
-  getAlertsDashboard(): Observable<IApiResponse<any>> {
-    return this.http.get<IApiResponse<any>>(`${this.apiUrl}/dashboard`);
+  getAlertsDashboard(): Observable<IBackendApiResponse<any>> {
+    return this.http.get<IBackendApiResponse<any>>(`${this.apiUrl}/dashboard`);
   }
 
   // Search alerts with filters
   searchAlerts(filters: {
     type_alerte?: string;
-    niveau_gravite?: string;
+    gravite?: string; // Match backend parameter name
     statut?: string;
     date_from?: string;
     date_to?: string;
-  }): Observable<IApiResponse<IAlert[]>> {
+  }): Observable<IBackendApiResponse<IAlert[]>> {
     let params = new HttpParams();
 
     Object.entries(filters).forEach(([key, value]) => {
@@ -125,11 +127,11 @@ export class AlertService {
       }
     });
 
-    return this.http.get<IApiResponse<IAlert[]>>(`${this.apiUrl}/search`, { params });
+    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/search`, { params });
   }
 
   // Auto expire alerts
-  autoExpireAlerts(): Observable<IApiResponse<any>> {
-    return this.http.post<IApiResponse<any>>(`${this.apiUrl}/auto-expire`, {});
+  autoExpireAlerts(): Observable<IBackendApiResponse<any>> {
+    return this.http.post<IBackendApiResponse<any>>(`${this.apiUrl}/auto-expire`, {});
   }
 }

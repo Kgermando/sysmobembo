@@ -47,7 +47,8 @@ export class AlertsComponent implements OnInit, OnDestroy {
   page_size = 15;
   current_page = 1;
 
-  // Filters
+  // Filters and search
+  search = '';
   selectedMigrant = '';
   selectedTypeAlerte = '';
   selectedNiveauGravite = '';
@@ -123,16 +124,17 @@ export class AlertsComponent implements OnInit, OnDestroy {
           this.selectedMigrant,
           this.selectedTypeAlerte,
           this.selectedNiveauGravite,
-          this.selectedStatut
+          this.selectedStatut,
+          this.search
         ).pipe(takeUntil(this.destroy$))
       );
 
-      if (response.success) {
+      if (response.status === 'success') {
         this.alerts = response.data;
         this.dataSource.data = response.data;
-        this.total_records = response.total;
-        this.current_page = response.page;
-        this.page_size = response.limit;
+        this.total_records = response.pagination.total_records;
+        this.current_page = response.pagination.current_page;
+        this.page_size = response.pagination.page_size;
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors du chargement des données';
@@ -148,7 +150,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
         this.migrantService.getAllMigrants().pipe(takeUntil(this.destroy$))
       );
 
-      if (response.success) {
+      if (response.status === 'success') {
         this.migrants = Array.isArray(response.data) ? response.data : [];
       }
     } catch (error: any) {
@@ -184,7 +186,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
         );
       }
 
-      if (response.success) {
+      if (response.status === 'success') {
         await this.loadData();
         this.resetForm();
         this.closeOffcanvas();
@@ -229,7 +231,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
           .pipe(takeUntil(this.destroy$))
       );
 
-      if (response.success) {
+      if (response.status === 'success') {
         await this.loadData();
       }
     } catch (error: any) {
@@ -249,7 +251,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
         }).pipe(takeUntil(this.destroy$))
       );
 
-      if (response.success) {
+      if (response.status === 'success') {
         await this.loadData();
       }
     } catch (error: any) {
@@ -422,5 +424,110 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   getExpiredAlertsCount(): number {
     return this.alerts.filter(a => this.isAlertExpired(a) && a.statut === 'active').length;
+  }
+
+  // Additional backend features
+  async loadActiveAlerts(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.alertService.getActiveAlerts().pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.alerts = response.data;
+        this.dataSource.data = response.data;
+      }
+    } catch (error: any) {
+      this.error = error.error?.message || 'Erreur lors du chargement des alertes actives';
+      console.error('Erreur lors du chargement des alertes actives:', error);
+    }
+  }
+
+  async loadCriticalAlerts(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.alertService.getCriticalAlerts().pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.alerts = response.data;
+        this.dataSource.data = response.data;
+      }
+    } catch (error: any) {
+      this.error = error.error?.message || 'Erreur lors du chargement des alertes critiques';
+      console.error('Erreur lors du chargement des alertes critiques:', error);
+    }
+  }
+
+  async loadAlertsByMigrant(migrantUuid: string): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.alertService.getAlertsByMigrant(migrantUuid).pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.alerts = response.data;
+        this.dataSource.data = response.data;
+      }
+    } catch (error: any) {
+      this.error = error.error?.message || 'Erreur lors du chargement des alertes du migrant';
+      console.error('Erreur lors du chargement des alertes du migrant:', error);
+    }
+  }
+
+  async searchAlerts(): Promise<void> {
+    try {
+      const filters: any = {};
+      
+      if (this.selectedTypeAlerte) filters.type_alerte = this.selectedTypeAlerte;
+      if (this.selectedNiveauGravite) filters.gravite = this.selectedNiveauGravite;
+      if (this.selectedStatut) filters.statut = this.selectedStatut;
+
+      const response = await firstValueFrom(
+        this.alertService.searchAlerts(filters).pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.alerts = response.data;
+        this.dataSource.data = response.data;
+      }
+    } catch (error: any) {
+      this.error = error.error?.message || 'Erreur lors de la recherche';
+      console.error('Erreur lors de la recherche d\'alertes:', error);
+    }
+  }
+
+  async autoExpireAlerts(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.alertService.autoExpireAlerts().pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        await this.loadData();
+        alert(`${response.data.expired_count} alertes ont été automatiquement expirées.`);
+      }
+    } catch (error: any) {
+      this.error = error.error?.message || 'Erreur lors de l\'expiration automatique';
+      console.error('Erreur lors de l\'expiration automatique:', error);
+    }
+  }
+
+  // Quick filter buttons
+  showActiveAlerts(): void {
+    this.selectedStatut = 'active';
+    this.current_page = 1;
+    this.loadData();
+  }
+
+  showCriticalAlerts(): void {
+    this.selectedNiveauGravite = 'critical';
+    this.selectedStatut = 'active';
+    this.current_page = 1;
+    this.loadData();
+  }
+
+  showAllAlerts(): void {
+    this.resetFilters();
   }
 }
