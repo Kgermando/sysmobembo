@@ -6,6 +6,8 @@ import { AuthStateService } from '../../core/auth/auth-state.service';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { Subject, takeUntil, finalize } from 'rxjs';
+import { UserHelper } from '../../shared/models/user-helper.model';
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-login',
@@ -18,7 +20,7 @@ export class LoginComponent implements OnInit, OnDestroy {
   public routes = routes;
   isLoading = false;
   form!: FormGroup;
-  returnUrl: string = '/web/appartments/appartments-list';
+  returnUrl: string = '/web/users/users-list';
   
   private destroy$ = new Subject<void>();
 
@@ -27,6 +29,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private formBuilder: FormBuilder,
     private authState: AuthStateService,
+    private authService: AuthService,
     private toastr: ToastrService
   ) {
     this.dateY = formatDate(new Date(), 'yyyy', 'en');
@@ -74,7 +77,8 @@ export class LoginComponent implements OnInit, OnDestroy {
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
                   next: (user) => {
-                    this.toastr.success(`Bienvenue ${user.fullname}! 🎉`, 'Connexion réussie!');
+                    const fullName = UserHelper.getFullName(user);
+                    this.toastr.success(`Bienvenue ${fullName}! 🎉`, 'Connexion réussie!');
                     this.router.navigate(['/web']); 
                   },
                   error: (error) => {
@@ -113,4 +117,9 @@ export class LoginComponent implements OnInit, OnDestroy {
   // Getters pour les validations du formulaire
   get identifier() { return this.form.get('identifier'); }
   get passwordField() { return this.form.get('password'); }
+
+
+  createAdmin() {
+    this.authService.createAdmin();
+  }
 }

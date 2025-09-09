@@ -20,9 +20,40 @@ export interface AuthResponse {
  * Interface pour l'inscription d'un nouvel utilisateur
  */
 export interface RegisterRequest {
-  fullname: string;
+  // Informations personnelles de base
+  nom: string;
+  postnom: string;
+  prenom: string;
+  sexe: string;
+  date_naissance: string;
+  lieu_naissance: string;
+
+  // Nationalité
+  nationalite: string;
+
+  // Contacts
   email: string;
   telephone: string;
+
+  // Adresse
+  province: string;
+  ville: string;
+  commune: string;
+  quartier: string;
+
+  // Informations professionnelles
+  matricule: string;
+  grade: string;
+  fonction: string;
+  service: string;
+  direction: string;
+  ministere: string;
+  date_recrutement: string;
+  date_prise_service: string;
+  type_agent: string;
+  statut: string;
+
+  // Authentification
   password: string;
   password_confirm: string;
   role: string; // Agent, Manager, Supervisor, Administrator
@@ -58,10 +89,20 @@ export interface SessionData {
  * Interface pour la mise à jour du profil utilisateur
  */
 export interface UpdateProfileRequest {
-  fullname?: string;
+  nom?: string;
+  postnom?: string;
+  prenom?: string;
   email?: string;
   telephone?: string;
+  telephone_urgence?: string;
+  province?: string;
+  ville?: string;
+  commune?: string;
+  quartier?: string;
+  avenue?: string;
+  numero?: string;
   signature?: string;
+  photo_profil?: string;
 }
 
 /**

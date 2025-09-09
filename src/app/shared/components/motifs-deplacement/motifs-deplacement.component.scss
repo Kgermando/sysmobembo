@@ -1,0 +1,250 @@
+.motifs-deplacement-component {
+  .code-cell {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+    color: var(--primary-color);
+    background: var(--background-light);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .primary-text {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .secondary-text {
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .priority-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    
+    .priority-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+  }
+
+  .status-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .status-label {
+      font-size: 12px;
+      font-weight: 500;
+      
+      &.active {
+        color: var(--success-color);
+      }
+      
+      &.inactive {
+        color: var(--danger-color);
+      }
+    }
+  }
+
+  // Priority colors
+  .badge-danger {
+    background: var(--danger-color);
+    color: white;
+  }
+
+  .badge-warning {
+    background: var(--warning-color);
+    color: white;
+  }
+
+  .badge-primary {
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .badge-success {
+    background: var(--success-color);
+    color: white;
+  }
+
+  .badge-accent {
+    background: var(--accent-color);
+    color: white;
+  }
+
+  .badge-info {
+    background: var(--info-color);
+    color: white;
+  }
+
+  .badge-secondary {
+    background: var(--secondary-color);
+    color: white;
+  }
+
+  // Stats cards specific styling
+  .stats-cards {
+    .stat-card {
+      &.info {
+        .stat-icon {
+          color: var(--info-color);
+        }
+      }
+    }
+  }
+
+  // Form specific styling
+  .status-field {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 16px 0;
+    
+    mat-hint {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  // Table enhancements
+  .data-table {
+    .mat-column-code {
+      min-width: 120px;
+    }
+    
+    .mat-column-libelle_fr {
+      min-width: 200px;
+    }
+    
+    .mat-column-libelle_en {
+      min-width: 180px;
+    }
+    
+    .mat-column-categorie {
+      min-width: 120px;
+    }
+    
+    .mat-column-priorite {
+      min-width: 100px;
+      text-align: center;
+    }
+    
+    .mat-column-actif {
+      min-width: 120px;
+    }
+    
+    .mat-column-actions {
+      min-width: 100px;
+    }
+  }
+
+  // Modal enhancements
+  .modal-content {
+    max-width: 600px;
+    
+    .form-row {
+      &:last-child {
+        .status-field {
+          border-left: 3px solid var(--primary-color);
+          padding-left: 16px;
+          background: var(--background-light);
+          border-radius: 0 8px 8px 0;
+        }
+      }
+    }
+  }
+
+  // Empty state
+  .empty-state {
+    i {
+      font-size: 4rem;
+      color: var(--primary-color);
+      opacity: 0.5;
+    }
+  }
+
+  // Search form enhancements
+  .search-form {
+    .search-row {
+      &:first-child {
+        mat-form-field {
+          &:first-child {
+            flex: 1.5; // Give more space to search field
+          }
+        }
+      }
+      
+      &:last-child {
+        mat-form-field {
+          max-width: 200px;
+        }
+      }
+    }
+  }
+
+  // Responsive design
+  @media (max-width: 768px) {
+    .search-form {
+      .search-row {
+        flex-direction: column;
+        
+        mat-form-field {
+          width: 100%;
+          margin-bottom: 16px;
+        }
+        
+        .search-actions {
+          width: 100%;
+          justify-content: stretch;
+          
+          button {
+            flex: 1;
+            margin: 0 4px;
+          }
+        }
+      }
+    }
+    
+    .stats-cards {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    
+    .priority-cell {
+      .priority-label {
+        display: none;
+      }
+    }
+    
+    .status-toggle {
+      flex-direction: column;
+      gap: 4px;
+      
+      .status-label {
+        font-size: 10px;
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    .stats-cards {
+      grid-template-columns: 1fr;
+    }
+    
+    .code-cell {
+      font-size: 10px;
+      padding: 2px 4px;
+    }
+  }
+}

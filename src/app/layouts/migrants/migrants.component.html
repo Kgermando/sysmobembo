@@ -1,0 +1,698 @@
+<!-- Page Wrapper -->
+<div class="page-wrapper">
+  <div class="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="row">
+        <div class="col-sm-12">
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a [routerLink]="'/web/dashboard'">Tableau de bord</a></li>
+            <li class="breadcrumb-item active">Gestion des Migrants</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- /Page Header -->
+
+    <!-- Enterprise Info Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info border-0 mb-0">
+                <div class="row align-items-center">
+                    <div class="col-auto">
+                        <i class="ti ti-users fs-3"></i>
+                    </div>
+                    <div class="col">
+                        <h6 class="mb-1">Gestion des Migrants</h6>
+                        <small class="text-muted">Administration et suivi des données migratoires</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /Enterprise Info Section -->
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4" *ngIf="migrantStats">
+      <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="card bg-primary text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('total_migrants') }}</h4>
+                <p class="mb-0 small">Total Migrants</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-users fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="card bg-success text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('active_migrants') }}</h4>
+                <p class="mb-0 small">Actifs</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-user-check fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="card bg-info text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('regular_migrants') }}</h4>
+                <p class="mb-0 small">Réguliers</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-shield-check fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="card bg-warning text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('irregular_migrants') }}</h4>
+                <p class="mb-0 small">Irréguliers</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-alert-triangle fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="card bg-secondary text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('refugee_migrants') }}</h4>
+                <p class="mb-0 small">Réfugiés</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-home fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-2 col-md-4 col-sm-6">
+        <div class="card bg-dark text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('asylum_seekers') }}</h4>
+                <p class="mb-0 small">Demandeurs d'asile</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-help fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /Statistics Cards -->
+
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            <div class="row align-items-center">
+              <div class="col">
+                <h4 class="card-title">Liste des Migrants</h4>
+              </div>
+              <div class="col-auto">
+                <a href="javascript:void(0);" class="btn btn-primary" 
+                  (click)="prepareNewMigrant(); openAddOffcanvas()">
+                  <i class="ti ti-plus me-2"></i>Ajouter un migrant
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Search & Filters -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="card-body">
+                  <!-- Row 1: Basic Filters -->
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Rechercher :</label>
+                        <input type="text" class="form-control" placeholder="Nom, email, numéro..."
+                          [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange($event)">
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Nationalité :</label>
+                        <select class="form-control" [(ngModel)]="selectedNationalite" (change)="applyFilters()">
+                          <option value="">Toutes</option>
+                          <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Statut :</label>
+                        <select class="form-control" [(ngModel)]="selectedStatutMigratoire" (change)="applyFilters()">
+                          <option value="">Tous</option>
+                          <option *ngFor="let statut of statutMiratoireOptions" [value]="statut.value">{{ statut.label }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Genre :</label>
+                        <select class="form-control" [(ngModel)]="selectedGenre" (change)="applyFilters()">
+                          <option value="">Tous</option>
+                          <option *ngFor="let sexe of sexeOptions" [value]="sexe.value">{{ sexe.label }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                          <button class="btn btn-outline-secondary" (click)="resetFilters()">
+                            <i class="ti ti-refresh"></i>
+                          </button>
+                          <button class="btn btn-primary" (click)="search()">
+                            <i class="ti ti-search"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Row 2: Advanced Filters -->
+                  <div class="row">
+                    <div class="col-md-2">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Pays d'origine :</label>
+                        <select class="form-control" [(ngModel)]="selectedPaysOrigine" (change)="applyFilters()">
+                          <option value="">Tous</option>
+                          <option *ngFor="let pays of paysOrigineOptions" [value]="pays">{{ pays }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Statut actif :</label>
+                        <select class="form-control" [(ngModel)]="selectedActif" (change)="applyFilters()">
+                          <option value="">Tous</option>
+                          <option *ngFor="let actif of actifOptions" [value]="actif.value">{{ actif.label }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Type document :</label>
+                        <select class="form-control" [(ngModel)]="selectedTypeDocument" (change)="applyFilters()">
+                          <option value="">Tous</option>
+                          <option *ngFor="let type of typeDocumentOptions" [value]="type.value">{{ type.label }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Date création :</label>
+                        <div class="d-flex gap-2">
+                          <input type="date" class="form-control" [(ngModel)]="dateCreationDebut" (change)="applyFilters()" placeholder="Du">
+                          <input type="date" class="form-control" [(ngModel)]="dateCreationFin" (change)="applyFilters()" placeholder="Au">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Date naissance :</label>
+                        <div class="d-flex gap-2">
+                          <input type="date" class="form-control" [(ngModel)]="dateNaissanceDebut" (change)="applyFilters()" placeholder="Du">
+                          <input type="date" class="form-control" [(ngModel)]="dateNaissanceFin" (change)="applyFilters()" placeholder="Au">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- /Search & Filters -->
+
+            <!-- Error Alert -->
+            <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+              {{ error }}
+              <button type="button" class="btn-close" (click)="error = null"></button>
+            </div>
+
+            <!-- Loading -->
+            <div *ngIf="isLoadingData" class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive custom-table" *ngIf="!isLoadingData">
+              <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
+                class="mat-elevation-z2 table tasks-activity tasks">
+
+                <!-- Nom Column -->
+                <ng-container matColumnDef="nom">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Nom </th>
+                  <td mat-cell *matCellDef="let element">
+                    <div class="d-flex align-items-center">
+                      <div class="avatar avatar-sm me-2">
+                        <span class="avatar-title bg-primary text-white rounded-circle">
+                          {{ getInitials(element) }}
+                        </span>
+                      </div>
+                      <div>
+                        <strong>{{ element.nom }}</strong>
+                        <div class="text-muted small">{{ element.numero_identifiant }}</div>
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Prénom Column -->
+                <ng-container matColumnDef="prenom">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Prénom </th>
+                  <td mat-cell *matCellDef="let element">
+                    <strong>{{ element.prenom }}</strong>
+                  </td>
+                </ng-container>
+
+                <!-- Sexe Column -->
+                <ng-container matColumnDef="sexe">
+                  <th mat-header-cell *matHeaderCellDef> Sexe </th>
+                  <td mat-cell *matCellDef="let element">
+                    <span class="badge bg-secondary">{{ element.sexe === 'M' ? 'Masculin' : 'Féminin' }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Nationalité Column -->
+                <ng-container matColumnDef="nationalite">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Nationalité </th>
+                  <td mat-cell *matCellDef="let element">
+                    {{ element.nationalite }}
+                  </td>
+                </ng-container>
+
+                <!-- Numéro Identifiant Column -->
+                <ng-container matColumnDef="numero_identifiant">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> N° Identifiant </th>
+                  <td mat-cell *matCellDef="let element">
+                    <span class="badge bg-info">{{ element.numero_identifiant }}</span>
+                  </td>
+                </ng-container>
+
+                <!-- Statut Migratoire Column -->
+                <ng-container matColumnDef="statut_migratoire">
+                  <th mat-header-cell *matHeaderCellDef> Statut </th>
+                  <td mat-cell *matCellDef="let element">
+                    <span [class]="getStatutBadgeClass(element.statut_migratoire)">
+                      {{ element.statut_migratoire | titlecase }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Pays Origine Column -->
+                <ng-container matColumnDef="pays_origine">
+                  <th mat-header-cell *matHeaderCellDef> Pays d'origine </th>
+                  <td mat-cell *matCellDef="let element">
+                    {{ element.pays_origine }}
+                  </td>
+                </ng-container>
+
+                <!-- Date Naissance Column -->
+                <ng-container matColumnDef="date_naissance">
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Date naissance </th>
+                  <td mat-cell *matCellDef="let element">
+                    {{ formatDate(element.date_naissance) }}
+                  </td>
+                </ng-container>
+
+                <!-- Actif Column -->
+                <ng-container matColumnDef="actif">
+                  <th mat-header-cell *matHeaderCellDef> Statut </th>
+                  <td mat-cell *matCellDef="let element">
+                    <span [class]="getStatusBadgeClass(element.actif)">
+                      {{ element.actif ? 'Actif' : 'Inactif' }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <!-- Actions Column -->
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef> Actions </th>
+                  <td mat-cell *matCellDef="let element">
+                    <div class="dropdown dropdown-action">
+                      <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="material-icons">more_vert</i>
+                      </a>
+                      <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="javascript:void(0);" (click)="openViewModal(element)">
+                          <i class="ti ti-eye me-2"></i>Voir détails
+                        </a>
+                        <a class="dropdown-item" href="javascript:void(0);" 
+                          (click)="prepareEditMigrant(element); openEditOffcanvas()">
+                          <i class="ti ti-edit me-2"></i>Modifier
+                        </a>
+                        <a class="dropdown-item text-danger" href="javascript:void(0);" 
+                          (click)="deleteMigrant(element)">
+                          <i class="ti ti-trash me-2"></i>Supprimer
+                        </a>
+                      </div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              </table>
+            </div>
+            <!-- /Table -->
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="!isLoadingData && migrants.length > 0">
+              <div class="text-muted">
+                Affichage de {{ ((current_page - 1) * page_size) + 1 }} à 
+                {{ Math.min(current_page * page_size, total_records) }} sur {{ total_records }} entrées
+              </div>
+              <mat-paginator 
+                [length]="total_records"
+                [pageSize]="page_size"
+                [pageIndex]="current_page - 1"
+                [pageSizeOptions]="[15, 25, 50, 100]"
+                (page)="onPageChange($event)"
+                showFirstLastButtons>
+              </mat-paginator>
+            </div>
+            <!-- /Pagination -->
+
+            <!-- No Data -->
+            <div *ngIf="!isLoadingData && migrants.length === 0" class="text-center py-4">
+              <div class="text-muted">
+                <i class="ti ti-users fs-1 d-block mb-3"></i>
+                <h5>Aucun migrant trouvé</h5>
+                <p>{{ searchTerm ? 'Aucun résultat ne correspond à votre recherche.' : 'Commencez par ajouter un migrant.' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add/Edit Migrant Form Modal -->
+    <div class="modal fade" id="migrantModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ editingMigrant ? 'Modifier' : 'Ajouter' }} un migrant</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form [formGroup]="migrantForm" (ngSubmit)="onSubmit()">
+            <div class="modal-body">
+              <!-- Error Alert -->
+              <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+              <div class="row">
+                <!-- Informations personnelles -->
+                <div class="col-12">
+                  <h6 class="mb-3">Informations personnelles</h6>
+                </div>
+                
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Nom <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="nom"
+                      [class.is-invalid]="isFieldInvalid('nom')">
+                    <div *ngIf="isFieldInvalid('nom')" class="invalid-feedback">
+                      {{ getFieldError('nom') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Prénom <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="prenom"
+                      [class.is-invalid]="isFieldInvalid('prenom')">
+                    <div *ngIf="isFieldInvalid('prenom')" class="invalid-feedback">
+                      {{ getFieldError('prenom') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Date de naissance <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" formControlName="date_naissance"
+                      [class.is-invalid]="isFieldInvalid('date_naissance')">
+                    <div *ngIf="isFieldInvalid('date_naissance')" class="invalid-feedback">
+                      {{ getFieldError('date_naissance') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Lieu de naissance <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="lieu_naissance"
+                      [class.is-invalid]="isFieldInvalid('lieu_naissance')">
+                    <div *ngIf="isFieldInvalid('lieu_naissance')" class="invalid-feedback">
+                      {{ getFieldError('lieu_naissance') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Sexe <span class="text-danger">*</span></label>
+                    <select class="form-control" formControlName="sexe"
+                      [class.is-invalid]="isFieldInvalid('sexe')">
+                      <option value="">Sélectionner</option>
+                      <option *ngFor="let sexe of sexeOptions" [value]="sexe.value">{{ sexe.label }}</option>
+                    </select>
+                    <div *ngIf="isFieldInvalid('sexe')" class="invalid-feedback">
+                      {{ getFieldError('sexe') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Nationalité <span class="text-danger">*</span></label>
+                    <select class="form-control" formControlName="nationalite"
+                      [class.is-invalid]="isFieldInvalid('nationalite')">
+                      <option value="">Sélectionner</option>
+                      <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
+                    </select>
+                    <div *ngIf="isFieldInvalid('nationalite')" class="invalid-feedback">
+                      {{ getFieldError('nationalite') }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Documents d'identité -->
+                <div class="col-12">
+                  <h6 class="mb-3 mt-3">Documents d'identité</h6>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Type de document <span class="text-danger">*</span></label>
+                    <select class="form-control" formControlName="type_document"
+                      [class.is-invalid]="isFieldInvalid('type_document')">
+                      <option value="">Sélectionner</option>
+                      <option *ngFor="let doc of typeDocumentOptions" [value]="doc.value">{{ doc.label }}</option>
+                    </select>
+                    <div *ngIf="isFieldInvalid('type_document')" class="invalid-feedback">
+                      {{ getFieldError('type_document') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Numéro de document <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" formControlName="numero_document"
+                      [class.is-invalid]="isFieldInvalid('numero_document')">
+                    <div *ngIf="isFieldInvalid('numero_document')" class="invalid-feedback">
+                      {{ getFieldError('numero_document') }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Informations migratoires -->
+                <div class="col-12">
+                  <h6 class="mb-3 mt-3">Informations migratoires</h6>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Statut migratoire <span class="text-danger">*</span></label>
+                    <select class="form-control" formControlName="statut_migratoire"
+                      [class.is-invalid]="isFieldInvalid('statut_migratoire')">
+                      <option value="">Sélectionner</option>
+                      <option *ngFor="let statut of statutMiratoireOptions" [value]="statut.value">{{ statut.label }}</option>
+                    </select>
+                    <div *ngIf="isFieldInvalid('statut_migratoire')" class="invalid-feedback">
+                      {{ getFieldError('statut_migratoire') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Pays d'origine <span class="text-danger">*</span></label>
+                    <select class="form-control" formControlName="pays_origine"
+                      [class.is-invalid]="isFieldInvalid('pays_origine')">
+                      <option value="">Sélectionner</option>
+                      <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
+                    </select>
+                    <div *ngIf="isFieldInvalid('pays_origine')" class="invalid-feedback">
+                      {{ getFieldError('pays_origine') }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Contact -->
+                <div class="col-12">
+                  <h6 class="mb-3 mt-3">Informations de contact</h6>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Téléphone</label>
+                    <input type="tel" class="form-control" formControlName="telephone">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" formControlName="email"
+                      [class.is-invalid]="isFieldInvalid('email')">
+                    <div *ngIf="isFieldInvalid('email')" class="invalid-feedback">
+                      {{ getFieldError('email') }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Adresse actuelle</label>
+                    <textarea class="form-control" formControlName="adresse_actuelle" rows="2"></textarea>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Ville actuelle</label>
+                    <input type="text" class="form-control" formControlName="ville_actuelle">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Pays actuel</label>
+                    <input type="text" class="form-control" formControlName="pays_actuel">
+                  </div>
+                </div>
+
+                <!-- Statut -->
+                <div class="col-12">
+                  <div class="input-block mb-3">
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" formControlName="actif" id="actif">
+                      <label class="form-check-label" for="actif">Actif</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+              <button type="submit" class="btn btn-primary" [disabled]="migrantForm.invalid || isSaving">
+                <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+                {{ editingMigrant ? 'Modifier' : 'Ajouter' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Migrant Modal -->
+    <div class="modal fade" id="viewMigrantModal" tabindex="-1" *ngIf="viewingMigrant">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Détails du migrant</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" (click)="closeViewModal()"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Informations personnelles</h6>
+                <p><strong>Nom :</strong> {{ viewingMigrant.nom }}</p>
+                <p><strong>Prénom :</strong> {{ viewingMigrant.prenom }}</p>
+                <p><strong>Date de naissance :</strong> {{ formatDate(viewingMigrant.date_naissance) }}</p>
+                <p><strong>Lieu de naissance :</strong> {{ viewingMigrant.lieu_naissance }}</p>
+                <p><strong>Sexe :</strong> {{ viewingMigrant.sexe === 'M' ? 'Masculin' : 'Féminin' }}</p>
+                <p><strong>Nationalité :</strong> {{ viewingMigrant.nationalite }}</p>
+              </div>
+              <div class="col-md-6">
+                <h6>Informations migratoires</h6>
+                <p><strong>N° Identifiant :</strong> {{ viewingMigrant.numero_identifiant }}</p>
+                <p><strong>Statut :</strong> {{ viewingMigrant.statut_migratoire | titlecase }}</p>
+                <p><strong>Pays d'origine :</strong> {{ viewingMigrant.pays_origine }}</p>
+                <p><strong>Pays de destination :</strong> {{ viewingMigrant.pays_destination || '-' }}</p>
+                <p><strong>Date d'entrée :</strong> {{ formatDate(viewingMigrant.date_entree) }}</p>
+                <p><strong>Point d'entrée :</strong> {{ viewingMigrant.point_entree || '-' }}</p>
+              </div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-md-6">
+                <h6>Contact</h6>
+                <p><strong>Téléphone :</strong> {{ viewingMigrant.telephone || '-' }}</p>
+                <p><strong>Email :</strong> {{ viewingMigrant.email || '-' }}</p>
+                <p><strong>Adresse :</strong> {{ viewingMigrant.adresse_actuelle || '-' }}</p>
+                <p><strong>Ville :</strong> {{ viewingMigrant.ville_actuelle || '-' }}</p>
+              </div>
+              <div class="col-md-6">
+                <h6>Documents</h6>
+                <p><strong>Type :</strong> {{ viewingMigrant.type_document | titlecase }}</p>
+                <p><strong>Numéro :</strong> {{ viewingMigrant.numero_document }}</p>
+                <p><strong>Autorité :</strong> {{ viewingMigrant.autorite_emission || '-' }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="closeViewModal()">
+              Fermer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -13,7 +13,7 @@ import { mergeMap } from 'rxjs/operators';
 export class SelectivePreloadingStrategy implements PreloadingStrategy {
   
   // Modules critiques à précharger immédiatement
-  private criticalRoutes = ['dashboard', 'commandes', 'products'];
+  private criticalRoutes = ['dashboard'];
   
   // Modules à précharger avec délai
   private delayedRoutes = ['clients', 'fournisseurs', 'finances'];

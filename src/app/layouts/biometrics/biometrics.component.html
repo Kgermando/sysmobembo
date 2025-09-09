@@ -1,0 +1,597 @@
+<!-- Page Wrapper -->
+<div class="page-wrapper">
+  <div class="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="row">
+        <div class="col-sm-12">
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a [routerLink]="'/web/dashboard'">Tableau de bord</a></li>
+            <li class="breadcrumb-item active">Gestion des Données Biométriques</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- /Page Header -->
+
+    <!-- Enterprise Info Section -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="alert alert-info border-0 mb-0">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <i class="ti ti-fingerprint fs-3"></i>
+            </div>
+            <div class="col">
+              <h6 class="mb-1">Gestion des Données Biométriques</h6>
+              <small class="text-muted">Administration et gestion des données biométriques des migrants</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /Enterprise Info Section -->
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <div class="d-flex align-items-center justify-content-center mb-2">
+              <i class="ti ti-database text-primary fs-3 me-2"></i>
+              <h3 class="mb-0">{{ stats.total_biometrics }}</h3>
+            </div>
+            <p class="text-muted mb-0">Total</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <div class="d-flex align-items-center justify-content-center mb-2">
+              <i class="ti ti-check-circle text-success fs-3 me-2"></i>
+              <h3 class="mb-0">{{ stats.verified_biometrics }}</h3>
+            </div>
+            <p class="text-muted mb-0">Vérifiées</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <div class="d-flex align-items-center justify-content-center mb-2">
+              <i class="ti ti-shield-lock text-info fs-3 me-2"></i>
+              <h3 class="mb-0">{{ stats.encrypted_biometrics }}</h3>
+            </div>
+            <p class="text-muted mb-0">Chiffrées</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card">
+          <div class="card-body text-center">
+            <div class="d-flex align-items-center justify-content-center mb-2">
+              <i class="ti ti-percentage text-warning fs-3 me-2"></i>
+              <h3 class="mb-0">{{ (stats.avg_confidence_score | number:'1.1-1') || 0 }}%</h3>
+            </div>
+            <p class="text-muted mb-0">Score moyen</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /Statistics Cards -->
+
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            <div class="row align-items-center">
+              <div class="col">
+                <h4 class="card-title">Liste des Données Biométriques</h4>
+              </div>
+              <div class="col-auto">
+                <a href="javascript:void(0);" class="btn btn-primary" 
+                  (click)="openCreateModal()">
+                  <i class="ti ti-plus me-2"></i>Ajouter des données biométriques
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Search & Filters -->
+            <div class="row">
+              <div class="col-md-12">
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Type biométrique :</label>
+                        <select class="form-control" [(ngModel)]="selectedType" (change)="applyFilters()">
+                          <option value="">Tous les types</option>
+                          <option *ngFor="let type of biometricTypes" [value]="type.value">{{ type.label }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Qualité :</label>
+                        <select class="form-control" [(ngModel)]="selectedQuality" (change)="applyFilters()">
+                          <option value="">Toutes les qualités</option>
+                          <option *ngFor="let quality of qualityLevels" [value]="quality.value">{{ quality.label }}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Statut vérification :</label>
+                        <select class="form-control" [(ngModel)]="selectedVerificationStatus" (change)="applyFilters()">
+                          <option value="">Tous</option>
+                          <option value="true">Vérifiées</option>
+                          <option value="false">Non vérifiées</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                          <button class="btn btn-outline-secondary" (click)="resetFilters()">
+                            <i class="ti ti-refresh"></i>
+                          </button>
+                          <button class="btn btn-primary" (click)="onSearch()">
+                            <i class="ti ti-search"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Advanced Search -->
+                  <div class="row" [formGroup]="searchForm">
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Date de capture (du) :</label>
+                        <input type="date" class="form-control" formControlName="date_from">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Date de capture (au) :</label>
+                        <input type="date" class="form-control" formControlName="date_to">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">Score min. de confiance :</label>
+                        <input type="number" class="form-control" formControlName="min_confidence" 
+                               min="0" max="100" placeholder="0-100">
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="input-block mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                          <button type="button" class="btn btn-outline-primary w-100" (click)="onSearch()">
+                            <i class="ti ti-search me-1"></i>Recherche avancée
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- /Search & Filters -->
+
+            <!-- Data Table -->
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="thead-light">
+                  <tr>
+                    <th>Migrant</th>
+                    <th>Type</th>
+                    <th>Index doigt</th>
+                    <th>Qualité</th>
+                    <th>Date capture</th>
+                    <th>Dispositif</th>
+                    <th>Vérification</th>
+                    <th>Score</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let biometric of dataSource.data">
+                    <td>
+                      <div class="user-info">
+                        <span class="user-name">{{ getMigrantName(biometric.migrant_uuid) }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge bg-info text-white">
+                        {{ getBiometricTypeLabel(biometric.type_biometrie) }}
+                      </span>
+                    </td>
+                    <td>
+                      <span *ngIf="biometric.index_doigt; else noFingerIndex">
+                        {{ getFingerIndexLabel(biometric.index_doigt) }}
+                      </span>
+                      <ng-template #noFingerIndex>
+                        <span class="text-muted">-</span>
+                      </ng-template>
+                    </td>
+                    <td>
+                      <span class="badge" [ngClass]="{
+                        'bg-success text-white': biometric.qualite_donnee === 'excellente',
+                        'bg-primary text-white': biometric.qualite_donnee === 'bonne',
+                        'bg-warning text-dark': biometric.qualite_donnee === 'moyenne',
+                        'bg-danger text-white': biometric.qualite_donnee === 'faible'
+                      }">
+                        {{ getQualityLabel(biometric.qualite_donnee) }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="date-info">
+                        <span>{{ formatDate(biometric.date_capture) }}</span>
+                        <small class="text-muted d-block" *ngIf="biometric.operateur_capture">
+                          Par: {{ biometric.operateur_capture }}
+                        </small>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="device-info">
+                        <span>{{ biometric.dispositif_capture || 'Non spécifié' }}</span>
+                        <small class="text-muted d-block" *ngIf="biometric.resolution_capture">
+                          {{ biometric.resolution_capture }}
+                        </small>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="badge" [ngClass]="{
+                        'bg-success text-white': biometric.verifie && biometric.score_confiance && biometric.score_confiance >= 80,
+                        'bg-warning text-dark': biometric.verifie && biometric.score_confiance && biometric.score_confiance < 80,
+                        'bg-secondary text-white': !biometric.verifie
+                      }">
+                        <i class="ti" [ngClass]="{
+                          'ti-check': biometric.verifie,
+                          'ti-clock': !biometric.verifie
+                        }"></i>
+                        {{ biometric.verifie ? 'Vérifiée' : 'En attente' }}
+                      </span>
+                      <div *ngIf="biometric.verifie && biometric.date_verification" class="small text-muted">
+                        {{ formatDate(biometric.date_verification) }}
+                      </div>
+                    </td>
+                    <td>
+                      <span *ngIf="biometric.score_confiance; else noScore" 
+                            class="fw-bold"
+                            [ngClass]="{
+                              'text-success': biometric.score_confiance >= 80,
+                              'text-warning': biometric.score_confiance >= 60 && biometric.score_confiance < 80,
+                              'text-danger': biometric.score_confiance < 60
+                            }">
+                        {{ biometric.score_confiance }}%
+                      </span>
+                      <ng-template #noScore>
+                        <span class="text-muted">-</span>
+                      </ng-template>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                (click)="openEditModal(biometric)"
+                                data-bs-toggle="tooltip" title="Modifier"
+                                *ngIf="canEditBiometric()">
+                          <i class="ti ti-edit"></i>
+                        </button>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-success" 
+                                (click)="openVerificationModal(biometric)"
+                                data-bs-toggle="tooltip" title="Vérifier"
+                                *ngIf="!biometric.verifie && canVerifyBiometric()">
+                          <i class="ti ti-check"></i>
+                        </button>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                (click)="deleteBiometric(biometric)"
+                                data-bs-toggle="tooltip" title="Supprimer"
+                                *ngIf="canDeleteBiometric()">
+                          <i class="ti ti-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- Loading State -->
+              <div *ngIf="isLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des données biométriques...</p>
+              </div>
+
+              <!-- Empty State -->
+              <div *ngIf="!isLoading && dataSource.data.length === 0" class="text-center py-5">
+                <i class="ti ti-fingerprint text-muted" style="font-size: 48px;"></i>
+                <h5 class="mt-3">Aucune donnée biométrique</h5>
+                <p class="text-muted">Aucune donnée biométrique trouvée avec les critères actuels.</p>
+              </div>
+            </div>
+            <!-- /Data Table -->
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="!isLoading && dataSource.data.length > 0">
+
+              <nav aria-label="Page navigation">
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" [class.disabled]="currentPage === 1">
+                    <a class="page-link" href="javascript:void(0)" (click)="currentPage > 1 && (currentPage = currentPage - 1) && loadBiometrics()">
+                      Précédent
+                    </a>
+                  </li>
+                  <li class="page-item" 
+                      *ngFor="let page of [].constructor(totalPages); let i = index"
+                      [class.active]="currentPage === i + 1"
+                      [style.display]="i + 1 >= currentPage - 2 && i + 1 <= currentPage + 2 ? 'block' : 'none'">
+                    <a class="page-link" href="javascript:void(0)" (click)="currentPage = i + 1; loadBiometrics()">
+                      {{ i + 1 }}
+                    </a>
+                  </li>
+                  <li class="page-item" [class.disabled]="currentPage === totalPages">
+                    <a class="page-link" href="javascript:void(0)" (click)="currentPage < totalPages && (currentPage = currentPage + 1) && loadBiometrics()">
+                      Suivant
+                    </a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+            <!-- /Pagination -->
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- /Page Wrapper -->
+
+<!-- Biometric Form Modal -->
+<div class="modal fade" id="biometricModal" tabindex="-1" [class.show]="isModalOpen" [style.display]="isModalOpen ? 'block' : 'none'" aria-labelledby="biometricModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="biometricModalLabel">
+          <i class="ti ti-fingerprint me-2"></i>
+          {{ editingBiometric ? 'Modifier' : 'Ajouter' }} des données biométriques
+        </h5>
+        <button type="button" class="btn-close" (click)="closeModal()" aria-label="Close"></button>
+      </div>
+
+      <form [formGroup]="biometricForm" (ngSubmit)="saveBiometric()">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Migrant <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="migrant_uuid" required>
+                  <option value="">Sélectionner un migrant</option>
+                  <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
+                    {{ migrant.nom }} {{ migrant.prenom }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" 
+                     [style.display]="biometricForm.get('migrant_uuid')?.touched && biometricForm.get('migrant_uuid')?.errors ? 'block' : 'none'">
+                  Le migrant est requis
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Type biométrique <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="type_biometrie" required>
+                  <option value="">Sélectionner un type</option>
+                  <option *ngFor="let type of biometricTypes" [value]="type.value">
+                    {{ type.label }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" 
+                     [style.display]="biometricForm.get('type_biometrie')?.touched && biometricForm.get('type_biometrie')?.errors ? 'block' : 'none'">
+                  Le type est requis
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6" *ngIf="biometricForm.get('type_biometrie')?.value === 'empreinte_digitale'">
+              <div class="input-block mb-3">
+                <label class="form-label">Index du doigt <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="index_doigt">
+                  <option value="">Sélectionner un doigt</option>
+                  <option *ngFor="let finger of fingerIndexes" [value]="finger.value">
+                    {{ finger.label }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" 
+                     [style.display]="biometricForm.get('index_doigt')?.touched && biometricForm.get('index_doigt')?.errors ? 'block' : 'none'">
+                  L'index du doigt est requis pour les empreintes
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Qualité des données</label>
+                <select class="form-control" formControlName="qualite_donnee">
+                  <option value="">Évaluation automatique</option>
+                  <option *ngFor="let quality of qualityLevels" [value]="quality.value">
+                    {{ quality.label }}
+                  </option>
+                </select>
+                <small class="form-text text-muted">Laissez vide pour une évaluation automatique</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Algorithme d'encodage <span class="text-danger">*</span></label>
+                <select class="form-control" formControlName="algorithme_encodage" required>
+                  <option value="">Sélectionner un algorithme</option>
+                  <option *ngFor="let algo of encodingAlgorithms" [value]="algo.value">
+                    {{ algo.label }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" 
+                     [style.display]="biometricForm.get('algorithme_encodage')?.touched && biometricForm.get('algorithme_encodage')?.errors ? 'block' : 'none'">
+                  L'algorithme est requis
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Date de capture <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="date_capture" required>
+                <div class="invalid-feedback" 
+                     [style.display]="biometricForm.get('date_capture')?.touched && biometricForm.get('date_capture')?.errors ? 'block' : 'none'">
+                  La date est requise
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Dispositif de capture</label>
+                <input type="text" class="form-control" formControlName="dispositif_capture" placeholder="Ex: Scanner XYZ">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Résolution de capture</label>
+                <input type="text" class="form-control" formControlName="resolution_capture" placeholder="Ex: 500 DPI">
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-12">
+              <div class="input-block mb-3">
+                <label class="form-label">Opérateur de capture</label>
+                <input type="text" class="form-control" formControlName="operateur_capture" placeholder="Nom de l'opérateur">
+              </div>
+            </div>
+          </div>
+
+          <div class="row" *ngIf="!editingBiometric">
+            <div class="col-md-12">
+              <div class="input-block mb-3">
+                <label class="form-label">Fichier biométrique <span class="text-danger">*</span></label>
+                <input type="file" 
+                       class="form-control" 
+                       accept=".jpg,.jpeg,.png,.bmp,.tiff,.wsq"
+                       (change)="onFileSelected($event)">
+                <small class="form-text text-muted">
+                  Formats acceptés: JPG, PNG, BMP, TIFF, WSQ. Taille max: 10MB
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">
+            Annuler
+          </button>
+          <button type="submit" 
+                  class="btn btn-primary" 
+                  [disabled]="!biometricForm.valid || isSaving">
+            <i class="ti ti-device-floppy me-2" *ngIf="!isSaving"></i>
+            <div class="spinner-border spinner-border-sm me-2" role="status" *ngIf="isSaving">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+            {{ editingBiometric ? 'Mettre à jour' : 'Enregistrer' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Verification Modal -->
+<div class="modal fade" id="verificationModal" tabindex="-1" [class.show]="isVerificationModalOpen" [style.display]="isVerificationModalOpen ? 'block' : 'none'" aria-labelledby="verificationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="verificationModalLabel">
+          <i class="ti ti-check-circle me-2"></i>
+          Vérification biométrique
+        </h5>
+        <button type="button" class="btn-close" (click)="closeVerificationModal()" aria-label="Close"></button>
+      </div>
+
+      <form [formGroup]="verificationForm" (ngSubmit)="verifyBiometric()">
+        <div class="modal-body">
+          <div class="alert alert-info" *ngIf="verifyingBiometric">
+            <h6>Informations de la donnée biométrique :</h6>
+            <p class="mb-1"><strong>Migrant:</strong> {{ getMigrantName(verifyingBiometric.migrant_uuid) }}</p>
+            <p class="mb-1"><strong>Type:</strong> {{ getBiometricTypeLabel(verifyingBiometric.type_biometrie) }}</p>
+            <p class="mb-0"><strong>Date capture:</strong> {{ formatDateTime(verifyingBiometric.date_capture) }}</p>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Score de confiance (%) <span class="text-danger">*</span></label>
+                <input type="number" 
+                       class="form-control" 
+                       formControlName="score_confiance" 
+                       min="0" 
+                       max="100" 
+                       required
+                       placeholder="0-100">
+                <div class="invalid-feedback" 
+                     [style.display]="verificationForm.get('score_confiance')?.touched && verificationForm.get('score_confiance')?.errors ? 'block' : 'none'">
+                  Le score est requis (0-100)
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Opérateur de vérification <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="operateur_verification" required placeholder="Nom de l'opérateur">
+                <div class="invalid-feedback" 
+                     [style.display]="verificationForm.get('operateur_verification')?.touched && verificationForm.get('operateur_verification')?.errors ? 'block' : 'none'">
+                  L'opérateur est requis
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeVerificationModal()">
+            Annuler
+          </button>
+          <button type="submit" 
+                  class="btn btn-success" 
+                  [disabled]="!verificationForm.valid || isSaving">
+            <i class="ti ti-check me-2" *ngIf="!isSaving"></i>
+            <div class="spinner-border spinner-border-sm me-2" role="status" *ngIf="isSaving">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+            Vérifier
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal backdrop -->
+<div class="modal-backdrop fade" [class.show]="isModalOpen || isVerificationModalOpen" *ngIf="isModalOpen || isVerificationModalOpen"></div>

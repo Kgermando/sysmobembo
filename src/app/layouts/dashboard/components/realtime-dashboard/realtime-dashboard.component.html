@@ -1,0 +1,407 @@
+<div class="realtime-dashboard">
+  <!-- Header with controls -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <div>
+            <h5 class="card-title mb-0">
+              <i class="material-icons me-2 text-success">visibility</i>
+              Surveillance en Temps Réel
+            </h5>
+            <small class="text-muted">
+              Dernière mise à jour: {{ lastUpdateTime | date:'short' }}
+            </small>
+          </div>
+          
+          <div class="d-flex gap-2">
+            <div class="form-check form-switch">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="autoRefresh"
+                [(ngModel)]="autoRefreshEnabled"
+                (change)="toggleAutoRefresh()">
+              <label class="form-check-label" for="autoRefresh">
+                Auto-actualisation
+              </label>
+            </div>
+            
+            <button 
+              class="btn btn-outline-primary btn-sm"
+              (click)="refreshData()"
+              [disabled]="isLoading">
+              <i class="material-icons me-1">refresh</i>
+              Actualiser
+            </button>
+            
+            <button 
+              class="btn btn-outline-success btn-sm"
+              (click)="exportRealtimeData()">
+              <i class="material-icons me-1">download</i>
+              Exporter
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p class="mt-2 text-muted">Chargement des données en temps réel...</p>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="error" class="alert alert-danger" role="alert">
+    <i class="material-icons me-2">error</i>
+    {{ error }}
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading && !error">
+    <!-- Statistics overview -->
+    <div class="row mb-4" *ngIf="dashboardData">
+      <div class="col-md-3 mb-3">
+        <div class="stat-card gradient-primary">
+          <div class="stat-icon">
+            <i class="material-icons">group</i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ dashboardData.statistics.total_migrants | number }}</h3>
+            <p>Total Migrants</p>
+            <div class="stat-badge">
+              +{{ dashboardData.statistics.migrants_aujourdhui }} aujourd'hui
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-3">
+        <div class="stat-card gradient-warning">
+          <div class="stat-icon">
+            <i class="material-icons">warning</i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ dashboardData.statistics.alertes_actives | number }}</h3>
+            <p>Alertes Actives</p>
+            <div class="stat-badge critical" *ngIf="dashboardData.statistics.alertes_critiques > 0">
+              {{ dashboardData.statistics.alertes_critiques }} critiques
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-3">
+        <div class="stat-card gradient-info">
+          <div class="stat-icon">
+            <i class="material-icons">my_location</i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ dashboardData.statistics.localisations_recentes | number }}</h3>
+            <p>Localisations 24h</p>
+            <div class="stat-badge">
+              En temps réel
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-3">
+        <div class="stat-card gradient-success">
+          <div class="stat-icon">
+            <i class="material-icons">fingerprint</i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ dashboardData.statistics.biometries_enregistrees | number }}</h3>
+            <p>Biométries</p>
+            <div class="stat-badge">
+              Enregistrées
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts section -->
+    <div class="row mb-4">
+      <!-- Alerts chart -->
+      <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h6 class="card-title mb-0">
+              <i class="material-icons me-2">pie_chart</i>
+              Alertes par Gravité
+            </h6>
+          </div>
+          <div class="card-body">
+            <apx-chart
+              #alertsChart
+              [series]="alertsChartOptions.series!"
+              [chart]="alertsChartOptions.chart!"
+              [labels]="alertsChartOptions.labels!"
+              [colors]="alertsChartOptions.colors!"
+              [legend]="alertsChartOptions.legend!"
+              [title]="alertsChartOptions.title!"
+              [dataLabels]="alertsChartOptions.dataLabels!">
+            </apx-chart>
+          </div>
+        </div>
+      </div>
+
+      <!-- Movements chart -->
+      <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h6 class="card-title mb-0">
+              <i class="material-icons me-2">bar_chart</i>
+              Points Chauds
+            </h6>
+          </div>
+          <div class="card-body">
+            <apx-chart
+              #movementsChart
+              [series]="movementsChartOptions.series!"
+              [chart]="movementsChartOptions.chart!"
+              [xaxis]="movementsChartOptions.xaxis!"
+              [yaxis]="movementsChartOptions.yaxis!"
+              [colors]="movementsChartOptions.colors!"
+              [title]="movementsChartOptions.title!"
+              [plotOptions]="movementsChartOptions.plotOptions!"
+              [dataLabels]="movementsChartOptions.dataLabels!">
+            </apx-chart>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status chart -->
+      <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+          <div class="card-header">
+            <h6 class="card-title mb-0">
+              <i class="material-icons me-2">trending_up</i>
+              Évolution Quotidienne
+            </h6>
+          </div>
+          <div class="card-body">
+            <apx-chart
+              #statusChart
+              [series]="statusChartOptions.series!"
+              [chart]="statusChartOptions.chart!"
+              [xaxis]="statusChartOptions.xaxis!"
+              [yaxis]="statusChartOptions.yaxis!"
+              [colors]="statusChartOptions.colors!"
+              [title]="statusChartOptions.title!"
+              [stroke]="statusChartOptions.stroke!"
+              [dataLabels]="statusChartOptions.dataLabels!">
+            </apx-chart>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent activities and system status -->
+    <div class="row">
+      <!-- Recent activities -->
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h6 class="card-title mb-0">
+                <i class="material-icons me-2">history</i>
+                Activités Récentes
+              </h6>
+              
+              <div class="d-flex gap-2">
+                <select 
+                  class="form-select form-select-sm"
+                  [(ngModel)]="activityFilters.priority"
+                  (change)="onActivityFilterChange()"
+                  style="width: auto;">
+                  <option value="all">Toutes priorités</option>
+                  <option value="critical">Critique</option>
+                  <option value="danger">Danger</option>
+                  <option value="info">Info</option>
+                </select>
+                
+                <select 
+                  class="form-select form-select-sm"
+                  [(ngModel)]="activityFilters.type"
+                  (change)="onActivityFilterChange()"
+                  style="width: auto;">
+                  <option value="all">Tous types</option>
+                  <option value="nouveau_migrant">Nouveaux migrants</option>
+                  <option value="nouvelle_alerte">Nouvelles alertes</option>
+                  <option value="nouvelle_localisation">Localisations</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card-body p-0">
+            <div class="activity-list">
+              <div 
+                *ngFor="let activity of paginatedActivities; trackBy: trackByActivityId"
+                class="activity-item"
+                [class.activity-critical]="activity.urgence === 'critical'"
+                [class.activity-danger]="activity.urgence === 'danger'">
+                
+                <div class="activity-icon">
+                  <i class="material-icons" [style.color]="getUrgencyColor(activity.urgence)">
+                    {{ getActivityIcon(activity.type) }}
+                  </i>
+                </div>
+                
+                <div class="activity-content">
+                  <p class="activity-description">{{ activity.description }}</p>
+                  <small class="activity-time text-muted">
+                    {{ formatRelativeTime(activity.timestamp) }}
+                  </small>
+                </div>
+                
+                <div class="activity-badge">
+                  <span 
+                    class="badge"
+                    [class.badge-danger]="activity.urgence === 'critical'"
+                    [class.badge-warning]="activity.urgence === 'danger'"
+                    [class.badge-info]="activity.urgence === 'info'">
+                    {{ activity.urgence | titlecase }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Empty state -->
+            <div *ngIf="filteredActivities.length === 0" class="text-center py-4">
+              <i class="material-icons text-muted" style="font-size: 48px;">inbox</i>
+              <p class="text-muted mt-2">Aucune activité trouvée</p>
+            </div>
+            
+            <!-- Pagination -->
+            <div *ngIf="totalActivitiesPages > 1" class="d-flex justify-content-center p-3 border-top">
+              <nav>
+                <ul class="pagination pagination-sm mb-0">
+                  <li class="page-item" [class.disabled]="currentActivitiesPage === 1">
+                    <button 
+                      class="page-link" 
+                      (click)="currentActivitiesPage = currentActivitiesPage - 1"
+                      [disabled]="currentActivitiesPage === 1">
+                      Précédent
+                    </button>
+                  </li>
+                  
+                  <li 
+                    *ngFor="let page of [].constructor(totalActivitiesPages); let i = index"
+                    class="page-item"
+                    [class.active]="currentActivitiesPage === i + 1">
+                    <button 
+                      class="page-link" 
+                      (click)="currentActivitiesPage = i + 1">
+                      {{ i + 1 }}
+                    </button>
+                  </li>
+                  
+                  <li class="page-item" [class.disabled]="currentActivitiesPage === totalActivitiesPages">
+                    <button 
+                      class="page-link" 
+                      (click)="currentActivitiesPage = currentActivitiesPage + 1"
+                      [disabled]="currentActivitiesPage === totalActivitiesPages">
+                      Suivant
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System status -->
+      <div class="col-lg-4">
+        <div class="card" *ngIf="statusData">
+          <div class="card-header">
+            <h6 class="card-title mb-0">
+              <i class="material-icons me-2">monitor_heart</i>
+              État du Système
+            </h6>
+          </div>
+          
+          <div class="card-body">
+            <!-- System health -->
+            <div class="system-health mb-4" *ngIf="getSystemHealthStatus() as healthStatus">
+              <div class="d-flex align-items-center mb-2">
+                <div 
+                  class="status-indicator me-2"
+                  [style.background-color]="healthStatus.color">
+                </div>
+                <strong>{{ healthStatus.description }}</strong>
+              </div>
+              <div class="progress mb-2" style="height: 8px;">
+                <div 
+                  class="progress-bar"
+                  [style.width.%]="healthStatus.status === 'excellent' ? 100 : healthStatus.status === 'good' ? 75 : healthStatus.status === 'fair' ? 50 : 25"
+                  [style.background-color]="healthStatus.color">
+                </div>
+              </div>
+            </div>
+            
+            <!-- System metrics -->
+            <div class="system-metrics">
+              <div class="metric-item">
+                <div class="d-flex justify-content-between">
+                  <span>Base de données</span>
+                  <span class="d-flex align-items-center">
+                    <i 
+                      class="material-icons me-1" 
+                      [style.color]="getStatusColor(statusData.system_status.database_status)">
+                      {{ getStatusIcon(statusData.system_status.database_status) }}
+                    </i>
+                    {{ statusData.system_status.database_status | titlecase }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="metric-item">
+                <div class="d-flex justify-content-between">
+                  <span>API</span>
+                  <span class="d-flex align-items-center">
+                    <i 
+                      class="material-icons me-1" 
+                      [style.color]="getStatusColor(statusData.system_status.api_status)">
+                      {{ getStatusIcon(statusData.system_status.api_status) }}
+                    </i>
+                    {{ statusData.system_status.api_status | titlecase }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="metric-item">
+                <div class="d-flex justify-content-between">
+                  <span>Temps de réponse</span>
+                  <span>{{ statusData.system_status.response_time_ms }}ms</span>
+                </div>
+              </div>
+              
+              <div class="metric-item">
+                <div class="d-flex justify-content-between">
+                  <span>Total enregistrements</span>
+                  <span>{{ statusData.system_status.total_records | number }}</span>
+                </div>
+              </div>
+              
+              <div class="metric-item">
+                <div class="d-flex justify-content-between">
+                  <span>Dernière sync</span>
+                  <span>{{ statusData.system_status.last_sync | date:'short' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

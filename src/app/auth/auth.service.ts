@@ -20,6 +20,13 @@ export class AuthService {
   register(data: any): Observable<any> {
     return this.http.post<IUser>(`${environment.apiUrl}/auth/register`, data);
   }
+
+    /**
+   * Creation Admin
+   */
+  createAdmin(): Observable<any> {
+    return this.http.get<IUser>(`${environment.apiUrl}/auth/create-admin`);
+  }
  
 
   /**

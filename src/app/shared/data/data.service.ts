@@ -12,11 +12,11 @@ export class DataService {
 
   toggleCollapse() {
     this.collapseSubject.next(!this.collapseSubject.value);
-  }
+  } 
 
   public sidebarData = [
     {
-      tittle: 'Main MENU',
+      tittle: 'Menu Principal',
       showAsTab: false,
       separateRoute: false,
       hasSubRoute: false,
@@ -24,37 +24,130 @@ export class DataService {
       menu: [
         {
           menuValue: 'Dashboard',
+          hasSubRoute: true,
+          showSubRoute: true,
           icon: 'dashboard',
           base: 'dashboard',
-          page: 'dashboard',
-          route: routes.dashboard,
-          hasSubRoute: false,
-          showSubRoute: false,
+          subMenus: [
+            {
+              menuValue: 'Vue d\'ensemble',
+              route: routes.dashboardSummary,
+            },
+            {
+              menuValue: 'Dashboard GIS',
+              route: routes.dashboardGis,
+            },
+            {
+              menuValue: 'Temps Réel',
+              route: routes.dashboardRealtime,
+            },
+            {
+              menuValue: 'Analyse Prédictive',
+              route: routes.dashboardPredictive,
+            },
+            {
+              menuValue: 'Analyse Spatiale',
+              route: routes.dashboardSpatial,
+            },
+            {
+              menuValue: 'Analyse Trajectoire',
+              route: routes.dashboardTrajectory,
+            },
+          ]
         },
+      ],
+    },
+    {
+      tittle: 'Gestion',
+      showAsTab: true,
+      separateRoute: false,
+      menu: [
         {
-          menuValue: 'Appartements',
-          icon: 'home',
-          base: 'appartements',
-          page: 'appartments',
-          route: routes.appartementsList,
-          hasSubRoute: false,
-          showSubRoute: false,
-        },
-        {
-          menuValue: 'Caisses',
-          icon: 'cash',
-          base: 'caisses',
-          page: 'caisses',
-          route: routes.caisseList,
-          hasSubRoute: false,
-          showSubRoute: false,
-        },
-        {
-          menuValue: 'Users',
+          menuValue: 'Utilisateurs',
           icon: 'users',
           base: 'users',
-          page: 'users',
+          page: 'user-list',
           route: routes.userList,
+          hasSubRoute: false,
+          showSubRoute: false,
+        },
+      ],
+    },
+    {
+      tittle: 'Migration',
+      showAsTab: true,
+      separateRoute: false,
+      menu: [
+        {
+          menuValue: 'Migrants',
+          icon: 'users',
+          base: 'migration',
+          page: 'migrants',
+          route: routes.migrants,
+          hasSubRoute: false,
+          showSubRoute: false,
+        },
+      ],
+    },
+    {
+      tittle: 'Géolocalisation',
+      showAsTab: true,
+      separateRoute: false,
+      menu: [
+        {
+          menuValue: 'Géolocalisations',
+          icon: 'map-pin',
+          base: 'gis',
+          page: 'geolocations',
+          route: routes.geolocations,
+          hasSubRoute: false,
+          showSubRoute: false,
+        },
+      ],
+    },
+    {
+      tittle: 'Notifications',
+      showAsTab: true,
+      separateRoute: false,
+      menu: [
+        {
+          menuValue: 'Alertes',
+          icon: 'alert-triangle',
+          base: 'notifications',
+          page: 'alerts',
+          route: routes.alerts,
+          hasSubRoute: false,
+          showSubRoute: false,
+        },
+      ],
+    },
+    {
+      tittle: 'Biométrie',
+      showAsTab: true,
+      separateRoute: false,
+      menu: [
+        {
+          menuValue: 'Biométrie',
+          icon: 'fingerprint',
+          base: 'bio',
+          page: 'biometrics',
+          route: routes.biometrics,
+          hasSubRoute: false,
+          showSubRoute: false,
+        },
+      ],
+    },
+    {
+      tittle: 'Motifs',
+      showAsTab: true,
+      separateRoute: false,
+      menu: [
+        {
+          menuValue: 'Motifs de Déplacement',
+          icon: 'move',
+          base: 'motifs',
+          page: 'motifs-deplacement',
+          route: routes.motifsDeplacementComponent,
           hasSubRoute: false,
           showSubRoute: false,
         },

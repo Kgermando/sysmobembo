@@ -1,0 +1,140 @@
+// Styles pour le composant geolocations
+// Réutilisation des styles globaux
+
+.custom-table {
+  .mat-elevation-z2 {
+    box-shadow: none;
+    border: 1px solid #e9ecef;
+  }
+  
+  th.mat-header-cell {
+    font-weight: 600;
+    color: #495057;
+  }
+}
+
+.avatar {
+  &.avatar-sm {
+    width: 40px;
+    height: 40px;
+    
+    .avatar-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+  }
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 500;
+  
+  &.bg-info {
+    background-color: #17a2b8 !important;
+  }
+  
+  &.bg-success {
+    background-color: #28a745 !important;
+  }
+  
+  &.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+  }
+  
+  &.bg-danger {
+    background-color: #dc3545 !important;
+  }
+  
+  &.bg-secondary {
+    background-color: #6c757d !important;
+  }
+}
+
+.coordinates-display {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  
+  .coord-label {
+    font-weight: 600;
+    color: #6c757d;
+  }
+}
+
+.location-info {
+  .location-type {
+    background: linear-gradient(45deg, #007bff, #6610f2);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+}
+
+.reliability-indicator {
+  &.high {
+    border-left: 3px solid #28a745;
+  }
+  
+  &.medium {
+    border-left: 3px solid #ffc107;
+  }
+  
+  &.low {
+    border-left: 3px solid #dc3545;
+  }
+}
+
+.modal-lg {
+  max-width: 900px;
+}
+
+.input-block {
+  .form-label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    
+    .text-danger {
+      color: #dc3545;
+    }
+  }
+  
+  .form-control {
+    &.is-invalid {
+      border-color: #dc3545;
+    }
+  }
+  
+  .invalid-feedback {
+    color: #dc3545;
+    font-size: 12px;
+  }
+}
+
+.gps-controls {
+  .btn-current-location {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    color: white;
+    
+    &:hover {
+      background: linear-gradient(45deg, #218838, #1c7c54);
+      color: white;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .table-responsive {
+    .small {
+      font-size: 10px;
+    }
+  }
+  
+  .coordinates-display {
+    font-size: 10px;
+  }
+}

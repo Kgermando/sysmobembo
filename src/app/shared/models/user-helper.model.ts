@@ -6,15 +6,17 @@ import { UserRole } from './types.model';
  */
 export class UserHelper {
   static getFullName(user: IUser): string {
-    return user.fullname.trim();
+    // Construction du nom complet à partir des champs séparés
+    return `${user.nom} ${user.postnom} ${user.prenom}`.trim();
   }
 
   static getInitials(user: IUser): string {
-    const names = user.fullname.split(' ');
+    const fullName = this.getFullName(user);
+    const names = fullName.split(' ');
     if (names.length >= 2) {
       return `${names[0].charAt(0)}${names[names.length - 1].charAt(0)}`.toUpperCase();
     }
-    return user.fullname.charAt(0).toUpperCase();
+    return fullName.charAt(0).toUpperCase();
   }
 
   static hasPermission(user: IUser, requiredPermission: string): boolean {
@@ -29,11 +31,11 @@ export class UserHelper {
   }
 
   static isAdmin(user: IUser): boolean {
-    return user.role === 'admin' || user.role === 'Manager général';
+    return user.role === 'Administrator' || user.role === 'Manager général';
   }
 
   static isManager(user: IUser): boolean {
-    return user.role === 'manager' || user.role === 'Manager général' || UserHelper.isAdmin(user);
+    return user.role === 'Manager' || user.role === 'Manager général' || UserHelper.isAdmin(user);
   }
 
   static canAccess(user: IUser, requiredRole: UserRole): boolean {
@@ -57,12 +59,26 @@ export class UserHelper {
   }
 
   static getAge(user: IUser): number | null {
-    // Cette méthode nécessite dateNaissance qui n'est pas disponible
-    return null;
+    if (!user.date_naissance) return null;
+    
+    const birthDate = new Date(user.date_naissance);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    
+    return age;
   }
 
   static getAnciennete(user: IUser): number {
-    // Cette méthode nécessite dateEmbauche qui n'est pas disponible
-    return 0;
+    if (!user.date_recrutement) return 0;
+    
+    const startDate = new Date(user.date_recrutement);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - startDate.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 365.25)); // années
   }
 }

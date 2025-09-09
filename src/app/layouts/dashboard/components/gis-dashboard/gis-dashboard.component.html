@@ -1,0 +1,249 @@
+<div class="page-wrapper">
+  <div class="content">
+    <div class="gis-dashboard">
+      <!-- Header with controls -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="card-title mb-0">
+                <i class="material-icons me-2">map</i>
+                Système d'Information Géographique (SIG)
+              </h5>
+
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" (click)="loadAllLayers()" [disabled]="isLoading">
+                  <i class="material-icons me-1">refresh</i>
+                  Actualiser
+                </button>
+
+                <button class="btn btn-outline-success btn-sm" (click)="exportMap()">
+                  <i class="material-icons me-1">download</i>
+                  Exporter
+                </button>
+              </div>
+            </div>
+
+            <div class="card-body py-2">
+              <!-- Statistics row -->
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="stat-card">
+                    <div class="stat-icon bg-primary">
+                      <i class="material-icons">person_pin</i>
+                    </div>
+                    <div class="stat-content">
+                      <h6>Migrants</h6>
+                      <h4>{{ stats.totalMigrants | number }}</h4>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="stat-card">
+                    <div class="stat-icon bg-warning">
+                      <i class="material-icons">warning</i>
+                    </div>
+                    <div class="stat-content">
+                      <h6>Alertes actives</h6>
+                      <h4>{{ stats.activeAlerts | number }}</h4>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="stat-card">
+                    <div class="stat-icon bg-info">
+                      <i class="material-icons">timeline</i>
+                    </div>
+                    <div class="stat-content">
+                      <h6>Routes migration</h6>
+                      <h4>{{ stats.migrationRoutes | number }}</h4>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="stat-card">
+                    <div class="stat-icon bg-success">
+                      <i class="material-icons">location_city</i>
+                    </div>
+                    <div class="stat-content">
+                      <h6>Points infrastructure</h6>
+                      <h4>{{ stats.infrastructurePoints | number }}</h4>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div class="row">
+        <!-- Map container -->
+        <div class="col-lg-9">
+          <div class="card h-100">
+            <div class="card-body p-0 position-relative">
+              <!-- Loading overlay -->
+              <div *ngIf="isLoading" class="loading-overlay">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+              </div>
+
+              <!-- Error message -->
+              <div *ngIf="error" class="alert alert-danger m-3" role="alert">
+                <i class="material-icons me-2">error</i>
+                {{ error }}
+              </div>
+
+              <!-- Map -->
+              <div #mapContainer class="gis-map-container" [class.loading]="isLoading">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls sidebar -->
+        <div class="col-lg-3">
+          <div class="card h-100">
+            <div class="card-header">
+              <h6 class="card-title mb-0">
+                <i class="material-icons me-2">tune</i>
+                Contrôles et filtres
+              </h6>
+            </div>
+
+            <div class="card-body">
+              <!-- Layer controls -->
+              <div class="control-section">
+                <h6 class="control-title">Couches de données</h6>
+
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="layer-migrants"
+                    [checked]="isLayerActive('migrants')" (change)="toggleLayer('migrants')">
+                  <label class="form-check-label" for="layer-migrants">
+                    <i class="material-icons me-1">person_pin</i>
+                    Migrants actuels
+                  </label>
+                </div>
+
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="layer-routes" [checked]="isLayerActive('routes')"
+                    (change)="toggleLayer('routes')">
+                  <label class="form-check-label" for="layer-routes">
+                    <i class="material-icons me-1">timeline</i>
+                    Routes de migration
+                  </label>
+                </div>
+
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="layer-alerts" [checked]="isLayerActive('alerts')"
+                    (change)="toggleLayer('alerts')">
+                  <label class="form-check-label" for="layer-alerts">
+                    <i class="material-icons me-1">warning</i>
+                    Zones d'alerte
+                  </label>
+                </div>
+
+                <div class="form-check mb-2">
+                  <input class="form-check-input" type="checkbox" id="layer-infrastructure"
+                    [checked]="isLayerActive('infrastructure')" (change)="toggleLayer('infrastructure')">
+                  <label class="form-check-label" for="layer-infrastructure">
+                    <i class="material-icons me-1">location_city</i>
+                    Infrastructure
+                  </label>
+                </div>
+
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="layer-heatmap"
+                    [checked]="isLayerActive('heatmap')" (change)="toggleLayer('heatmap')">
+                  <label class="form-check-label" for="layer-heatmap">
+                    <i class="material-icons me-1">gradient</i>
+                    Carte de densité
+                  </label>
+                </div>
+              </div>
+
+              <!-- Filters -->
+              <div class="control-section">
+                <h6 class="control-title">Filtres temporels</h6>
+
+                <div class="mb-3">
+                  <label for="filter-days" class="form-label">Période d'analyse</label>
+                  <select class="form-select" id="filter-days" [(ngModel)]="filterParams.days"
+                    (change)="updateFilters()">
+                    <option [value]="7">7 derniers jours</option>
+                    <option [value]="30">30 derniers jours</option>
+                    <option [value]="60">60 derniers jours</option>
+                    <option [value]="90">90 derniers jours</option>
+                  </select>
+                </div>
+
+                <div class="mb-3">
+                  <label for="filter-minflow" class="form-label">Flux minimum</label>
+                  <input type="number" class="form-control" id="filter-minflow" [(ngModel)]="filterParams.minFlow"
+                    (change)="updateFilters()" min="1" max="50">
+                </div>
+
+                <div class="mb-3">
+                  <label for="filter-intensity" class="form-label">Type d'intensité</label>
+                  <select class="form-select" id="filter-intensity" [(ngModel)]="filterParams.intensityType"
+                    (change)="loadDensityHeatmap()">
+                    <option value="migrant_count">Nombre de migrants</option>
+                    <option value="alert_count">Nombre d'alertes</option>
+                    <option value="movement_count">Nombre de mouvements</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Map tools -->
+              <div class="control-section">
+                <h6 class="control-title">Outils de mesure</h6>
+
+                <div class="btn-group-vertical w-100" role="group">
+                  <button type="button" class="btn btn-outline-secondary btn-sm"
+                    [class.active]="selectedTool === 'measure'" (click)="activateTool('measure')">
+                    <i class="material-icons me-1">straighten</i>
+                    Mesurer distance
+                  </button>
+
+                  <button type="button" class="btn btn-outline-secondary btn-sm"
+                    [class.active]="selectedTool === 'area'" (click)="activateTool('area')">
+                    <i class="material-icons me-1">crop_square</i>
+                    Mesurer surface
+                  </button>
+
+                  <button type="button" class="btn btn-outline-secondary btn-sm"
+                    [class.active]="selectedTool === 'identify'" (click)="activateTool('identify')">
+                    <i class="material-icons me-1">info</i>
+                    Identifier
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick actions -->
+              <div class="control-section">
+                <h6 class="control-title">Actions rapides</h6>
+
+                <div class="d-grid gap-2">
+                  <button class="btn btn-outline-primary btn-sm" (click)="resetFilters()">
+                    <i class="material-icons me-1">settings_backup_restore</i>
+                    Réinitialiser filtres
+                  </button>
+
+                  <button class="btn btn-outline-info btn-sm" (click)="loadDensityHeatmap()">
+                    <i class="material-icons me-1">gradient</i>
+                    Charger heatmap
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -5,6 +5,7 @@ import { IUser } from '../../models/user.model';
 import { AuthStateService } from '../../../core/auth/auth-state.service';
 import { ToastrService } from 'ngx-toastr';
 import { Subject, takeUntil } from 'rxjs';
+import { UserHelper } from '../../models/user-helper.model';
 
 export interface UserProfileDialogData {
   user: IUser;
@@ -126,30 +127,15 @@ export class UserProfileDialogComponent implements OnInit, OnDestroy {
   getUserInitials(): string {
     if (!this.data.user) return 'U';
     
-    // Si initials est déjà défini, l'utiliser
-    if (this.data.user.initials) {
-      return this.data.user.initials.toUpperCase();
-    }
-    
-    // Sinon, extraire les initiales du fullname
-    const fullName = this.data.user.fullname || '';
-    const nameParts = fullName.trim().split(' ');
-    
-    if (nameParts.length >= 2) {
-      const firstName = nameParts[0].charAt(0) || '';
-      const lastName = nameParts[nameParts.length - 1].charAt(0) || '';
-      return (firstName + lastName).toUpperCase() || 'U';
-    } else if (nameParts.length === 1) {
-      return nameParts[0].charAt(0).toUpperCase() || 'U';
-    }
-    
-    return 'U';
+    // Utiliser la méthode du UserHelper
+    return UserHelper.getInitials(this.data.user);
   }
 
   getFullName(): string {
     if (!this.data.user) return 'Utilisateur';
     
-    return this.data.user.fullname?.trim() || 'Utilisateur';
+    // Utiliser la méthode du UserHelper
+    return UserHelper.getFullName(this.data.user);
   }
 
   formatDate(dateString?: string): string {

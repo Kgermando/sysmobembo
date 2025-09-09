@@ -20,8 +20,8 @@ export class UsersComponent implements OnInit, OnDestroy {
   // Angular Material Table
   dataSource = new MatTableDataSource<IUser>();
   displayedColumns: string[] = [
-    'fullname', 'email', 'telephone', 'role',
-    'permission', 'status', 'actions'
+    'nom', 'postnom', 'prenom', 'email', 'telephone', 'matricule', 
+    'role', 'permission', 'status', 'actions'
   ];
 
   // Data
@@ -53,12 +53,27 @@ export class UsersComponent implements OnInit, OnDestroy {
   selectedStatus = '';
   selectedPermission = '';
 
-  // Roles disponibles
+  // Roles disponibles (selon le backend Go)
   roles = [
-    { value: 'admin', label: 'Administrateur' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'user', label: 'Utilisateur' }, 
-    { value: 'Manager général', label: 'Manager Général' }
+    { value: 'Admin', label: 'Administrateur' },
+    { value: 'Supervisor', label: 'Superviseur' },
+    { value: 'Manager', label: 'Manager' },
+    { value: 'Agent', label: 'Agent' }
+  ];
+
+  // Types d'agents
+  typeAgents = [
+    { value: 'Fonctionnaire', label: 'Fonctionnaire' },
+    { value: 'Contractuel', label: 'Contractuel' },
+    { value: 'Stagiaire', label: 'Stagiaire' }
+  ];
+
+  // Statuts
+  statuts = [
+    { value: 'Actif', label: 'Actif' },
+    { value: 'Retraité', label: 'Retraité' },
+    { value: 'Suspendu', label: 'Suspendu' },
+    { value: 'Révoqué', label: 'Révoqué' }
   ];
 
   // Permissions disponibles
@@ -95,12 +110,87 @@ export class UsersComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // Méthodes utilitaires pour l'affichage
+  getFullName(user: IUser): string {
+    return `${user.nom} ${user.postnom} ${user.prenom}`.trim();
+  }
+
+  getInitials(user: IUser): string {
+    const fullName = this.getFullName(user);
+    const names = fullName.split(' ');
+    if (names.length >= 2) {
+      return `${names[0].charAt(0)}${names[names.length - 1].charAt(0)}`.toUpperCase();
+    }
+    return fullName.charAt(0).toUpperCase();
+  }
+
   private createForm(): FormGroup {
     return this.fb.group({
-      fullname: ['', [Validators.required, Validators.minLength(2)]],
+      // Informations personnelles de base
+      nom: ['', [Validators.required, Validators.minLength(2)]],
+      postnom: ['', [Validators.required, Validators.minLength(2)]],
+      prenom: ['', [Validators.required, Validators.minLength(2)]],
+      sexe: ['M', [Validators.required]],
+      date_naissance: ['', [Validators.required]],
+      lieu_naissance: ['', [Validators.required]],
+
+      // État civil
+      etat_civil: ['Célibataire'],
+      nombre_enfants: [0, [Validators.min(0)]],
+
+      // Nationalité
+      nationalite: ['Congolaise', [Validators.required]],
+      numero_cni: [''],
+      date_emission_cni: [''],
+      date_expiration_cni: [''],
+      lieu_emission_cni: [''],
+
+      // Contacts
       email: ['', [Validators.required, Validators.email]],
       telephone: ['', [Validators.required, Validators.minLength(8)]],
-      role: ['user', [Validators.required]],
+      telephone_urgence: [''],
+
+      // Adresse
+      province: ['', [Validators.required]],
+      ville: ['', [Validators.required]],
+      commune: ['', [Validators.required]],
+      quartier: ['', [Validators.required]],
+      avenue: [''],
+      numero: [''],
+
+      // Informations professionnelles
+      matricule: ['', [Validators.required]],
+      grade: ['', [Validators.required]],
+      fonction: ['', [Validators.required]],
+      service: ['', [Validators.required]],
+      direction: ['', [Validators.required]],
+      ministere: ['', [Validators.required]],
+      date_recrutement: ['', [Validators.required]],
+      date_prise_service: ['', [Validators.required]],
+      type_agent: ['Fonctionnaire', [Validators.required]],
+      statut: ['Actif', [Validators.required]],
+
+      // Formation et éducation
+      niveau_etude: [''],
+      diplome_base: [''],
+      universite_ecole: [''],
+      annee_obtention: [null, [Validators.min(1950), Validators.max(new Date().getFullYear())]],
+      specialisation: [''],
+
+      // Informations bancaires
+      numero_bancaire: [''],
+      banque: [''],
+
+      // Informations de sécurité sociale
+      numero_cnss: [''],
+      numero_onem: [''],
+
+      // Documents et photos
+      photo_profil: [''],
+      cv_document: [''],
+
+      // Informations système
+      role: ['Agent', [Validators.required]],
       permission: ['R', [Validators.required]],
       status: [true],
       signature: [''],
@@ -206,11 +296,10 @@ export class UsersComponent implements OnInit, OnDestroy {
 
   getRoleBadgeClass(role: string): string {
     switch (role) {
-      case 'admin': return 'badge bg-danger';
-      case 'Manager général': return 'badge bg-primary';
-      case 'manager': return 'badge bg-warning';
-      case 'user': return 'badge bg-info';
-      case 'viewer': return 'badge bg-secondary';
+      case 'Administrator': return 'badge bg-danger';
+      case 'Supervisor': return 'badge bg-primary';
+      case 'Manager': return 'badge bg-warning';
+      case 'Agent': return 'badge bg-info';
       default: return 'badge bg-secondary';
     }
   }
@@ -234,9 +323,64 @@ export class UsersComponent implements OnInit, OnDestroy {
   editUser(user: IUser): void {
     this.editingUser = user;
     this.userForm.patchValue({
-      fullname: user.fullname,
+      // Informations personnelles
+      nom: user.nom,
+      postnom: user.postnom,
+      prenom: user.prenom,
+      sexe: user.sexe,
+      date_naissance: user.date_naissance,
+      lieu_naissance: user.lieu_naissance,
+      etat_civil: user.etat_civil,
+      nombre_enfants: user.nombre_enfants,
+      nationalite: user.nationalite,
+      numero_cni: user.numero_cni,
+      date_emission_cni: user.date_emission_cni,
+      date_expiration_cni: user.date_expiration_cni,
+      lieu_emission_cni: user.lieu_emission_cni,
+
+      // Contact
       email: user.email,
       telephone: user.telephone,
+      telephone_urgence: user.telephone_urgence,
+      province: user.province,
+      ville: user.ville,
+      commune: user.commune,
+      quartier: user.quartier,
+      avenue: user.avenue,
+      numero: user.numero,
+
+      // Professionnel
+      matricule: user.matricule,
+      grade: user.grade,
+      fonction: user.fonction,
+      service: user.service,
+      direction: user.direction,
+      ministere: user.ministere,
+      date_recrutement: user.date_recrutement,
+      date_prise_service: user.date_prise_service,
+      type_agent: user.type_agent,
+      statut: user.statut,
+
+      // Formation
+      niveau_etude: user.niveau_etude,
+      diplome_base: user.diplome_base,
+      universite_ecole: user.universite_ecole,
+      annee_obtention: user.annee_obtention,
+      specialisation: user.specialisation,
+
+      // Bancaire
+      numero_bancaire: user.numero_bancaire,
+      banque: user.banque,
+
+      // Sécurité sociale
+      numero_cnss: user.numero_cnss,
+      numero_onem: user.numero_onem,
+
+      // Documents
+      photo_profil: user.photo_profil,
+      cv_document: user.cv_document,
+
+      // Système
       role: user.role,
       permission: user.permission,
       status: user.status,
@@ -254,7 +398,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   }
 
   async deleteUser(user: IUser): Promise<void> {
-    if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${user.fullname}" ?`)) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur "${this.getFullName(user)}" ?`)) {
       try {
         this.isLoading = true;
         await firstValueFrom(this.userService.deleteUser(user.uuid));
@@ -279,9 +423,19 @@ export class UsersComponent implements OnInit, OnDestroy {
       this.isSaving = true;
       const formData: UserFormData = this.userForm.value;
 
+      // Convertir les champs de date en format ISO string
+      const userData = {
+        ...formData,
+        date_naissance: formData.date_naissance ? new Date(formData.date_naissance).toISOString() : '',
+        date_emission_cni: formData.date_emission_cni ? new Date(formData.date_emission_cni).toISOString() : '',
+        date_expiration_cni: formData.date_expiration_cni ? new Date(formData.date_expiration_cni).toISOString() : '',
+        date_recrutement: formData.date_recrutement ? new Date(formData.date_recrutement).toISOString() : '',
+        date_prise_service: formData.date_prise_service ? new Date(formData.date_prise_service).toISOString() : ''
+      };
+
       if (this.editingUser) {
         // Mise à jour - on retire les champs de mot de passe
-        const { password, password_confirm, ...updateData } = formData;
+        const { password, password_confirm, ...updateData } = userData;
         await firstValueFrom(
           this.userService.updateUser(this.editingUser.uuid, updateData)
         );
@@ -290,7 +444,7 @@ export class UsersComponent implements OnInit, OnDestroy {
       } else {
         // Création
         await firstValueFrom(
-          this.userService.createUser(formData)
+          this.userService.createUser(userData)
         );
         alert('Utilisateur créé avec succès');
         this.closeAddOffcanvas();
@@ -316,13 +470,68 @@ export class UsersComponent implements OnInit, OnDestroy {
 
   private resetForm(): void {
     this.userForm.reset({
-      fullname: '',
+      // Informations personnelles
+      nom: '',
+      postnom: '',
+      prenom: '',
+      sexe: 'M',
+      date_naissance: '',
+      lieu_naissance: '',
+      etat_civil: 'Célibataire',
+      nombre_enfants: 0,
+      nationalite: 'Congolaise',
+      numero_cni: '',
+      date_emission_cni: '',
+      date_expiration_cni: '',
+      lieu_emission_cni: '',
+
+      // Contact
       email: '',
       telephone: '',
-      role: 'user',
+      telephone_urgence: '',
+      province: '',
+      ville: '',
+      commune: '',
+      quartier: '',
+      avenue: '',
+      numero: '',
+
+      // Professionnel
+      matricule: '',
+      grade: '',
+      fonction: '',
+      service: '',
+      direction: '',
+      ministere: '',
+      date_recrutement: '',
+      date_prise_service: '',
+      type_agent: 'Fonctionnaire',
+      statut: 'Actif',
+
+      // Formation
+      niveau_etude: '',
+      diplome_base: '',
+      universite_ecole: '',
+      annee_obtention: null,
+      specialisation: '',
+
+      // Bancaire
+      numero_bancaire: '',
+      banque: '',
+
+      // Sécurité sociale
+      numero_cnss: '',
+      numero_onem: '',
+
+      // Documents
+      photo_profil: '',
+      cv_document: '',
+
+      // Système
+      role: 'Agent',
       permission: 'R',
       status: true,
-      signature: this.currentUser?.fullname || '',
+      signature: this.getFullName(this.currentUser!) || '',
       password: '',
       password_confirm: ''
     });
@@ -336,17 +545,17 @@ export class UsersComponent implements OnInit, OnDestroy {
 
   // Vérifier les permissions
   canCreateUser(): boolean {
-    return this.currentUser?.role === 'Admin' || this.currentUser?.role === 'Manager général' ||
+    return this.currentUser?.role === 'Administrator' || this.currentUser?.role === 'Supervisor' ||
       (this.currentUser?.permission?.includes('C') || this.currentUser?.permission === 'ALL');
   }
 
   canEditUser(): boolean {
-    return this.currentUser?.role === 'Admin' || this.currentUser?.role === 'Manager général' ||
+    return this.currentUser?.role === 'Administrator' || this.currentUser?.role === 'Supervisor' ||
       (this.currentUser?.permission?.includes('U') || this.currentUser?.permission === 'ALL');
   }
 
   canDeleteUser(): boolean {
-    return this.currentUser?.role === 'Admin' || this.currentUser?.role === 'Manager général' ||
+    return this.currentUser?.role === 'Administrator' || this.currentUser?.role === 'Supervisor' ||
       (this.currentUser?.permission?.includes('D') || this.currentUser?.permission === 'ALL');
   }
 
