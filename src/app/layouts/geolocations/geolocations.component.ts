@@ -51,7 +51,27 @@ export class GeolocationsComponent implements OnInit, OnDestroy {
   selectedMigrant = '';
   selectedTypeLocalisation = '';
   selectedPays = '';
+  selectedVille = '';
+  selectedMethodeCapture = '';
+  selectedFiabilite = '';
+  selectedTypeMouvement = '';
   selectedActif = '';
+  dateFrom = '';
+  dateTo = '';
+
+  // Advanced search mode
+  showAdvancedFilters = false;
+
+  // Map/radius search
+  radiusLat: number | null = null;
+  radiusLon: number | null = null;
+  radiusKm = 10;
+
+  // Statistics and analytics
+  stats: any = null;
+  migrationRoutes: any[] = [];
+  hotspots: any[] = [];
+  showStatsPanel = false;
 
   // Options
   typeLocalisationOptions = [
@@ -131,23 +151,28 @@ export class GeolocationsComponent implements OnInit, OnDestroy {
     this.error = null;
 
     try {
-      const response = await firstValueFrom(
-        this.geolocationService.getPaginatedGeolocations(
-          this.current_page, 
-          this.page_size,
-          this.selectedMigrant,
-          this.selectedTypeLocalisation,
-          this.selectedPays,
-          this.selectedActif
-        ).pipe(takeUntil(this.destroy$))
-      );
+      // Use advanced search if filters are applied
+      if (this.hasAdvancedFilters()) {
+        await this.performAdvancedSearch();
+      } else {
+        const response = await firstValueFrom(
+          this.geolocationService.getPaginatedGeolocations(
+            this.current_page, 
+            this.page_size,
+            this.selectedMigrant,
+            this.selectedTypeLocalisation,
+            this.selectedPays,
+            this.selectedActif
+          ).pipe(takeUntil(this.destroy$))
+        );
 
-      if (response.success) {
-        this.geolocations = response.data;
-        this.dataSource.data = response.data;
-        this.total_records = response.total;
-        this.current_page = response.page;
-        this.page_size = response.limit;
+        if (response.status === 'success') {
+          this.geolocations = response.data;
+          this.dataSource.data = response.data;
+          this.total_records = response.pagination.total_records;
+          this.current_page = response.pagination.current_page;
+          this.page_size = response.pagination.page_size;
+        }
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors du chargement des données';
@@ -157,13 +182,44 @@ export class GeolocationsComponent implements OnInit, OnDestroy {
     }
   }
 
+  private hasAdvancedFilters(): boolean {
+    return !!(this.selectedVille || this.selectedMethodeCapture || 
+              this.selectedFiabilite || this.selectedTypeMouvement || 
+              this.dateFrom || this.dateTo);
+  }
+
+  private async performAdvancedSearch(): Promise<void> {
+    const filters: any = {};
+    
+    if (this.selectedTypeLocalisation) filters.type_localisation = this.selectedTypeLocalisation;
+    if (this.selectedPays) filters.pays = this.selectedPays;
+    if (this.selectedVille) filters.ville = this.selectedVille;
+    if (this.selectedMethodeCapture) filters.methode_capture = this.selectedMethodeCapture;
+    if (this.selectedFiabilite) filters.fiabilite = this.selectedFiabilite;
+    if (this.selectedTypeMouvement) filters.type_mouvement = this.selectedTypeMouvement;
+    if (this.selectedActif) filters.actif = this.selectedActif;
+    if (this.dateFrom) filters.date_from = this.dateFrom;
+    if (this.dateTo) filters.date_to = this.dateTo;
+
+    const response = await firstValueFrom(
+      this.geolocationService.searchGeolocations(filters).pipe(takeUntil(this.destroy$))
+    );
+
+    if (response.status === 'success') {
+      this.geolocations = response.data;
+      this.dataSource.data = response.data;
+      this.total_records = response.data.length;
+      this.current_page = 1;
+    }
+  }
+
   async loadMigrants(): Promise<void> {
     try {
       const response = await firstValueFrom(
         this.migrantService.getAllMigrants().pipe(takeUntil(this.destroy$))
       );
 
-      if (response.success) {
+      if (response.status === 'success') {
         this.migrants = Array.isArray(response.data) ? response.data : [];
       }
     } catch (error: any) {
@@ -199,7 +255,7 @@ export class GeolocationsComponent implements OnInit, OnDestroy {
         );
       }
 
-      if (response.success) {
+      if (response.status === 'success') {
         await this.loadData();
         this.resetForm();
         this.closeOffcanvas();
@@ -257,7 +313,7 @@ export class GeolocationsComponent implements OnInit, OnDestroy {
           .pipe(takeUntil(this.destroy$))
       );
 
-      if (response.success) {
+      if (response.status === 'success') {
         await this.loadData();
       }
     } catch (error: any) {
@@ -280,7 +336,7 @@ export class GeolocationsComponent implements OnInit, OnDestroy {
         }).pipe(takeUntil(this.destroy$))
       );
 
-      if (response.success) {
+      if (response.status === 'success') {
         await this.loadData();
       }
     } catch (error: any) {
@@ -309,8 +365,18 @@ export class GeolocationsComponent implements OnInit, OnDestroy {
     this.selectedMigrant = '';
     this.selectedTypeLocalisation = '';
     this.selectedPays = '';
+    this.selectedVille = '';
+    this.selectedMethodeCapture = '';
+    this.selectedFiabilite = '';
+    this.selectedTypeMouvement = '';
     this.selectedActif = '';
+    this.dateFrom = '';
+    this.dateTo = '';
+    this.radiusLat = null;
+    this.radiusLon = null;
+    this.radiusKm = 10;
     this.current_page = 1;
+    this.showAdvancedFilters = false;
     this.loadData();
   }
 
@@ -436,5 +502,270 @@ export class GeolocationsComponent implements OnInit, OnDestroy {
     } else {
       alert('La géolocalisation n\'est pas supportée par ce navigateur');
     }
+  }
+
+  // Advanced features based on backend API
+
+  // Get geolocations within radius
+  async searchInRadius(): Promise<void> {
+    if (!this.radiusLat || !this.radiusLon) {
+      alert('Veuillez spécifier les coordonnées du centre de recherche');
+      return;
+    }
+
+    // Validate coordinates
+    const validation = this.geolocationService.validateCoordinates(this.radiusLat, this.radiusLon);
+    if (!validation.valid) {
+      alert(validation.error);
+      return;
+    }
+
+    this.isLoadingData = true;
+    try {
+      const response = await firstValueFrom(
+        this.geolocationService.getGeolocationsWithinRadius(
+          this.radiusLat, 
+          this.radiusLon, 
+          this.radiusKm
+        ).pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.geolocations = response.data;
+        this.dataSource.data = response.data;
+        this.total_records = response.data.length;
+      }
+    } catch (error: any) {
+      this.error = error.error?.message || 'Erreur lors de la recherche par rayon';
+      console.error('Erreur lors de la recherche par rayon:', error);
+    } finally {
+      this.isLoadingData = false;
+    }
+  }
+
+  // Set radius center to current location
+  setRadiusCenterToCurrent(): void {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.radiusLat = position.coords.latitude;
+          this.radiusLon = position.coords.longitude;
+        },
+        (error) => {
+          console.error('Erreur de géolocalisation:', error);
+          alert('Impossible d\'obtenir votre position actuelle');
+        }
+      );
+    } else {
+      alert('La géolocalisation n\'est pas supportée par ce navigateur');
+    }
+  }
+
+  // Calculate distance between two geolocations
+  calculateDistance(geo1: IGeolocalisation, geo2: IGeolocalisation): number {
+    return this.geolocationService.calculateDistance(
+      geo1.latitude, geo1.longitude,
+      geo2.latitude, geo2.longitude
+    );
+  }
+
+  // Get geolocation statistics
+  async loadStats(): Promise<any> {
+    try {
+      const response = await firstValueFrom(
+        this.geolocationService.getGeolocationsStats().pipe(takeUntil(this.destroy$))
+      );
+      return response.status === 'success' ? response.data : null;
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des statistiques:', error);
+      return null;
+    }
+  }
+
+  // Get migration routes
+  async loadMigrationRoutes(): Promise<any[]> {
+    try {
+      const response = await firstValueFrom(
+        this.geolocationService.getMigrationRoutes().pipe(takeUntil(this.destroy$))
+      );
+      return response.status === 'success' ? response.data : [];
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des routes de migration:', error);
+      return [];
+    }
+  }
+
+  // Get hotspots
+  async loadHotspots(): Promise<any[]> {
+    try {
+      const response = await firstValueFrom(
+        this.geolocationService.getGeolocationHotspots().pipe(takeUntil(this.destroy$))
+      );
+      return response.status === 'success' ? response.data : [];
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des hotspots:', error);
+      return [];
+    }
+  }
+
+  // Load geolocations for specific migrant
+  async loadGeolocationsByMigrant(migrantUuid: string): Promise<void> {
+    this.isLoadingData = true;
+    try {
+      const response = await firstValueFrom(
+        this.geolocationService.getGeolocationsByMigrant(migrantUuid).pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.geolocations = response.data;
+        this.dataSource.data = response.data;
+        this.total_records = response.data.length;
+      }
+    } catch (error: any) {
+      this.error = error.error?.message || 'Erreur lors du chargement des géolocalisations du migrant';
+      console.error('Erreur:', error);
+    } finally {
+      this.isLoadingData = false;
+    }
+  }
+
+  // Load only active geolocations
+  async loadActiveGeolocations(): Promise<void> {
+    this.isLoadingData = true;
+    try {
+      const response = await firstValueFrom(
+        this.geolocationService.getActiveGeolocations().pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.geolocations = response.data;
+        this.dataSource.data = response.data;
+        this.total_records = response.data.length;
+      }
+    } catch (error: any) {
+      this.error = error.error?.message || 'Erreur lors du chargement des géolocalisations actives';
+      console.error('Erreur:', error);
+    } finally {
+      this.isLoadingData = false;
+    }
+  }
+
+  // Toggle advanced filters
+  toggleAdvancedFilters(): void {
+    this.showAdvancedFilters = !this.showAdvancedFilters;
+    if (!this.showAdvancedFilters) {
+      // Reset advanced filters when hiding
+      this.selectedVille = '';
+      this.selectedMethodeCapture = '';
+      this.selectedFiabilite = '';
+      this.selectedTypeMouvement = '';
+      this.dateFrom = '';
+      this.dateTo = '';
+    }
+  }
+
+  // Form validation for coordinates
+  validateCoordinates(): void {
+    const lat = this.geolocationForm.get('latitude')?.value;
+    const lon = this.geolocationForm.get('longitude')?.value;
+
+    if (lat && lon) {
+      const validation = this.geolocationService.validateCoordinates(lat, lon);
+      if (!validation.valid) {
+        this.geolocationForm.get('latitude')?.setErrors({ 'invalidCoords': validation.error });
+        this.geolocationForm.get('longitude')?.setErrors({ 'invalidCoords': validation.error });
+      }
+    }
+  }
+
+  // Export geolocations to CSV
+  exportToCSV(): void {
+    if (this.geolocations.length === 0) {
+      alert('Aucune donnée à exporter');
+      return;
+    }
+
+    const headers = [
+      'UUID', 'Migrant UUID', 'Migrant', 'Type Localisation', 'Latitude', 'Longitude',
+      'Altitude', 'Précision', 'Pays', 'Ville', 'Adresse', 'Date Enregistrement',
+      'Méthode Capture', 'Fiabilité Source', 'Actif', 'Type Mouvement', 'Durée Séjour',
+      'Prochaine Destination', 'Validé Par', 'Date Validation', 'Commentaire'
+    ];
+
+    const csvData = this.geolocations.map(geo => [
+      geo.uuid,
+      geo.migrant_uuid,
+      this.getMigrantName(geo.migrant_uuid),
+      geo.type_localisation,
+      geo.latitude,
+      geo.longitude,
+      geo.altitude || '',
+      geo.precision || '',
+      geo.pays,
+      geo.ville || '',
+      geo.adresse || '',
+      geo.date_enregistrement,
+      geo.methode_capture,
+      geo.fiabilite_source,
+      geo.actif,
+      geo.type_mouvement || '',
+      geo.duree_sejour || '',
+      geo.prochaine_destination || '',
+      geo.valide_par || '',
+      geo.date_validation || '',
+      geo.commentaire || ''
+    ]);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `geolocalisations_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Get coordinate display format
+  getCoordinateDisplay(lat: number, lon: number): string {
+    return `${lat.toFixed(6)}°, ${lon.toFixed(6)}°`;
+  }
+
+  // Get movement type badge class
+  getMovementTypeBadgeClass(typeMovement?: string): string {
+    switch (typeMovement) {
+      case 'arrivee': return 'badge bg-success';
+      case 'depart': return 'badge bg-danger';
+      case 'transit': return 'badge bg-warning';
+      case 'residence_temporaire': return 'badge bg-info';
+      case 'residence_permanente': return 'badge bg-primary';
+      default: return 'badge bg-secondary';
+    }
+  }
+
+  // Get movement type label
+  getMovementTypeLabel(typeMovement?: string): string {
+    const option = this.typeMouvementOptions.find(o => o.value === typeMovement);
+    return option?.label || typeMovement || '-';
+  }
+
+  // Check if geolocation is validated
+  isValidated(geolocation: IGeolocalisation): boolean {
+    return !!(geolocation.date_validation && geolocation.valide_par);
+  }
+
+  // Get validation status badge
+  getValidationBadgeClass(geolocation: IGeolocalisation): string {
+    return this.isValidated(geolocation) ? 'badge bg-success' : 'badge bg-warning';
+  }
+
+  // Get validation status text
+  getValidationStatus(geolocation: IGeolocalisation): string {
+    return this.isValidated(geolocation) ? 'Validé' : 'Non validé';
   }
 }

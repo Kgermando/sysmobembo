@@ -136,18 +136,18 @@
               Informations système
             </h4>
             <div class="info-grid">
-              <div class="info-item" *ngIf="data.user.createdAt">
+              <div class="info-item" *ngIf="data.user.created_at">
                 <label>Date de création</label>
                 <span class="info-value">
                   <i class="ti ti-calendar-plus me-1 text-info"></i>
-                  {{ formatDate(data.user.createdAt) }}
+                  {{ formatDate(data.user.created_at) }}
                 </span>
               </div>
-              <div class="info-item" *ngIf="data.user.updatedAt">
+              <div class="info-item" *ngIf="data.user.updated_at">
                 <label>Dernière mise à jour</label>
                 <span class="info-value">
                   <i class="ti ti-calendar-event me-1 text-warning"></i>
-                  {{ formatDate(data.user.updatedAt) }}
+                  {{ formatDate(data.user.updated_at) }}
                 </span>
               </div>  
             </div>

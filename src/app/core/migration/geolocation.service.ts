@@ -4,8 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
   IGeolocalisation, 
-  IPaginationResponse, 
-  IApiResponse 
+  IBackendPaginationResponse, 
+  IBackendApiResponse 
 } from '../../shared/models/migrant.model';
 
 export interface IGeolocationFormData {
@@ -47,7 +47,7 @@ export class GeolocationService {
     typeLocalisation?: string,
     pays?: string,
     actif?: string
-  ): Observable<IPaginationResponse<IGeolocalisation>> {
+  ): Observable<IBackendPaginationResponse<IGeolocalisation>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
@@ -57,27 +57,27 @@ export class GeolocationService {
     if (pays) params = params.set('pays', pays);
     if (actif) params = params.set('actif', actif);
 
-    return this.http.get<IPaginationResponse<IGeolocalisation>>(`${this.apiUrl}/paginate`, { params });
+    return this.http.get<IBackendPaginationResponse<IGeolocalisation>>(`${this.apiUrl}/paginate`, { params });
   }
 
   // Get all geolocations
-  getAllGeolocations(): Observable<IApiResponse<IGeolocalisation[]>> {
-    return this.http.get<IApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/all`);
+  getAllGeolocations(): Observable<IBackendApiResponse<IGeolocalisation[]>> {
+    return this.http.get<IBackendApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/all`);
   }
 
   // Get one geolocation
-  getGeolocation(uuid: string): Observable<IApiResponse<IGeolocalisation>> {
-    return this.http.get<IApiResponse<IGeolocalisation>>(`${this.apiUrl}/get/${uuid}`);
+  getGeolocation(uuid: string): Observable<IBackendApiResponse<IGeolocalisation>> {
+    return this.http.get<IBackendApiResponse<IGeolocalisation>>(`${this.apiUrl}/get/${uuid}`);
   }
 
   // Get geolocations by migrant
-  getGeolocationsByMigrant(migrantUuid: string): Observable<IApiResponse<IGeolocalisation[]>> {
-    return this.http.get<IApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/migrant/${migrantUuid}`);
+  getGeolocationsByMigrant(migrantUuid: string): Observable<IBackendApiResponse<IGeolocalisation[]>> {
+    return this.http.get<IBackendApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/migrant/${migrantUuid}`);
   }
 
   // Get active geolocations
-  getActiveGeolocations(): Observable<IApiResponse<IGeolocalisation[]>> {
-    return this.http.get<IApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/active`);
+  getActiveGeolocations(): Observable<IBackendApiResponse<IGeolocalisation[]>> {
+    return this.http.get<IBackendApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/active`);
   }
 
   // Get geolocations within radius
@@ -85,51 +85,51 @@ export class GeolocationService {
     latitude: number,
     longitude: number,
     radius: number = 10
-  ): Observable<IApiResponse<IGeolocalisation[]>> {
+  ): Observable<IBackendApiResponse<IGeolocalisation[]>> {
     const params = new HttpParams()
       .set('latitude', latitude.toString())
       .set('longitude', longitude.toString())
       .set('radius', radius.toString());
 
-    return this.http.get<IApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/radius`, { params });
+    return this.http.get<IBackendApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/radius`, { params });
   }
 
   // Create geolocation
-  createGeolocation(geoData: IGeolocationFormData): Observable<IApiResponse<IGeolocalisation>> {
-    return this.http.post<IApiResponse<IGeolocalisation>>(`${this.apiUrl}/create`, geoData);
+  createGeolocation(geoData: IGeolocationFormData): Observable<IBackendApiResponse<IGeolocalisation>> {
+    return this.http.post<IBackendApiResponse<IGeolocalisation>>(`${this.apiUrl}/create`, geoData);
   }
 
   // Update geolocation
-  updateGeolocation(uuid: string, geoData: Partial<IGeolocationFormData>): Observable<IApiResponse<IGeolocalisation>> {
-    return this.http.put<IApiResponse<IGeolocalisation>>(`${this.apiUrl}/update/${uuid}`, geoData);
+  updateGeolocation(uuid: string, geoData: Partial<IGeolocationFormData>): Observable<IBackendApiResponse<IGeolocalisation>> {
+    return this.http.put<IBackendApiResponse<IGeolocalisation>>(`${this.apiUrl}/update/${uuid}`, geoData);
   }
 
   // Validate geolocation
   validateGeolocation(uuid: string, validationData: {
     valide_par: string;
     commentaire: string;
-  }): Observable<IApiResponse<IGeolocalisation>> {
-    return this.http.put<IApiResponse<IGeolocalisation>>(`${this.apiUrl}/validate/${uuid}`, validationData);
+  }): Observable<IBackendApiResponse<IGeolocalisation>> {
+    return this.http.put<IBackendApiResponse<IGeolocalisation>>(`${this.apiUrl}/validate/${uuid}`, validationData);
   }
 
   // Delete geolocation
-  deleteGeolocation(uuid: string): Observable<IApiResponse<null>> {
-    return this.http.delete<IApiResponse<null>>(`${this.apiUrl}/delete/${uuid}`);
+  deleteGeolocation(uuid: string): Observable<IBackendApiResponse<null>> {
+    return this.http.delete<IBackendApiResponse<null>>(`${this.apiUrl}/delete/${uuid}`);
   }
 
   // Get geolocations statistics
-  getGeolocationsStats(): Observable<IApiResponse<any>> {
-    return this.http.get<IApiResponse<any>>(`${this.apiUrl}/stats`);
+  getGeolocationsStats(): Observable<IBackendApiResponse<any>> {
+    return this.http.get<IBackendApiResponse<any>>(`${this.apiUrl}/stats`);
   }
 
   // Get migration routes
-  getMigrationRoutes(): Observable<IApiResponse<any[]>> {
-    return this.http.get<IApiResponse<any[]>>(`${this.apiUrl}/migration-routes`);
+  getMigrationRoutes(): Observable<IBackendApiResponse<any[]>> {
+    return this.http.get<IBackendApiResponse<any[]>>(`${this.apiUrl}/migration-routes`);
   }
 
   // Get hotspots
-  getGeolocationHotspots(): Observable<IApiResponse<any[]>> {
-    return this.http.get<IApiResponse<any[]>>(`${this.apiUrl}/hotspots`);
+  getGeolocationHotspots(): Observable<IBackendApiResponse<any[]>> {
+    return this.http.get<IBackendApiResponse<any[]>>(`${this.apiUrl}/hotspots`);
   }
 
   // Search geolocations with filters
@@ -143,7 +143,7 @@ export class GeolocationService {
     actif?: string;
     date_from?: string;
     date_to?: string;
-  }): Observable<IApiResponse<IGeolocalisation[]>> {
+  }): Observable<IBackendApiResponse<IGeolocalisation[]>> {
     let params = new HttpParams();
 
     Object.entries(filters).forEach(([key, value]) => {
@@ -152,6 +152,40 @@ export class GeolocationService {
       }
     });
 
-    return this.http.get<IApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/search`, { params });
+    return this.http.get<IBackendApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/search`, { params });
+  }
+
+  // Calculate distance between two points (utility method)
+  calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const earthRadius = 6371; // Earth radius in kilometers
+
+    // Convert to radians
+    const lat1Rad = lat1 * Math.PI / 180;
+    const lon1Rad = lon1 * Math.PI / 180;
+    const lat2Rad = lat2 * Math.PI / 180;
+    const lon2Rad = lon2 * Math.PI / 180;
+
+    // Differences
+    const dlat = lat2Rad - lat1Rad;
+    const dlon = lon2Rad - lon1Rad;
+
+    // Haversine formula
+    const a = Math.sin(dlat/2) * Math.sin(dlat/2) + 
+              Math.cos(lat1Rad) * Math.cos(lat2Rad) * 
+              Math.sin(dlon/2) * Math.sin(dlon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return earthRadius * c;
+  }
+
+  // Validate coordinates
+  validateCoordinates(lat: number, lon: number): { valid: boolean; error?: string } {
+    if (lat < -90 || lat > 90) {
+      return { valid: false, error: 'Latitude must be between -90 and 90 degrees' };
+    }
+    if (lon < -180 || lon > 180) {
+      return { valid: false, error: 'Longitude must be between -180 and 180 degrees' };
+    }
+    return { valid: true };
   }
 }
