@@ -6,8 +6,8 @@ import { MigrantsComponent } from './migrants/migrants.component';
 import { GeolocationsComponent } from './geolocations/geolocations.component';
 import { AlertsComponent } from './alerts/alerts.component';
 import { BiometricsComponent } from './biometrics/biometrics.component';
-import { MotifsDeplacementComponent } from '../shared/components/motifs-deplacement/motifs-deplacement.component';
-
+import { MotifDeplacementsComponent } from './motif-deplacements/motif-deplacements.component';
+ 
 const routes: Routes = [
   {
     path: '',
@@ -41,7 +41,7 @@ const routes: Routes = [
       },
       {
         path: 'motifs/motifs-deplacement',
-        component: MotifsDeplacementComponent
+        component: MotifDeplacementsComponent
       },
        {
         path: 'dashboard',

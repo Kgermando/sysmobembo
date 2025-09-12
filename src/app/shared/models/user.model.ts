@@ -1,12 +1,14 @@
 /**
  * Interface User basée sur l'entité User du backend Go
  * Représente un utilisateur avec toutes ses informations personnelles et professionnelles
+ * Aligné avec la structure Go backend
  */
 export interface IUser {
-  // Identifiants principaux
+  // Identifiants principaux et audit GORM
   uuid: string;
   created_at?: string;
   updated_at?: string;
+  deleted_at?: string;
 
   // Informations personnelles de base
   nom: string;
@@ -71,7 +73,7 @@ export interface IUser {
   photo_profil?: string; // URL ou chemin vers la photo
   cv_document?: string; // URL ou chemin vers le CV
 
-  // QR Code
+  // QR Code (générés automatiquement côté backend)
   qr_code?: string; // URL ou chemin vers l'image du QR code
   qr_code_data?: string; // Données encodées dans le QR code (JSON avec infos de base)
 
@@ -86,4 +88,16 @@ export interface IUser {
   // Audit et suivi
   dernier_acces?: string;
   nombre_connexions?: number;
+}
+
+/**
+ * Interface pour les options de filtrage
+ */
+export interface UserFilterOptions {
+  roles: Array<{ value: string; label: string }>;
+  typeAgents: Array<{ value: string; label: string }>;
+  statuts: Array<{ value: string; label: string }>;
+  permissions: Array<{ value: string; label: string }>;
+  etatsCivils: Array<{ value: string; label: string }>;
+  niveauxEtude: Array<{ value: string; label: string }>;
 }

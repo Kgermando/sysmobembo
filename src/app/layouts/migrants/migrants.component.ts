@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
@@ -6,7 +6,9 @@ import { PageEvent } from '@angular/material/paginator';
 import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 import { IMigrant } from '../../shared/models/migrant.model';
 import { MigrantService, IMigrantFormData, IBackendPaginationResponse } from '../../core/migration/migrant.service';
-import { NATIONALITES, searchNationalites, PAYS_ORIGINE_COMMUNS } from '../../shared/utils';
+import { NATIONALITES, PAYS_ORIGINE_COMMUNS } from '../../shared/utils';
+import { IMotifDeplacement } from '../../shared/models/motif-deplacement.model';
+import { MotifDeplacementService } from '../../core/migration/motif-deplacement.service';
 
 @Component({
   selector: 'app-migrants',
@@ -14,8 +16,11 @@ import { NATIONALITES, searchNationalites, PAYS_ORIGINE_COMMUNS } from '../../sh
   templateUrl: './migrants.component.html',
   styleUrl: './migrants.component.scss'
 })
-export class MigrantsComponent implements OnInit, OnDestroy {
+export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   private destroy$ = new Subject<void>();
+
+  // ViewChild pour gérer le scroll horizontal
+  @ViewChild('tableScrollWrapper', { static: false }) tableScrollWrapper!: ElementRef;
 
   // Math reference for template
   Math = Math;
@@ -31,6 +36,18 @@ export class MigrantsComponent implements OnInit, OnDestroy {
   migrants: IMigrant[] = [];
   dataList: IMigrant[] = [];
   migrantStats: any = null;
+
+  // Motifs de déplacement data
+  motifsByMigrant: { [migrantUuid: string]: IMotifDeplacement[] } = {};
+  selectedMigrantForMotifs: IMigrant | null = null;
+  viewingMotifs: IMotifDeplacement[] = [];
+  
+  // Pagination pour les motifs
+  motifsPagination = {
+    total_records: 0,
+    page_size: 5,
+    current_page: 1
+  };
 
   // Form
   migrantForm: FormGroup;
@@ -100,18 +117,15 @@ export class MigrantsComponent implements OnInit, OnDestroy {
     return PAYS_ORIGINE_COMMUNS;
   }
 
-  // Nationalités communes (vous pouvez étendre cette liste)
-  nationaliteOptions = [
-    'Congolaise (RDC)', 'Française', 'Belge', 'Camerounaise', 'Gabonaise',
-    'Centrafricaine', 'Tchadienne', 'Angolaise', 'Zambienne', 'Tanzanienne',
-    'Ougandaise', 'Rwandaise', 'Burundaise', 'Soudanaise', 'Érythréenne',
-    'Éthiopienne', 'Somalienne', 'Malienne', 'Burkinabè', 'Ivoirienne',
-    'Ghanéenne', 'Nigériane', 'Sénégalaise', 'Guinéenne', 'Libérienne'
-  ];
+  // Getter pour les nationalités (utilise l'utilitaire)
+  get nationaliteOptions(): string[] {
+    return NATIONALITES;
+  }
 
   constructor(
     private fb: FormBuilder,
-    private migrantService: MigrantService
+    private migrantService: MigrantService,
+    private motifDeplacementService: MotifDeplacementService
   ) {
     this.migrantForm = this.createForm();
   }
@@ -125,6 +139,112 @@ export class MigrantsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  ngAfterViewInit(): void {
+    // Configuration du scroll horizontal après que la vue soit initialisée
+    setTimeout(() => {
+      this.setupHorizontalScroll();
+    }, 100);
+  }
+
+  private setupHorizontalScroll(): void {
+    if (this.tableScrollWrapper?.nativeElement) {
+      const scrollElement = this.tableScrollWrapper.nativeElement;
+      const tableContainer = scrollElement.closest('.table-container');
+      
+      // Gérer les événements de scroll
+      scrollElement.addEventListener('scroll', () => {
+        this.updateScrollIndicators(scrollElement, tableContainer);
+      });
+      
+      // Initialiser les indicateurs
+      this.updateScrollIndicators(scrollElement, tableContainer);
+      
+      // Ajouter des boutons de navigation (optionnel)
+      this.addScrollButtons(tableContainer, scrollElement);
+    }
+  }
+
+  private updateScrollIndicators(scrollElement: HTMLElement, container: HTMLElement): void {
+    if (!scrollElement || !container) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = scrollElement;
+    const maxScrollLeft = scrollWidth - clientWidth;
+    
+    // Ajouter/supprimer les classes pour les indicateurs
+    if (scrollLeft > 0) {
+      container.classList.add('scrolled-left');
+    } else {
+      container.classList.remove('scrolled-left');
+    }
+    
+    if (scrollLeft >= maxScrollLeft - 1) {
+      container.classList.add('scrolled-right');
+    } else {
+      container.classList.remove('scrolled-right');
+    }
+  }
+
+  private addScrollButtons(container: HTMLElement, scrollElement: HTMLElement): void {
+    // Créer le bouton de scroll gauche
+    const leftButton = document.createElement('button');
+    leftButton.innerHTML = '<i class="ti ti-chevron-left"></i>';
+    leftButton.className = 'btn btn-sm btn-primary scroll-button scroll-left';
+    leftButton.style.cssText = `
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 30;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    `;
+    
+    // Créer le bouton de scroll droite
+    const rightButton = document.createElement('button');
+    rightButton.innerHTML = '<i class="ti ti-chevron-right"></i>';
+    rightButton.className = 'btn btn-sm btn-primary scroll-button scroll-right';
+    rightButton.style.cssText = `
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 30;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    `;
+    
+    // Ajouter les événements de clic
+    leftButton.addEventListener('click', () => {
+      scrollElement.scrollBy({ left: -200, behavior: 'smooth' });
+    });
+    
+    rightButton.addEventListener('click', () => {
+      scrollElement.scrollBy({ left: 200, behavior: 'smooth' });
+    });
+    
+    // Ajouter les boutons au container
+    container.style.position = 'relative';
+    container.appendChild(leftButton);
+    container.appendChild(rightButton);
+    
+    // Mettre à jour la visibilité des boutons lors du scroll
+    const updateButtonVisibility = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollElement;
+      const maxScrollLeft = scrollWidth - clientWidth;
+      
+      leftButton.style.display = scrollLeft > 0 ? 'flex' : 'none';
+      rightButton.style.display = scrollLeft < maxScrollLeft - 1 ? 'flex' : 'none';
+    };
+    
+    scrollElement.addEventListener('scroll', updateButtonVisibility);
+    updateButtonVisibility();
   }
 
   private createForm(): FormGroup {
@@ -190,6 +310,11 @@ export class MigrantsComponent implements OnInit, OnDestroy {
         this.total_records = response.pagination.total_records;
         this.current_page = response.pagination.current_page;
         this.page_size = response.pagination.page_size;
+        
+        // Reconfigurer le scroll horizontal après le chargement des données
+        setTimeout(() => {
+          this.setupHorizontalScroll();
+        }, 100);
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors du chargement des données';
@@ -268,14 +393,14 @@ export class MigrantsComponent implements OnInit, OnDestroy {
     this.migrantForm.patchValue({
       nom: migrant.nom,
       prenom: migrant.prenom,
-      date_naissance: migrant.date_naissance ? migrant.date_naissance.split('T')[0] : '',
+      date_naissance: migrant.date_naissance ? migrant.date_naissance : new Date(),
       lieu_naissance: migrant.lieu_naissance,
       sexe: migrant.sexe,
       nationalite: migrant.nationalite,
       type_document: migrant.type_document,
       numero_document: migrant.numero_document,
-      date_emission_document: migrant.date_emission_document ? migrant.date_emission_document.split('T')[0] : '',
-      date_expiration_document: migrant.date_expiration_document ? migrant.date_expiration_document.split('T')[0] : '',
+      date_emission_document: migrant.date_emission_document ? migrant.date_emission_document : new Date(),
+      date_expiration_document: migrant.date_expiration_document ? migrant.date_expiration_document : new Date(),
       autorite_emission: migrant.autorite_emission,
       telephone: migrant.telephone,
       email: migrant.email,
@@ -287,7 +412,7 @@ export class MigrantsComponent implements OnInit, OnDestroy {
       personne_contact: migrant.personne_contact,
       telephone_contact: migrant.telephone_contact,
       statut_migratoire: migrant.statut_migratoire,
-      date_entree: migrant.date_entree ? migrant.date_entree.split('T')[0] : '',
+      date_entree: migrant.date_entree ? migrant.date_entree : new Date(),
       point_entree: migrant.point_entree,
       pays_origine: migrant.pays_origine,
       pays_destination: migrant.pays_destination,
@@ -322,38 +447,8 @@ export class MigrantsComponent implements OnInit, OnDestroy {
     this.error = null;
   }
 
-  // Search by numero identifiant
-  searchByNumero = '';
-
-  async searchMigrantByNumero(): Promise<void> {
-    if (!this.searchByNumero.trim()) {
-      this.error = 'Veuillez saisir un numéro d\'identifiant';
-      return;
-    }
-
-    this.isLoadingData = true;
-    this.error = null;
-
-    try {
-      const response = await firstValueFrom(
-        this.migrantService.getMigrantByNumero(this.searchByNumero.trim())
-          .pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.status === 'success') {
-        this.migrants = [response.data];
-        this.dataSource.data = this.migrants;
-        this.total_records = 1;
-      }
-    } catch (error: any) {
-      this.error = error.error?.message || 'Migrant non trouvé';
-      this.migrants = [];
-      this.dataSource.data = [];
-      this.total_records = 0;
-    } finally {
-      this.isLoadingData = false;
-    }
-  }
+  // Search functionality - uses general search parameter
+  // The backend search filters across multiple fields: nom, prenom, numero_identifiant, nationalite, numero_document
 
   // Search and filters
   onSearchChange(searchTerm: string): void {
@@ -439,10 +534,7 @@ export class MigrantsComponent implements OnInit, OnDestroy {
     return sexe === 'M' ? 'Masculin' : 'Féminin';
   }
 
-  formatDate(dateString: string | undefined): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-FR');
-  }
+
 
   // Stats helpers
   getStatValue(statKey: string): number {
@@ -488,5 +580,139 @@ export class MigrantsComponent implements OnInit, OnDestroy {
 
   closeViewModal(): void {
     this.viewingMigrant = null;
+  }
+
+  // ============================
+  // MOTIFS DE DÉPLACEMENT METHODS
+  // ============================
+
+  async openMotifsModal(migrant: IMigrant): Promise<void> {
+    this.selectedMigrantForMotifs = migrant;
+    this.motifsPagination.current_page = 1;
+    await this.loadMotifsByMigrant(migrant.uuid);
+  }
+
+  closeMotifsModal(): void {
+    this.selectedMigrantForMotifs = null;
+    this.viewingMotifs = [];
+    this.motifsPagination = {
+      total_records: 0,
+      page_size: 5,
+      current_page: 1
+    };
+  }
+
+  async loadMotifsByMigrant(migrantUuid: string, search?: string): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.motifDeplacementService.getMotifsByMigrant(
+          migrantUuid,
+          this.motifsPagination.current_page,
+          this.motifsPagination.page_size,
+          search
+        ).pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.viewingMotifs = response.data;
+        this.motifsPagination.total_records = response.pagination.total_records;
+        
+        // Cache the data for the migrant
+        this.motifsByMigrant[migrantUuid] = response.data;
+      }
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des motifs:', error);
+      this.viewingMotifs = [];
+    }
+  }
+
+  onMotifsPageChange(event: PageEvent): void {
+    this.motifsPagination.current_page = event.pageIndex + 1;
+    this.motifsPagination.page_size = event.pageSize;
+    
+    if (this.selectedMigrantForMotifs) {
+      this.loadMotifsByMigrant(this.selectedMigrantForMotifs.uuid);
+    }
+  }
+
+  // UI Helpers for Motifs
+  getTypeMotifLabel(typeMotif: string): string {
+    const typeMotifOptions = [
+      { value: 'economique', label: 'Économique' },
+      { value: 'politique', label: 'Politique' },
+      { value: 'persecution', label: 'Persécution' },
+      { value: 'naturelle', label: 'Catastrophe naturelle' },
+      { value: 'familial', label: 'Familial' },
+      { value: 'education', label: 'Éducation' },
+      { value: 'sanitaire', label: 'Sanitaire' }
+    ];
+    
+    const option = typeMotifOptions.find(opt => opt.value === typeMotif);
+    return option ? option.label : typeMotif;
+  }
+
+  getUrgenceLabel(urgence: string): string {
+    const urgenceOptions = [
+      { value: 'faible', label: 'Faible' },
+      { value: 'moyenne', label: 'Moyenne' },
+      { value: 'elevee', label: 'Élevée' },
+      { value: 'critique', label: 'Critique' }
+    ];
+    
+    const option = urgenceOptions.find(opt => opt.value === urgence);
+    return option ? option.label : urgence;
+  }
+
+  getUrgenceBadgeClass(urgence: string): string {
+    switch (urgence) {
+      case 'critique': return 'badge-danger';
+      case 'elevee': return 'badge-warning';
+      case 'moyenne': return 'badge-info';
+      case 'faible': return 'badge-secondary';
+      default: return 'badge-light';
+    }
+  }
+
+  getCaractereVolontaireLabel(volontaire: boolean): string {
+    return volontaire ? 'Volontaire' : 'Involontaire';
+  }
+
+  getCaractereBadgeClass(volontaire: boolean): string {
+    return volontaire ? 'badge-success' : 'badge-danger';
+  }
+
+  getFacteursExternes(motif: IMotifDeplacement): string[] {
+    const facteurs: string[] = [];
+    if (motif.conflit_arme) facteurs.push('Conflit armé');
+    if (motif.catastrophe_naturelle) facteurs.push('Catastrophe naturelle');
+    if (motif.persecution) facteurs.push('Persécution');
+    if (motif.violence_generalisee) facteurs.push('Violence généralisée');
+    return facteurs;
+  }
+
+  getMotifsCount(migrantUuid: string): number {
+    return this.motifsByMigrant[migrantUuid]?.length || 0;
+  }
+
+  async preloadMotifsForMigrant(migrantUuid: string): Promise<void> {
+    if (!this.motifsByMigrant[migrantUuid]) {
+      try {
+        const response = await firstValueFrom(
+          this.motifDeplacementService.getMotifsByMigrant(migrantUuid, 1, 5)
+            .pipe(takeUntil(this.destroy$))
+        );
+
+        if (response.status === 'success') {
+          this.motifsByMigrant[migrantUuid] = response.data;
+        }
+      } catch (error) {
+        console.error('Erreur lors du préchargement des motifs:', error);
+      }
+    }
+  }
+
+  // TrackBy function for performance optimization
+  trackByMotifUuid(index: number, motif: IMotifDeplacement): string {
+    return motif.uuid;
   }
 }

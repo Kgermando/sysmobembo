@@ -86,11 +86,6 @@ export class MigrantService {
     return this.http.get<IBackendApiResponse<IMigrant>>(`${this.apiUrl}/get/${uuid}`);
   }
 
-  // Get migrant by numero identifiant
-  getMigrantByNumero(numero: string): Observable<IBackendApiResponse<IMigrant>> {
-    return this.http.get<IBackendApiResponse<IMigrant>>(`${this.apiUrl}/numero/${numero}`);
-  }
-
   // Create new migrant
   createMigrant(migrantData: IMigrantFormData): Observable<IBackendApiResponse<IMigrant>> {
     return this.http.post<IBackendApiResponse<IMigrant>>(`${this.apiUrl}/create`, migrantData);

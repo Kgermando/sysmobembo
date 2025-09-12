@@ -1,26 +1,40 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { 
   IAlert, 
   IBackendPaginationResponse, 
-  IBackendApiResponse 
+  IBackendApiResponse,
+  DateUtils 
 } from '../../shared/models/migrant.model';
 
 export interface IAlertFormData {
   migrant_uuid: string;
-  type_alerte: string;
-  niveau_gravite: string;
+  type_alerte: 'securite' | 'sante' | 'juridique' | 'administrative' | 'humanitaire';
+  niveau_gravite: 'info' | 'warning' | 'danger' | 'critical';
   titre: string;
   description: string;
-  date_expiration?: string;
+  date_expiration?: string; // Gardé en string pour les formulaires HTML
   action_requise?: string;
   personne_responsable?: string;
-  notifier_autorites: boolean;
-  latitude?: number;
-  longitude?: number;
-  adresse?: string;
+}
+
+export interface IAlertFilters {
+  search?: string;
+  migrant_uuid?: string;
+  statut?: string;
+  gravite?: string;
+}
+
+export interface IAlertStats {
+  total_alerts: number;
+  active_alerts: number;
+  resolved_alerts: number;
+  critical_alerts: number;
+  expired_alerts: number;
+  alert_types: Array<{ type_alerte: string; count: number }>;
+  gravity_distribution: Array<{ niveau_gravite: string; count: number }>;
 }
 
 @Injectable({
@@ -35,23 +49,24 @@ export class AlertService {
   getPaginatedAlerts(
     page: number = 1,
     limit: number = 15,
-    migrantUuid?: string,
-    typeAlerte?: string,
-    niveauGravite?: string,
-    statut?: string,
-    search?: string
+    filters: IAlertFilters = {}
   ): Observable<IBackendPaginationResponse<IAlert>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
 
-    if (migrantUuid) params = params.set('migrant_uuid', migrantUuid);
-    if (typeAlerte) params = params.set('type_alerte', typeAlerte);
-    if (niveauGravite) params = params.set('gravite', niveauGravite); // Match backend parameter name
-    if (statut) params = params.set('statut', statut);
-    if (search) params = params.set('search', search);
+    if (filters.search) params = params.set('search', filters.search);
+    if (filters.migrant_uuid) params = params.set('migrant_uuid', filters.migrant_uuid);
+    if (filters.statut) params = params.set('statut', filters.statut);
+    if (filters.gravite) params = params.set('gravite', filters.gravite);
 
-    return this.http.get<IBackendPaginationResponse<IAlert>>(`${this.apiUrl}/paginate`, { params });
+    return this.http.get<IBackendPaginationResponse<any>>(`${this.apiUrl}/paginate`, { params })
+      .pipe(
+        map(response => ({
+          ...response,
+          data: response.data.map((alert: any) => DateUtils.parseApiDates(alert))
+        }))
+      );
   }
 
   // Get all alerts
@@ -64,19 +79,22 @@ export class AlertService {
     return this.http.get<IBackendApiResponse<IAlert>>(`${this.apiUrl}/get/${uuid}`);
   }
 
-  // Get alerts by migrant
-  getAlertsByMigrant(migrantUuid: string): Observable<IBackendApiResponse<IAlert[]>> {
-    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/migrant/${migrantUuid}`);
-  }
+  // Get alerts by migrant with pagination
+  getAlertsByMigrant(
+    migrantUuid: string,
+    page: number = 1,
+    limit: number = 15,
+    filters: Omit<IAlertFilters, 'migrant_uuid'> = {}
+  ): Observable<IBackendPaginationResponse<IAlert>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
 
-  // Get active alerts
-  getActiveAlerts(): Observable<IBackendApiResponse<IAlert[]>> {
-    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/active`);
-  }
+    if (filters.search) params = params.set('search', filters.search);
+    if (filters.statut) params = params.set('statut', filters.statut);
+    if (filters.gravite) params = params.set('gravite', filters.gravite);
 
-  // Get critical alerts
-  getCriticalAlerts(): Observable<IBackendApiResponse<IAlert[]>> {
-    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/critical`);
+    return this.http.get<IBackendPaginationResponse<IAlert>>(`${this.apiUrl}/migrant/${migrantUuid}`, { params });
   }
 
   // Create alert
@@ -102,36 +120,7 @@ export class AlertService {
   }
 
   // Get alerts statistics
-  getAlertsStats(): Observable<IBackendApiResponse<any>> {
-    return this.http.get<IBackendApiResponse<any>>(`${this.apiUrl}/stats`);
-  }
-
-  // Get alerts dashboard
-  getAlertsDashboard(): Observable<IBackendApiResponse<any>> {
-    return this.http.get<IBackendApiResponse<any>>(`${this.apiUrl}/dashboard`);
-  }
-
-  // Search alerts with filters
-  searchAlerts(filters: {
-    type_alerte?: string;
-    gravite?: string; // Match backend parameter name
-    statut?: string;
-    date_from?: string;
-    date_to?: string;
-  }): Observable<IBackendApiResponse<IAlert[]>> {
-    let params = new HttpParams();
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        params = params.set(key, value);
-      }
-    });
-
-    return this.http.get<IBackendApiResponse<IAlert[]>>(`${this.apiUrl}/search`, { params });
-  }
-
-  // Auto expire alerts
-  autoExpireAlerts(): Observable<IBackendApiResponse<any>> {
-    return this.http.post<IBackendApiResponse<any>>(`${this.apiUrl}/auto-expire`, {});
+  getAlertsStats(): Observable<IBackendApiResponse<IAlertStats>> {
+    return this.http.get<IBackendApiResponse<IAlertStats>>(`${this.apiUrl}/stats`);
   }
 }

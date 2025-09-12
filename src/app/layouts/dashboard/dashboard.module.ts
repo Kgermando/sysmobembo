@@ -10,27 +10,22 @@ import { SharedAdvancedModule } from '../../shared/shared-advanced.module';
 // Dashboard Components
 import { GisDashboardComponent } from './components/gis-dashboard/gis-dashboard.component';
 import { RealtimeDashboardComponent } from './components/realtime-dashboard/realtime-dashboard.component';
-import { PredictiveAnalyticsComponent } from './components/predictive-analytics/predictive-analytics.component';
-import { SpatialAnalysisComponent } from './components/spatial-analysis/spatial-analysis.component';
-import { TrajectoryAnalysisComponent } from './components/trajectory-analysis/trajectory-analysis.component';
-
+import { PredictiveAnalyticsComponent } from './components/predictive-analytics/predictive-analytics.component'; 
+ 
 // Dashboard Services
 import { DashboardBaseService } from './services/dashboard-base.service';
 import { GisService } from './services/gis.service';
 import { PredictiveAnalysisService } from './services/predictive-analysis.service';
-import { RealtimeMonitoringService } from './services/realtime-monitoring.service';
-import { SpatialAnalysisService } from './services/spatial-analysis.service';
-import { TrajectoryAnalysisService } from './services/trajectory-analysis.service';
-
+import { AdvancedAnalyticsService } from './services/advanced-analytics.service';
+import { RealtimeMonitoringService } from './services/realtime-monitoring.service'; 
+ 
 @NgModule({
   declarations: [
     DashboardComponent,
     // Dashboard Components - convertis en composants normaux
     GisDashboardComponent,
     RealtimeDashboardComponent,
-    PredictiveAnalyticsComponent,
-    SpatialAnalysisComponent,
-    TrajectoryAnalysisComponent
+    PredictiveAnalyticsComponent,  
   ],
   imports: [
     CommonModule,
@@ -39,14 +34,12 @@ import { TrajectoryAnalysisService } from './services/trajectory-analysis.servic
     SharedAdvancedModule, // Module avancé pour les charts 
     NgScrollbarModule // Pour le sidebar scrollable
   ],
-  providers: [
-    // Dashboard Services
+  providers: [ 
     DashboardBaseService,
     GisService,
     PredictiveAnalysisService,
-    RealtimeMonitoringService,
-    SpatialAnalysisService,
-    TrajectoryAnalysisService
+    AdvancedAnalyticsService,
+    RealtimeMonitoringService,  
   ]
 })
 export class DashboardModule { }

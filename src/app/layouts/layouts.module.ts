@@ -15,6 +15,7 @@ import { MigrantsComponent } from './migrants/migrants.component';
 import { GeolocationsComponent } from './geolocations/geolocations.component';
 import { AlertsComponent } from './alerts/alerts.component';
 import { BiometricsComponent } from './biometrics/biometrics.component';
+import { MotifDeplacementsComponent } from './motif-deplacements/motif-deplacements.component';
 
 
 @NgModule({
@@ -29,14 +30,14 @@ import { BiometricsComponent } from './biometrics/biometrics.component';
     GeolocationsComponent,
     AlertsComponent,
     BiometricsComponent,
+    MotifDeplacementsComponent,
 
   ], 
   imports: [
     CommonModule,
     LayoutsRoutingModule,
     SharedCoreModule, // Module allégé pour les layouts
-    SharedAdvancedModule, // Module avancé pour les charts
-    MigrationComponentsModule, // Module pour les composants de migration
+    SharedAdvancedModule, // Module avancé pour les charts 
     NgScrollbarModule, // Pour le sidebar scrollable
   ]
 })

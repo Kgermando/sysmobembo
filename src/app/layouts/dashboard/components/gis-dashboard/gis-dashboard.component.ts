@@ -1,14 +1,158 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
-import { Subject, takeUntil, finalize } from 'rxjs';
-import { 
-  GisService, 
-  GISMapConfiguration, 
-  GISLayerData, 
-  GISFeature,
-  DensityHeatmapData 
-} from '../../services/gis.service';
+import { Subject, takeUntil, finalize, interval } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../../environments/environment';
 
 declare var L: any; // Leaflet maps
+
+// Service simple pour les données GIS
+class GisDashboardService {
+  private apiUrl = `${environment.apiUrl}/dashboard/gis`;
+
+  constructor(private http: HttpClient) {}
+
+  getGISStatistics() {
+    return this.http.get<any>(`${this.apiUrl}/statistics`);
+  }
+
+  getMigrationHeatmap() {
+    return this.http.get<any>(`${this.apiUrl}/heatmap`);
+  }
+
+  getLiveMigrationData() {
+    return this.http.get<any>(`${this.apiUrl}/live-data`);
+  }
+
+  getPredictiveInsights() {
+    return this.http.get<any>(`${this.apiUrl}/predictive-insights`);
+  }
+
+  getInteractiveMap() {
+    return this.http.get<any>(`${this.apiUrl}/interactive-map`);
+  }
+}
+
+// Interfaces matching Go API structures
+interface CountryStats {
+  country: string;
+  count: number;
+  percent: number;
+}
+
+interface StatusStats {
+  status: string;
+  count: number;
+  percent: number;
+  color: string;
+}
+
+interface MonthlyFlow {
+  month: string;
+  year: number;
+  arrivals: number;
+  departures: number;
+  net_flow: number;
+}
+
+interface Hotspot {
+  uuid: string;
+  latitude: number;
+  longitude: number;
+  city: string;
+  country: string;
+  count: number;
+  intensity: number;
+  type: string;
+  description: string;
+}
+
+interface Corridor {
+  from_country: string;
+  to_country: string;
+  from_latitude: number;
+  from_longitude: number;
+  to_latitude: number;
+  to_longitude: number;
+  count: number;
+  flow_direction: string;
+}
+
+interface DensityPoint {
+  latitude: number;
+  longitude: number;
+  density: number;
+  radius: number;
+}
+
+interface RealTimePosition {
+  migrant_uuid: string;
+  migrant_name: string;
+  latitude: number;
+  longitude: number;
+  status: string;
+  last_update: string;
+  city: string;
+  country: string;
+  movement_type: string;
+  risk_level: string;
+}
+
+interface RiskZone {
+  uuid: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  risk_level: string;
+  risk_score: number;
+  factors: string[];
+  alert_count: number;
+  last_update: string;
+}
+
+interface PredictiveData {
+  next_month_prediction: number;
+  trend_direction: string;
+  seasonal_patterns: SeasonalPattern[];
+  risk_predictions: RiskPrediction[];
+  population_growth_rate: number;
+  predicted_hotspots: PredictedHotspot[];
+}
+
+interface SeasonalPattern {
+  month: string;
+  average_arrivals: number;
+  trend: number;
+}
+
+interface RiskPrediction {
+  zone: string;
+  risk_level: string;
+  probability: number;
+  factors: string[];
+}
+
+interface PredictedHotspot {
+  latitude: number;
+  longitude: number;
+  probability: number;
+  timeframe: string;
+}
+
+interface GISStatistics {
+  total_migrants: number;
+  migrants_by_country: CountryStats[];
+  migrants_by_status: StatusStats[];
+  migration_flows_by_month: MonthlyFlow[];
+  hotspot_locations: Hotspot[];
+  migration_corridors: Corridor[];
+  density_map: DensityPoint[];
+  realtime_positions: RealTimePosition[];
+  predictive_analysis: PredictiveData;
+  geographic_distribution: any[];
+  movement_patterns: any[];
+  risk_zones: RiskZone[];
+}
 
 @Component({
   selector: 'app-gis-dashboard',
@@ -23,46 +167,50 @@ export class GisDashboardComponent implements OnInit, OnDestroy {
   
   // Map instance and configuration
   private map: any;
-  mapConfig: GISMapConfiguration | null = null;
-  
-  // Layer data
-  migrantsLayer: GISLayerData | null = null;
-  routesLayer: GISLayerData | null = null;
-  alertZonesLayer: GISLayerData | null = null;
-  infrastructureLayer: GISLayerData | null = null;
-  densityData: DensityHeatmapData | null = null;
-  
-  // Layer groups for Leaflet
   private layerGroups: { [key: string]: any } = {};
   private baseLayers: { [key: string]: any } = {};
   private overlayLayers: { [key: string]: any } = {};
   
+  // Data from API
+  gisStatistics: GISStatistics | null = null;
+  heatmapData: DensityPoint[] = [];
+  liveData: RealTimePosition[] = [];
+  predictiveInsights: PredictiveData | null = null;
+  
   // UI State
   isLoading = false;
   error: string | null = null;
-  activeLayerIds: string[] = [];
+  selectedView: 'overview' | 'heatmap' | 'live' | 'predictive' | 'interactive' = 'overview';
+  autoRefresh = true;
+  refreshInterval = 30000; // 30 seconds
   selectedTool: string | null = null;
   
   // Filter parameters
   filterParams = {
     days: 30,
-    minFlow: 3,
-    intensityType: 'migrant_count' as 'migrant_count' | 'alert_count' | 'movement_count'
+    minFlow: 1,
+    intensityType: 'high'
   };
   
-  // Statistics
-  stats = {
-    totalMigrants: 0,
-    activeAlerts: 0,
-    migrationRoutes: 0,
-    infrastructurePoints: 0
-  };
+  // Statistics for dashboard widgets
+  totalMigrants = 0;
+  migrantsByCountry: CountryStats[] = [];
+  migrantsByStatus: StatusStats[] = [];
+  monthlyFlows: MonthlyFlow[] = [];
+  hotspots: Hotspot[] = [];
+  corridors: Corridor[] = [];
+  riskZones: RiskZone[] = [];
 
-  constructor(private gisService: GisService) {}
+  private gisService: GisDashboardService;
+
+  constructor(private http: HttpClient) {
+    this.gisService = new GisDashboardService(this.http);
+  }
 
   ngOnInit(): void {
     this.initializeMap();
-    this.loadMapConfiguration();
+    this.loadInitialData();
+    this.setupAutoRefresh();
   }
 
   ngOnDestroy(): void {
@@ -79,9 +227,9 @@ export class GisDashboardComponent implements OnInit, OnDestroy {
   // ===============================
 
   private initializeMap(): void {
-    // Initialize Leaflet map
+    // Initialize Leaflet map with RDC center
     this.map = L.map(this.mapContainer.nativeElement, {
-      center: [-4.038333, 21.758664], // Centre RDC par défaut
+      center: [-4.4419, 15.2663], // Kinshasa, RDC
       zoom: 6,
       zoomControl: true,
       attributionControl: true
@@ -89,14 +237,14 @@ export class GisDashboardComponent implements OnInit, OnDestroy {
 
     // Add base layers
     this.baseLayers = {
-      'Satellite': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      'Satellite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri'
+      }),
+      'Streets': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }),
       'Terrain': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenTopoMap contributors'
-      }),
-      'Streets': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
       })
     };
 
@@ -105,47 +253,52 @@ export class GisDashboardComponent implements OnInit, OnDestroy {
 
     // Initialize layer groups
     this.layerGroups = {
-      migrants: L.layerGroup(),
-      routes: L.layerGroup(),
-      alerts: L.layerGroup(),
-      infrastructure: L.layerGroup(),
-      heatmap: L.layerGroup()
+      hotspots: L.layerGroup(),
+      corridors: L.layerGroup(),
+      realtime: L.layerGroup(),
+      riskZones: L.layerGroup(),
+      heatmap: L.layerGroup(),
+      predictive: L.layerGroup()
     };
 
-    // Add layer control
+    // Add overlay layers
     this.overlayLayers = {
-      'Migrants actuels': this.layerGroups['migrants'],
-      'Routes de migration': this.layerGroups['routes'],
-      'Zones d\'alerte': this.layerGroups['alerts'],
-      'Infrastructure': this.layerGroups['infrastructure'],
-      'Carte de densité': this.layerGroups['heatmap']
+      'Points chauds': this.layerGroups['hotspots'],
+      'Corridors migratoires': this.layerGroups['corridors'],
+      'Positions temps réel': this.layerGroups['realtime'],
+      'Zones de risque': this.layerGroups['riskZones'],
+      'Carte de densité': this.layerGroups['heatmap'],
+      'Prédictions': this.layerGroups['predictive']
     };
 
     L.control.layers(this.baseLayers, this.overlayLayers).addTo(this.map);
 
-    // Add map tools
-    this.addMapTools();
-  }
-
-  private addMapTools(): void {
-    // Scale control
+    // Add scale control
     L.control.scale().addTo(this.map);
 
-    // Custom control for tools
-    const toolsControl = L.control({ position: 'topright' });
+    // Add custom controls
+    this.addCustomControls();
+  }
+
+  private addCustomControls(): void {
+    // View selector control
+    const viewControl = L.control({ position: 'topright' });
     
-    toolsControl.onAdd = () => {
-      const div = L.DomUtil.create('div', 'gis-tools-control');
+    viewControl.onAdd = () => {
+      const div = L.DomUtil.create('div', 'gis-view-control');
       div.innerHTML = `
         <div class="btn-group-vertical" role="group">
-          <button type="button" class="btn btn-sm btn-outline-primary" data-tool="measure">
-            <i class="material-icons">straighten</i>
+          <button type="button" class="btn btn-sm btn-primary" data-view="overview" title="Vue d'ensemble">
+            <i class="material-icons">dashboard</i>
           </button>
-          <button type="button" class="btn btn-sm btn-outline-primary" data-tool="area">
-            <i class="material-icons">crop_square</i>
+          <button type="button" class="btn btn-sm btn-outline-primary" data-view="heatmap" title="Carte de chaleur">
+            <i class="material-icons">whatshot</i>
           </button>
-          <button type="button" class="btn btn-sm btn-outline-primary" data-tool="identify">
-            <i class="material-icons">info</i>
+          <button type="button" class="btn btn-sm btn-outline-primary" data-view="live" title="Temps réel">
+            <i class="material-icons">track_changes</i>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-primary" data-view="predictive" title="Prédictions">
+            <i class="material-icons">trending_up</i>
           </button>
         </div>
       `;
@@ -154,435 +307,595 @@ export class GisDashboardComponent implements OnInit, OnDestroy {
       
       div.addEventListener('click', (e: Event) => {
         const target = e.target as HTMLElement;
-        const button = target.closest('[data-tool]') as HTMLElement;
+        const button = target.closest('[data-view]') as HTMLElement;
         if (button) {
-          this.activateTool(button.dataset['tool']!);
+          this.switchView(button.dataset['view'] as any);
+          // Update button states
+          div.querySelectorAll('.btn').forEach((btn: Element) => btn.className = 'btn btn-sm btn-outline-primary');
+          button.className = 'btn btn-sm btn-primary';
         }
       });
       
       return div;
     };
     
-    toolsControl.addTo(this.map);
+    viewControl.addTo(this.map);
+
+    // Auto-refresh toggle
+    const refreshControl = L.control({ position: 'bottomright' });
+    
+    refreshControl.onAdd = () => {
+      const div = L.DomUtil.create('div', 'gis-refresh-control');
+      div.innerHTML = `
+        <button type="button" class="btn btn-sm ${this.autoRefresh ? 'btn-success' : 'btn-outline-secondary'}" 
+                id="autoRefreshBtn" title="Actualisation automatique">
+          <i class="material-icons">refresh</i>
+        </button>
+      `;
+      
+      L.DomEvent.disableClickPropagation(div);
+      
+      div.addEventListener('click', () => {
+        this.toggleAutoRefresh();
+        const btn = div.querySelector('#autoRefreshBtn') as HTMLElement;
+        btn.className = `btn btn-sm ${this.autoRefresh ? 'btn-success' : 'btn-outline-secondary'}`;
+      });
+      
+      return div;
+    };
+    
+    refreshControl.addTo(this.map);
   }
 
   // ===============================
   // DATA LOADING
   // ===============================
 
-  private loadMapConfiguration(): void {
+  private loadInitialData(): void {
+    this.loadGISStatistics();
+  }
+
+  loadGISStatistics(): void {
     this.isLoading = true;
     this.error = null;
 
-    this.gisService.getMapConfiguration()
+    this.gisService.getGISStatistics()
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.isLoading = false)
       )
       .subscribe({
-        next: (config) => {
-          this.mapConfig = config;
-          this.applyMapConfiguration(config);
-          this.loadAllLayers();
+        next: (data: any) => {
+          this.gisStatistics = data;
+          this.processStatisticsData(data);
+          this.renderAllLayers();
         },
-        error: (error) => {
-          this.error = 'Erreur lors du chargement de la configuration de la carte';
-          console.error('Map configuration error:', error);
+        error: (error: any) => {
+          this.error = 'Erreur lors du chargement des statistiques GIS';
+          console.error('GIS Statistics error:', error);
         }
       });
   }
 
-  private applyMapConfiguration(config: GISMapConfiguration): void {
-    if (config.map_config) {
-      // Update map center and zoom
-      this.map.setView([
-        config.map_config.default_center.latitude,
-        config.map_config.default_center.longitude
-      ], config.map_config.default_zoom);
-
-      // Set bounds if available
-      if (config.map_config.bounds) {
-        const bounds = L.latLngBounds([
-          [config.map_config.bounds.south, config.map_config.bounds.west],
-          [config.map_config.bounds.north, config.map_config.bounds.east]
-        ]);
-        this.map.setMaxBounds(bounds);
-      }
-    }
-  }
-
-  loadAllLayers(): void {
-    this.loadMigrantsLayer();
-    this.loadMigrationRoutesLayer();
-    this.loadAlertZonesLayer();
-    this.loadInfrastructureLayer();
-  }
-
-  loadMigrantsLayer(): void {
-    this.gisService.getMigrantsLayer()
+  loadHeatmapData(): void {
+    this.gisService.getMigrationHeatmap()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.migrantsLayer = data;
-          this.renderMigrantsLayer(data);
-          this.stats.totalMigrants = data.count;
+        next: (data: any) => {
+          this.heatmapData = data.heatmap_data;
+          this.renderHeatmapLayer();
         },
-        error: (error) => {
-          console.error('Migrants layer error:', error);
+        error: (error: any) => {
+          console.error('Heatmap error:', error);
         }
       });
   }
 
-  loadMigrationRoutesLayer(): void {
-    this.gisService.getMigrationRoutesLayer({
-      days: this.filterParams.days,
-      min_flow: this.filterParams.minFlow
-    })
+  loadLiveData(): void {
+    this.gisService.getLiveMigrationData()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.routesLayer = data;
-          this.renderRoutesLayer(data);
-          this.stats.migrationRoutes = data.count;
+        next: (data: any) => {
+          this.liveData = data.live_data;
+          this.renderRealTimeLayer();
         },
-        error: (error) => {
-          console.error('Routes layer error:', error);
+        error: (error: any) => {
+          console.error('Live data error:', error);
         }
       });
   }
 
-  loadAlertZonesLayer(): void {
-    this.gisService.getAlertZonesLayer()
+  loadPredictiveInsights(): void {
+    this.gisService.getPredictiveInsights()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.alertZonesLayer = data;
-          this.renderAlertZonesLayer(data);
-          this.stats.activeAlerts = data.count;
+        next: (data: any) => {
+          this.predictiveInsights = data.predictive_insights;
+          this.renderPredictiveLayer();
         },
-        error: (error) => {
-          console.error('Alert zones layer error:', error);
+        error: (error: any) => {
+          console.error('Predictive insights error:', error);
         }
       });
   }
 
-  loadInfrastructureLayer(): void {
-    this.gisService.getInfrastructureLayer('all')
+  loadInteractiveMap(): void {
+    this.gisService.getInteractiveMap()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.infrastructureLayer = data;
-          this.renderInfrastructureLayer(data);
-          this.stats.infrastructurePoints = data.count;
+        next: (data: any) => {
+          // Process and render all interactive map data
+          this.renderInteractiveMapData(data.map_data);
         },
-        error: (error) => {
-          console.error('Infrastructure layer error:', error);
+        error: (error: any) => {
+          console.error('Interactive map error:', error);
         }
       });
   }
 
-  loadDensityHeatmap(): void {
-    this.gisService.getDensityHeatmapLayer({
-      days: this.filterParams.days,
-      intensity: this.filterParams.intensityType
-    })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          this.densityData = data;
-          this.renderHeatmapLayer(data);
-        },
-        error: (error) => {
-          console.error('Heatmap layer error:', error);
-        }
-      });
+  private processStatisticsData(data: GISStatistics): void {
+    this.totalMigrants = data.total_migrants;
+    this.migrantsByCountry = data.migrants_by_country;
+    this.migrantsByStatus = data.migrants_by_status;
+    this.monthlyFlows = data.migration_flows_by_month;
+    this.hotspots = data.hotspot_locations;
+    this.corridors = data.migration_corridors;
+    this.riskZones = data.risk_zones;
   }
 
   // ===============================
   // LAYER RENDERING
   // ===============================
 
-  private renderMigrantsLayer(data: GISLayerData): void {
-    this.layerGroups['migrants'].clearLayers();
-
-    if (data.data?.features) {
-      data.data.features.forEach((feature: GISFeature) => {
-        const coords = feature.geometry.coordinates as number[];
-        const props = feature.properties;
-
-        const marker = L.circleMarker([coords[1], coords[0]], {
-          radius: 8,
-          fillColor: props['alerte_active'] ? '#f44336' : '#2196f3',
-          color: '#ffffff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.8
-        });
-
-        const popupContent = `
-          <div class="gis-popup">
-            <h6>${props['migrant_nom']} ${props['migrant_prenom']}</h6>
-            <p><strong>Localisation:</strong> ${props['ville']}, ${props['pays']}</p>
-            <p><strong>Statut:</strong> ${props['statut_migrant']}</p>
-            <p><strong>Dernière MAJ:</strong> ${new Date(props['last_update']).toLocaleString()}</p>
-            ${props['alerte_active'] ? '<span class="badge badge-danger">Alerte active</span>' : ''}
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-        marker.addTo(this.layerGroups['migrants']);
-      });
-    }
+  private renderAllLayers(): void {
+    this.renderHotspotsLayer();
+    this.renderCorridorsLayer();
+    this.renderRiskZonesLayer();
+    
+    // Also load additional data for complete view
+    this.loadHeatmapData();
+    this.loadLiveData();
   }
 
-  private renderRoutesLayer(data: GISLayerData): void {
-    this.layerGroups['routes'].clearLayers();
+  private renderHotspotsLayer(): void {
+    this.layerGroups['hotspots'].clearLayers();
 
-    if (data.data?.features) {
-      data.data.features.forEach((feature: GISFeature) => {
-        const coords = feature.geometry.coordinates as number[][];
-        const props = feature.properties;
-
-        const polyline = L.polyline(
-          coords.map(coord => [coord[1], coord[0]]),
-          {
-            color: '#2196f3',
-            weight: Math.min(8, Math.max(2, props['flow_count'] / 2)),
-            opacity: 0.7
-          }
-        );
-
-        const popupContent = `
-          <div class="gis-popup">
-            <h6>Route migratoire</h6>
-            <p><strong>De:</strong> ${props['pays_origine']}</p>
-            <p><strong>Vers:</strong> ${props['pays_destination']}</p>
-            <p><strong>Flux:</strong> ${props['flow_count']} migrants</p>
-          </div>
-        `;
-
-        polyline.bindPopup(popupContent);
-        polyline.addTo(this.layerGroups['routes']);
+    this.hotspots.forEach(hotspot => {
+      const marker = L.circleMarker([hotspot.latitude, hotspot.longitude], {
+        radius: 8 + (hotspot.intensity * 15),
+        fillColor: this.getHotspotColor(hotspot.intensity),
+        color: '#ffffff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.7
       });
-    }
+
+      const popupContent = `
+        <div class="gis-popup">
+          <h6><i class="material-icons">place</i> ${hotspot.city}, ${hotspot.country}</h6>
+          <p><strong>Type:</strong> ${hotspot.type}</p>
+          <p><strong>Migrants:</strong> ${hotspot.count}</p>
+          <p><strong>Intensité:</strong> ${(hotspot.intensity * 100).toFixed(1)}%</p>
+          <p><strong>Description:</strong> ${hotspot.description}</p>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent);
+      marker.addTo(this.layerGroups['hotspots']);
+    });
+
+    // Add hotspots layer to map by default
+    this.layerGroups['hotspots'].addTo(this.map);
   }
 
-  private renderAlertZonesLayer(data: GISLayerData): void {
-    this.layerGroups['alerts'].clearLayers();
+  private renderCorridorsLayer(): void {
+    this.layerGroups['corridors'].clearLayers();
 
-    if (data.data?.features) {
-      data.data.features.forEach((feature: GISFeature) => {
-        const coords = feature.geometry.coordinates as number[][][];
-        const props = feature.properties;
-
-        let fillColor = '#ffeb3b';
-        if (props['niveau_gravite'] === 'critical') fillColor = '#f44336';
-        else if (props['niveau_gravite'] === 'danger') fillColor = '#ff9800';
-
-        const polygon = L.polygon(
-          coords[0].map(coord => [coord[1], coord[0]]),
-          {
-            fillColor: fillColor,
-            fillOpacity: 0.3,
-            color: fillColor,
-            weight: 2
-          }
-        );
-
-        const popupContent = `
-          <div class="gis-popup">
-            <h6>${props['titre']}</h6>
-            <p><strong>Type:</strong> ${props['type_alerte']}</p>
-            <p><strong>Gravité:</strong> ${props['niveau_gravite']}</p>
-            <p><strong>Description:</strong> ${props['description']}</p>
-            <p><strong>Date:</strong> ${new Date(props['date_creation']).toLocaleString()}</p>
-          </div>
-        `;
-
-        polygon.bindPopup(popupContent);
-        polygon.addTo(this.layerGroups['alerts']);
+    this.corridors.forEach(corridor => {
+      const polyline = L.polyline([
+        [corridor.from_latitude, corridor.from_longitude],
+        [corridor.to_latitude, corridor.to_longitude]
+      ], {
+        color: '#2196f3',
+        weight: Math.min(8, Math.max(2, corridor.count / 5)),
+        opacity: 0.8,
+        dashArray: corridor.flow_direction === 'unidirectional' ? '' : '10, 10'
       });
-    }
+
+      // Add arrow for direction
+      const decorator = L.polylineDecorator(polyline, {
+        patterns: [{
+          offset: '50%',
+          repeat: 0,
+          symbol: L.Symbol.arrowHead({
+            pixelSize: 15,
+            polygon: false,
+            pathOptions: { stroke: true, weight: 2, color: '#2196f3' }
+          })
+        }]
+      });
+
+      const popupContent = `
+        <div class="gis-popup">
+          <h6><i class="material-icons">trending_flat</i> Corridor migratoire</h6>
+          <p><strong>De:</strong> ${corridor.from_country}</p>
+          <p><strong>Vers:</strong> ${corridor.to_country}</p>
+          <p><strong>Flux:</strong> ${corridor.count} migrants</p>
+          <p><strong>Direction:</strong> ${corridor.flow_direction === 'unidirectional' ? 'Unidirectionnel' : 'Bidirectionnel'}</p>
+        </div>
+      `;
+
+      polyline.bindPopup(popupContent);
+      polyline.addTo(this.layerGroups['corridors']);
+      
+      if (decorator) {
+        decorator.addTo(this.layerGroups['corridors']);
+      }
+    });
   }
 
-  private renderInfrastructureLayer(data: GISLayerData): void {
-    this.layerGroups['infrastructure'].clearLayers();
+  private renderRiskZonesLayer(): void {
+    this.layerGroups['riskZones'].clearLayers();
 
-    if (data.data?.features) {
-      data.data.features.forEach((feature: GISFeature) => {
-        const coords = feature.geometry.coordinates as number[];
-        const props = feature.properties;
-
-        let iconClass = 'place';
-        let iconColor = '#9c27b0';
-
-        if (props['point_type'] === 'frontiere') {
-          iconClass = 'gps_fixed';
-          iconColor = '#9c27b0';
-        } else if (props['point_type'] === 'centre_accueil') {
-          iconClass = 'home';
-          iconColor = '#4caf50';
-        }
-
-        const divIcon = L.divIcon({
-          html: `<i class="material-icons" style="color: ${iconColor}; font-size: 24px;">${iconClass}</i>`,
-          iconSize: [24, 24],
-          className: 'gis-infrastructure-icon'
-        });
-
-        const marker = L.marker([coords[1], coords[0]], { icon: divIcon });
-
-        const popupContent = `
-          <div class="gis-popup">
-            <h6>${props['nom']}</h6>
-            <p><strong>Type:</strong> ${props['point_type']}</p>
-            <p><strong>Localisation:</strong> ${props['ville']}, ${props['pays']}</p>
-            <p><strong>Activité:</strong> ${props['activity_count']} passages</p>
-            <p><strong>Description:</strong> ${props['description']}</p>
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-        marker.addTo(this.layerGroups['infrastructure']);
+    this.riskZones.forEach(zone => {
+      const circle = L.circle([zone.latitude, zone.longitude], {
+        radius: zone.radius * 1000, // Convert to meters
+        fillColor: this.getRiskZoneColor(zone.risk_level),
+        color: this.getRiskZoneColor(zone.risk_level),
+        weight: 2,
+        opacity: 0.8,
+        fillOpacity: 0.3
       });
-    }
+
+      const popupContent = `
+        <div class="gis-popup">
+          <h6><i class="material-icons">warning</i> ${zone.name}</h6>
+          <p><strong>Niveau de risque:</strong> 
+            <span class="badge" style="background-color: ${this.getRiskZoneColor(zone.risk_level)}">${zone.risk_level}</span>
+          </p>
+          <p><strong>Score:</strong> ${zone.risk_score}/10</p>
+          <p><strong>Alertes:</strong> ${zone.alert_count}</p>
+          <p><strong>Facteurs:</strong> ${zone.factors.join(', ')}</p>
+          <p><strong>Dernière MAJ:</strong> ${new Date(zone.last_update).toLocaleString()}</p>
+        </div>
+      `;
+
+      circle.bindPopup(popupContent);
+      circle.addTo(this.layerGroups['riskZones']);
+    });
   }
 
-  private renderHeatmapLayer(data: DensityHeatmapData): void {
+  private renderHeatmapLayer(): void {
     this.layerGroups['heatmap'].clearLayers();
 
-    if (data.data && data.data.length > 0) {
-      const heatmapData = data.data.map(point => [
-        point.latitude,
-        point.longitude,
-        point.weight
-      ]);
-
-      // Note: This requires leaflet-heatmap plugin
-      // const heatLayer = L.heatLayer(heatmapData, {
-      //   radius: 25,
-      //   blur: 15,
-      //   maxZoom: 18
-      // });
-
-      // For now, render as circle markers
-      data.data.forEach(point => {
-        const circle = L.circleMarker([point.latitude, point.longitude], {
-          radius: 5 + (point.weight * 20),
-          fillColor: this.getHeatmapColor(point.weight),
-          color: 'transparent',
-          fillOpacity: 0.6
-        });
-
-        circle.addTo(this.layerGroups['heatmap']);
+    this.heatmapData.forEach(point => {
+      const circle = L.circleMarker([point.latitude, point.longitude], {
+        radius: 5 + (point.density * 20),
+        fillColor: this.getHeatmapColor(point.density),
+        color: 'transparent',
+        fillOpacity: 0.6
       });
+
+      circle.bindTooltip(`Densité: ${(point.density * 100).toFixed(1)}%`, {
+        permanent: false,
+        direction: 'top'
+      });
+
+      circle.addTo(this.layerGroups['heatmap']);
+    });
+  }
+
+  private renderRealTimeLayer(): void {
+    this.layerGroups['realtime'].clearLayers();
+
+    this.liveData.forEach(position => {
+      const marker = L.circleMarker([position.latitude, position.longitude], {
+        radius: 6,
+        fillColor: this.getRiskLevelColor(position.risk_level),
+        color: '#ffffff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+      });
+
+      // Add pulsing animation for real-time effect
+      marker.bindTooltip(`${position.migrant_name} - ${position.status}`, {
+        permanent: false,
+        direction: 'top'
+      });
+
+      const popupContent = `
+        <div class="gis-popup">
+          <h6><i class="material-icons">person_pin</i> ${position.migrant_name}</h6>
+          <p><strong>Localisation:</strong> ${position.city}, ${position.country}</p>
+          <p><strong>Statut:</strong> ${position.status}</p>
+          <p><strong>Type mouvement:</strong> ${position.movement_type}</p>
+          <p><strong>Niveau de risque:</strong> 
+            <span class="badge" style="background-color: ${this.getRiskLevelColor(position.risk_level)}">${position.risk_level}</span>
+          </p>
+          <p><strong>Dernière MAJ:</strong> ${new Date(position.last_update).toLocaleString()}</p>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent);
+      marker.addTo(this.layerGroups['realtime']);
+    });
+  }
+
+  private renderPredictiveLayer(): void {
+    if (!this.predictiveInsights) return;
+
+    this.layerGroups['predictive'].clearLayers();
+
+    this.predictiveInsights.predicted_hotspots.forEach(hotspot => {
+      const marker = L.circleMarker([hotspot.latitude, hotspot.longitude], {
+        radius: 8 + (hotspot.probability * 12),
+        fillColor: '#ff9800',
+        color: '#ffffff',
+        weight: 2,
+        opacity: 0.7,
+        fillOpacity: 0.5,
+        dashArray: '5, 5'
+      });
+
+      const popupContent = `
+        <div class="gis-popup">
+          <h6><i class="material-icons">trending_up</i> Point chaud prédit</h6>
+          <p><strong>Probabilité:</strong> ${(hotspot.probability * 100).toFixed(1)}%</p>
+          <p><strong>Délai:</strong> ${hotspot.timeframe}</p>
+        </div>
+      `;
+
+      marker.bindPopup(popupContent);
+      marker.addTo(this.layerGroups['predictive']);
+    });
+  }
+
+  private renderInteractiveMapData(mapData: any): void {
+    // Clear all layers
+    Object.values(this.layerGroups).forEach(layer => layer.clearLayers());
+
+    // Render all data from interactive map endpoint
+    if (mapData.hotspots) {
+      this.hotspots = mapData.hotspots;
+      this.renderHotspotsLayer();
+    }
+
+    if (mapData.corridors) {
+      this.corridors = mapData.corridors;
+      this.renderCorridorsLayer();
+    }
+
+    if (mapData.risk_zones) {
+      this.riskZones = mapData.risk_zones;
+      this.renderRiskZonesLayer();
+    }
+
+    if (mapData.real_time_positions) {
+      this.liveData = mapData.real_time_positions;
+      this.renderRealTimeLayer();
     }
   }
 
-  private getHeatmapColor(intensity: number): string {
-    if (intensity < 0.2) return '#0000ff';
-    if (intensity < 0.4) return '#00ffff';
-    if (intensity < 0.6) return '#00ff00';
-    if (intensity < 0.8) return '#ffff00';
-    return '#ff0000';
-  }
-
   // ===============================
-  // TOOL ACTIVATION
+  // VIEW MANAGEMENT
   // ===============================
 
-  activateTool(toolId: string): void {
-    this.selectedTool = toolId;
+  switchView(view: 'overview' | 'heatmap' | 'live' | 'predictive' | 'interactive'): void {
+    this.selectedView = view;
 
-    // Reset all tool states
-    this.map.getContainer().style.cursor = '';
+    // Clear all layers first
+    Object.values(this.layerGroups).forEach(layer => this.map.removeLayer(layer));
 
-    switch (toolId) {
-      case 'measure':
-        this.activateMeasureTool();
+    switch (view) {
+      case 'overview':
+        this.layerGroups['hotspots'].addTo(this.map);
+        this.layerGroups['corridors'].addTo(this.map);
+        this.layerGroups['riskZones'].addTo(this.map);
         break;
-      case 'area':
-        this.activateAreaTool();
+        
+      case 'heatmap':
+        this.layerGroups['heatmap'].addTo(this.map);
+        if (this.heatmapData.length === 0) {
+          this.loadHeatmapData();
+        }
         break;
-      case 'identify':
-        this.activateIdentifyTool();
+        
+      case 'live':
+        this.layerGroups['realtime'].addTo(this.map);
+        this.layerGroups['riskZones'].addTo(this.map);
+        if (this.liveData.length === 0) {
+          this.loadLiveData();
+        }
+        break;
+        
+      case 'predictive':
+        this.layerGroups['predictive'].addTo(this.map);
+        this.layerGroups['hotspots'].addTo(this.map);
+        if (!this.predictiveInsights) {
+          this.loadPredictiveInsights();
+        }
+        break;
+        
+      case 'interactive':
+        this.loadInteractiveMap();
         break;
     }
   }
 
-  private activateMeasureTool(): void {
-    this.map.getContainer().style.cursor = 'crosshair';
-    // Implementation for measure tool
+  // ===============================
+  // AUTO REFRESH
+  // ===============================
+
+  private setupAutoRefresh(): void {
+    if (this.autoRefresh) {
+      interval(this.refreshInterval)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => {
+          if (this.selectedView === 'live') {
+            this.loadLiveData();
+          } else if (this.selectedView === 'overview') {
+            this.loadGISStatistics();
+          }
+        });
+    }
   }
 
-  private activateAreaTool(): void {
-    this.map.getContainer().style.cursor = 'crosshair';
-    // Implementation for area measurement tool
-  }
-
-  private activateIdentifyTool(): void {
-    this.map.getContainer().style.cursor = 'help';
-    // Implementation for identify tool
+  toggleAutoRefresh(): void {
+    this.autoRefresh = !this.autoRefresh;
+    if (this.autoRefresh) {
+      this.setupAutoRefresh();
+    }
   }
 
   // ===============================
-  // LAYER MANAGEMENT
+  // UTILITY METHODS
   // ===============================
 
-  toggleLayer(layerId: string): void {
-    const index = this.activeLayerIds.indexOf(layerId);
+  private getHotspotColor(intensity: number): string {
+    if (intensity < 0.3) return '#4caf50';
+    if (intensity < 0.6) return '#ff9800';
+    return '#f44336';
+  }
+
+  private getRiskZoneColor(riskLevel: string): string {
+    switch (riskLevel) {
+      case 'critique': return '#d32f2f';
+      case 'élevé': return '#f57c00';
+      case 'moyen': return '#fbc02d';
+      case 'faible': return '#388e3c';
+      default: return '#9e9e9e';
+    }
+  }
+
+  private getHeatmapColor(density: number): string {
+    if (density < 0.2) return '#2196f3';
+    if (density < 0.4) return '#00bcd4';
+    if (density < 0.6) return '#4caf50';
+    if (density < 0.8) return '#ff9800';
+    return '#f44336';
+  }
+
+  // ===============================
+  // PUBLIC METHODS
+  // ===============================
+
+  refreshData(): void {
+    this.loadGISStatistics();
     
-    if (index > -1) {
-      this.activeLayerIds.splice(index, 1);
-      this.map.removeLayer(this.layerGroups[layerId]);
-    } else {
-      this.activeLayerIds.push(layerId);
-      this.map.addLayer(this.layerGroups[layerId]);
+    switch (this.selectedView) {
+      case 'heatmap':
+        this.loadHeatmapData();
+        break;
+      case 'live':
+        this.loadLiveData();
+        break;
+      case 'predictive':
+        this.loadPredictiveInsights();
+        break;
+      case 'interactive':
+        this.loadInteractiveMap();
+        break;
     }
   }
 
-  isLayerActive(layerId: string): boolean {
-    return this.activeLayerIds.includes(layerId);
+  exportCurrentView(): void {
+    // Implementation for exporting current map view
+    console.log('Exporting current view:', this.selectedView);
+  }
+
+  resetMapView(): void {
+    this.map.setView([-4.4419, 15.2663], 6);
   }
 
   // ===============================
-  // FILTER MANAGEMENT
+  // TEMPLATE HELPER METHODS
   // ===============================
+
+  getViewTitle(): string {
+    switch (this.selectedView) {
+      case 'overview': return 'Vue d\'ensemble';
+      case 'heatmap': return 'Carte de densité';
+      case 'live': return 'Données temps réel';
+      case 'predictive': return 'Analyses prédictives';
+      case 'interactive': return 'Carte interactive';
+      default: return 'Vue d\'ensemble';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    const statusLabels: { [key: string]: string } = {
+      'regulier': 'Régulier',
+      'irregulier': 'Irrégulier',
+      'demandeur_asile': 'Demandeur d\'asile',
+      'refugie': 'Réfugié'
+    };
+    return statusLabels[status] || status;
+  }
+
+  getLiveDataByRisk(riskLevel: string): RealTimePosition[] {
+    return this.liveData.filter(pos => pos.risk_level === riskLevel);
+  }
+
+  getTimeAgo(dateString: string): string {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+    if (diffInMinutes < 1) return 'À l\'instant';
+    if (diffInMinutes < 60) return `Il y a ${diffInMinutes} min`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `Il y a ${diffInHours}h`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
+  }
+
+  // Méthodes manquantes pour le template
+
+  getRiskLevelColor(riskLevel: string): string {
+    const colors: { [key: string]: string } = {
+      'faible': '#28a745',
+      'moyen': '#ffc107', 
+      'élevé': '#fd7e14',
+      'critique': '#dc3545'
+    };
+    return colors[riskLevel] || '#6c757d';
+  }
+
+  isLayerActive(layerName: string): boolean {
+    // Implémentation simple - peut être étendue selon les besoins
+    return true; // Par défaut, toutes les couches sont actives
+  }
+
+  toggleLayer(layerName: string): void {
+    console.log(`Toggle layer: ${layerName}`);
+    // Implémentation pour activer/désactiver les couches
+  }
 
   updateFilters(): void {
-    this.loadMigrationRoutesLayer();
-    this.loadDensityHeatmap();
+    console.log('Updating filters:', this.filterParams);
+    // Recharger les données avec les nouveaux filtres
+    this.loadGISStatistics();
+  }
+
+  loadDensityHeatmap(): void {
+    console.log('Loading density heatmap with filters:', this.filterParams);
+    this.loadHeatmapData();
+  }
+
+  activateTool(toolName: string): void {
+    this.selectedTool = this.selectedTool === toolName ? null : toolName;
+    console.log(`Activated tool: ${toolName}`);
   }
 
   resetFilters(): void {
     this.filterParams = {
       days: 30,
-      minFlow: 3,
-      intensityType: 'migrant_count'
+      minFlow: 1,
+      intensityType: 'high'
     };
     this.updateFilters();
-  }
-
-  // ===============================
-  // EXPORT FUNCTIONALITY
-  // ===============================
-
-  exportMap(): void {
-    const activeLayersString = this.activeLayerIds.join(',');
-    
-    this.gisService.exportGISData({
-      format: 'geojson',
-      layers: activeLayersString || 'all'
-    })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (exportData) => {
-          // Handle export download
-          window.open(exportData.download_url, '_blank');
-        },
-        error: (error) => {
-          console.error('Export error:', error);
-        }
-      });
   }
 }

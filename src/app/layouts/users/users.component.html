@@ -17,19 +17,19 @@
 
     <!-- Enterprise Info Section -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-info border-0 mb-0">
-                <div class="row align-items-center">
-                    <div class="col-auto">
-                        <i class="ti ti-users fs-3"></i>
-                    </div>
-                    <div class="col">
-                        <h6 class="mb-1">Gestion des Utilisateurs</h6>
-                        <small class="text-muted">Administration et gestion des comptes utilisateurs</small>
-                    </div>
-                </div>
+      <div class="col-12">
+        <div class="alert alert-info border-0 mb-0">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <i class="ti ti-users fs-3"></i>
             </div>
+            <div class="col">
+              <h6 class="mb-1">Gestion des Utilisateurs</h6>
+              <small class="text-muted">Administration et gestion des comptes utilisateurs</small>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
     <!-- /Enterprise Info Section -->
 
@@ -42,8 +42,7 @@
                 <h4 class="card-title">Liste des Utilisateurs</h4>
               </div>
               <div class="col-auto" *ngIf="canCreateUser()">
-                <a href="javascript:void(0);" class="btn btn-primary" 
-                  (click)="prepareNewUser(); openAddOffcanvas()">
+                <a href="javascript:void(0);" class="btn btn-primary" (click)="prepareNewUser(); openAddOffcanvas()">
                   <i class="ti ti-plus me-2"></i>Ajouter un utilisateur
                 </a>
               </div>
@@ -106,19 +105,31 @@
               <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
                 class="mat-elevation-z2 table tasks-activity tasks">
 
+                <!-- Photo de profil Column -->
+                <ng-container matColumnDef="photo_profil">
+                  <th mat-header-cell *matHeaderCellDef> Photo </th>
+                  <td mat-cell *matCellDef="let element">
+                    <div class="avatar avatar-sm">
+                      <img *ngIf="hasProfilePhoto(element)" [src]="getUserAvatar(element)" [alt]="getFullName(element)"
+                        class="avatar-img rounded-circle">
+                      <span *ngIf="!hasProfilePhoto(element)" class="avatar-title bg-primary text-white rounded-circle">
+                        {{ getInitials(element) }}
+                      </span>
+                    </div>
+                  </td>
+                </ng-container>
+
                 <!-- Nom Column -->
                 <ng-container matColumnDef="nom">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Nom </th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Nom complet </th>
                   <td mat-cell *matCellDef="let element">
-                    <div class="d-flex align-items-center">
-                      <div class="avatar avatar-sm me-2">
-                        <span class="avatar-title bg-primary text-white rounded-circle">
-                          {{ getInitials(element) }}
-                        </span>
+                    <div>
+                      <strong>{{ getFullName(element) }}</strong>
+                      <div class="text-muted small">
+                        <i class="ti ti-id-badge me-1"></i>{{ element.matricule }}
                       </div>
-                      <div>
-                        <strong>{{ element.nom }}</strong>
-                        <div class="text-muted small">{{ element.matricule }}</div>
+                      <div class="text-muted small" *ngIf="element.date_naissance">
+                        <i class="ti ti-calendar me-1"></i>{{ getAge(element.date_naissance) }} ans
                       </div>
                     </div>
                   </td>
@@ -142,11 +153,16 @@
 
                 <!-- Email Column -->
                 <ng-container matColumnDef="email">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Email </th>
+                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Contact </th>
                   <td mat-cell *matCellDef="let element">
-                    <a [href]="'mailto:' + element.email" class="text-decoration-none">
-                      {{ element.email }}
-                    </a>
+                    <div>
+                      <a [href]="'mailto:' + element.email" class="text-decoration-none d-block">
+                        <i class="ti ti-mail me-1"></i>{{ element.email }}
+                      </a>
+                      <a [href]="'tel:' + element.telephone" class="text-decoration-none text-muted small d-block">
+                        <i class="ti ti-phone me-1"></i>{{ element.telephone }}
+                      </a>
+                    </div>
                   </td>
                 </ng-container>
 
@@ -155,7 +171,7 @@
                   <th mat-header-cell *matHeaderCellDef> Téléphone </th>
                   <td mat-cell *matCellDef="let element">
                     <a [href]="'tel:' + element.telephone" class="text-decoration-none">
-                      {{ element.telephone }}
+                      <i class="ti ti-phone me-1"></i>{{ element.telephone }}
                     </a>
                   </td>
                 </ng-container>
@@ -168,13 +184,43 @@
                   </td>
                 </ng-container>
 
+                <!-- Grade Column -->
+                <ng-container matColumnDef="grade">
+                  <th mat-header-cell *matHeaderCellDef> Grade </th>
+                  <td mat-cell *matCellDef="let element">
+                    <div>
+                      <strong>{{ element.grade }}</strong>
+                      <div class="text-muted small">{{ element.fonction }}</div>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <!-- Fonction Column -->
+                <ng-container matColumnDef="fonction">
+                  <th mat-header-cell *matHeaderCellDef> Poste </th>
+                  <td mat-cell *matCellDef="let element">
+                    <div>
+                      <strong>{{ element.fonction }}</strong>
+                      <div class="text-muted small">{{ element.service }}</div>
+                      <div class="text-muted small">{{ element.direction }}</div>
+                    </div>
+                  </td>
+                </ng-container>
+
                 <!-- Rôle Column -->
                 <ng-container matColumnDef="role">
-                  <th mat-header-cell *matHeaderCellDef> Rôle </th>
+                  <th mat-header-cell *matHeaderCellDef> Rôle & Type </th>
                   <td mat-cell *matCellDef="let element">
-                    <span [class]="getRoleBadgeClass(element.role)">
-                      {{ element.role }}
-                    </span>
+                    <div>
+                      <span [class]="getRoleBadgeClass(element.role)">
+                        {{ element.role }}
+                      </span>
+                      <div class="mt-1">
+                        <span [class]="getTypeAgentBadgeClass(element.type_agent)" class="badge">
+                          {{ element.type_agent }}
+                        </span>
+                      </div>
+                    </div>
                   </td>
                 </ng-container>
 
@@ -192,9 +238,19 @@
                 <ng-container matColumnDef="status">
                   <th mat-header-cell *matHeaderCellDef> Statut </th>
                   <td mat-cell *matCellDef="let element">
-                    <span [class]="getStatusBadgeClass(element.status)">
-                      {{ element.status ? 'Actif' : 'Inactif' }}
-                    </span>
+                    <div>
+                      <span [class]="getStatusBadgeClass(element.status)">
+                        {{ element.status ? 'Actif' : 'Inactif' }}
+                      </span>
+                      <div class="mt-1">
+                        <span [class]="getStatutBadgeClass(element.statut)" class="badge">
+                          {{ element.statut }}
+                        </span>
+                      </div>
+                      <div class="text-muted small" *ngIf="element.date_recrutement">
+                        <i class="ti ti-briefcase me-1"></i>{{ getAnciennete(element.date_recrutement) }}
+                      </div>
+                    </div>
                   </td>
                 </ng-container>
 
@@ -203,20 +259,16 @@
                   <th mat-header-cell *matHeaderCellDef> Actions </th>
                   <td mat-cell *matCellDef="let element">
                     <div class="btn-group" role="group">
-                      <button type="button" class="btn btn-sm btn-outline-info"
-                        (click)="viewUser(element)" title="Voir détails">
+                      <button type="button" class="btn btn-sm btn-outline-info" (click)="viewUser(element)"
+                        title="Voir détails">
                         <i class="ti ti-eye"></i>
                       </button>
-                      <button type="button" class="btn btn-sm btn-outline-primary"
-                        (click)="editUser(element)"
-                        *ngIf="canEditUser()"
-                        title="Modifier">
+                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="editUser(element)"
+                        *ngIf="canEditUser()" title="Modifier">
                         <i class="ti ti-edit"></i>
                       </button>
-                      <button type="button" class="btn btn-sm btn-outline-danger"
-                        (click)="deleteUser(element)"
-                        *ngIf="canDeleteUser()"
-                        title="Supprimer">
+                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteUser(element)"
+                        *ngIf="canDeleteUser()" title="Supprimer">
                         <i class="ti ti-trash"></i>
                       </button>
                     </div>
@@ -248,8 +300,7 @@
                 <i class="ti ti-users display-4 text-muted mb-3"></i>
                 <h4>Aucun utilisateur trouvé</h4>
                 <p class="text-muted">Commencez par créer le premier utilisateur.</p>
-                <button class="btn btn-primary" 
-                        (click)="prepareNewUser(); openAddOffcanvas()" *ngIf="canCreateUser()">
+                <button class="btn btn-primary" (click)="prepareNewUser(); openAddOffcanvas()" *ngIf="canCreateUser()">
                   <i class="ti ti-plus me-2"></i>Créer un utilisateur
                 </button>
               </div>
@@ -277,96 +328,651 @@
   <div class="offcanvas-body">
     <form [formGroup]="userForm" (ngSubmit)="saveUser()">
 
-
-
-      <!-- Email -->
-      <div class="mb-3">
-        <label for="email" class="form-label">Email *</label>
-        <input type="email" id="email" class="form-control" formControlName="email"
-          placeholder="Ex: jean.dupont@example.com">
-        <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="text-danger small">
-          <div *ngIf="userForm.get('email')?.errors?.['required']">L'email est requis</div>
-          <div *ngIf="userForm.get('email')?.errors?.['email']">L'email n'est pas valide</div>
+      <!-- Section 1: Informations personnelles de base -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-user me-2"></i>Informations personnelles
+          </h6>
         </div>
-      </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Nom -->
+            <div class="col-md-6 mb-3">
+              <label for="nom" class="form-label">Nom *</label>
+              <input type="text" id="nom" class="form-control" formControlName="nom" placeholder="Ex: Dupont">
+              <div *ngIf="userForm.get('nom')?.invalid && userForm.get('nom')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('nom')?.errors?.['required']">Le nom est requis</div>
+                <div *ngIf="userForm.get('nom')?.errors?.['minlength']">Le nom doit contenir au moins 2 caractères</div>
+              </div>
+            </div>
 
-      <!-- Téléphone -->
-      <div class="mb-3">
-        <label for="telephone" class="form-label">Téléphone *</label>
-        <input type="tel" id="telephone" class="form-control" formControlName="telephone"
-          placeholder="Ex: +243 900 000 000">
-        <div *ngIf="userForm.get('telephone')?.invalid && userForm.get('telephone')?.touched" class="text-danger small">
-          <div *ngIf="userForm.get('telephone')?.errors?.['required']">Le téléphone est requis</div>
-          <div *ngIf="userForm.get('telephone')?.errors?.['minlength']">Le téléphone doit contenir au moins 8 caractères</div>
-        </div>
-      </div>
+            <!-- Post-nom -->
+            <div class="col-md-6 mb-3">
+              <label for="postnom" class="form-label">Post-nom *</label>
+              <input type="text" id="postnom" class="form-control" formControlName="postnom" placeholder="Ex: wa">
+              <div *ngIf="userForm.get('postnom')?.invalid && userForm.get('postnom')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('postnom')?.errors?.['required']">Le post-nom est requis</div>
+                <div *ngIf="userForm.get('postnom')?.errors?.['minlength']">Le post-nom doit contenir au moins 2
+                  caractères</div>
+              </div>
+            </div>
 
-      <!-- Rôle et Permission -->
-      <div class="row">
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="role" class="form-label">Rôle *</label>
-            <select id="role" class="form-select" formControlName="role">
-              <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
-            </select>
+            <!-- Prénom -->
+            <div class="col-md-6 mb-3">
+              <label for="prenom" class="form-label">Prénom *</label>
+              <input type="text" id="prenom" class="form-control" formControlName="prenom" placeholder="Ex: Jean">
+              <div *ngIf="userForm.get('prenom')?.invalid && userForm.get('prenom')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('prenom')?.errors?.['required']">Le prénom est requis</div>
+                <div *ngIf="userForm.get('prenom')?.errors?.['minlength']">Le prénom doit contenir au moins 2 caractères
+                </div>
+              </div>
+            </div>
+
+            <!-- Sexe -->
+            <div class="col-md-6 mb-3">
+              <label for="sexe" class="form-label">Sexe *</label>
+              <select id="sexe" class="form-control" formControlName="sexe">
+                <option value="M">Masculin</option>
+                <option value="F">Féminin</option>
+              </select>
+              <div *ngIf="userForm.get('sexe')?.invalid && userForm.get('sexe')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('sexe')?.errors?.['required']">Le sexe est requis</div>
+              </div>
+            </div>
+
+            <!-- Date de naissance -->
+            <div class="col-md-6 mb-3">
+              <label for="date_naissance" class="form-label">Date de naissance *</label>
+              <input type="date" id="date_naissance" class="form-control" formControlName="date_naissance">
+              <div *ngIf="userForm.get('date_naissance')?.invalid && userForm.get('date_naissance')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('date_naissance')?.errors?.['required']">La date de naissance est requise</div>
+              </div>
+            </div>
+
+            <!-- Lieu de naissance -->
+            <div class="col-md-6 mb-3">
+              <label for="lieu_naissance" class="form-label">Lieu de naissance *</label>
+              <input type="text" id="lieu_naissance" class="form-control" formControlName="lieu_naissance"
+                placeholder="Ex: Kinshasa">
+              <div *ngIf="userForm.get('lieu_naissance')?.invalid && userForm.get('lieu_naissance')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('lieu_naissance')?.errors?.['required']">Le lieu de naissance est requis</div>
+              </div>
+            </div>
+
+            <!-- État civil -->
+            <div class="col-md-6 mb-3">
+              <label for="etat_civil" class="form-label">État civil</label>
+              <select id="etat_civil" class="form-control" formControlName="etat_civil">
+                <option *ngFor="let etat of etatsCivils" [value]="etat.value">{{ etat.label }}</option>
+              </select>
+            </div>
+
+            <!-- Nombre d'enfants -->
+            <div class="col-md-6 mb-3">
+              <label for="nombre_enfants" class="form-label">Nombre d'enfants</label>
+              <input type="number" id="nombre_enfants" class="form-control" formControlName="nombre_enfants" min="0"
+                max="20">
+              <div *ngIf="userForm.get('nombre_enfants')?.invalid && userForm.get('nombre_enfants')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('nombre_enfants')?.errors?.['min']">Le nombre ne peut pas être négatif</div>
+                <div *ngIf="userForm.get('nombre_enfants')?.errors?.['max']">Le nombre ne peut pas dépasser 20</div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="permission" class="form-label">Permissions *</label>
-            <select id="permission" class="form-select" formControlName="permission">
-              <option *ngFor="let perm of permissions" [value]="perm.value">{{ perm.label }}</option>
-            </select>
+      </div>
+
+      <!-- Section 2: Nationalité et documents d'identité -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-id me-2"></i>Nationalité et documents d'identité
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Nationalité -->
+            <div class="col-md-6 mb-3">
+              <label for="nationalite" class="form-label">Nationalité *</label>
+              <input type="text" id="nationalite" class="form-control" formControlName="nationalite"
+                placeholder="Ex: Congolaise">
+              <div *ngIf="userForm.get('nationalite')?.invalid && userForm.get('nationalite')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('nationalite')?.errors?.['required']">La nationalité est requise</div>
+              </div>
+            </div>
+
+            <!-- Numéro CNI -->
+            <div class="col-md-6 mb-3">
+              <label for="numero_cni" class="form-label">Numéro CNI</label>
+              <input type="text" id="numero_cni" class="form-control" formControlName="numero_cni"
+                placeholder="Ex: 1234567890">
+              <div *ngIf="userForm.get('numero_cni')?.invalid && userForm.get('numero_cni')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('numero_cni')?.errors?.['pattern']">Format invalide (10-20 caractères
+                  alphanumériques)</div>
+              </div>
+            </div>
+
+            <!-- Date d'émission CNI -->
+            <div class="col-md-6 mb-3">
+              <label for="date_emission_cni" class="form-label">Date d'émission CNI</label>
+              <input type="date" id="date_emission_cni" class="form-control" formControlName="date_emission_cni">
+            </div>
+
+            <!-- Date d'expiration CNI -->
+            <div class="col-md-6 mb-3">
+              <label for="date_expiration_cni" class="form-label">Date d'expiration CNI</label>
+              <input type="date" id="date_expiration_cni" class="form-control" formControlName="date_expiration_cni">
+            </div>
+
+            <!-- Lieu d'émission CNI -->
+            <div class="col-12 mb-3">
+              <label for="lieu_emission_cni" class="form-label">Lieu d'émission CNI</label>
+              <input type="text" id="lieu_emission_cni" class="form-control" formControlName="lieu_emission_cni"
+                placeholder="Ex: Kinshasa">
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Statut -->
-      <div class="mb-3">
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="status" formControlName="status">
-          <label class="form-check-label" for="status">
-            Utilisateur actif
-          </label>
+      <!-- Section 3: Contacts -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-phone me-2"></i>Contacts
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Email -->
+            <div class="col-md-6 mb-3">
+              <label for="email" class="form-label">Email *</label>
+              <input type="email" id="email" class="form-control" formControlName="email"
+                placeholder="Ex: jean.dupont@example.com">
+              <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('email')?.errors?.['required']">L'email est requis</div>
+                <div *ngIf="userForm.get('email')?.errors?.['email']">L'email n'est pas valide</div>
+              </div>
+            </div>
+
+            <!-- Téléphone -->
+            <div class="col-md-6 mb-3">
+              <label for="telephone" class="form-label">Téléphone *</label>
+              <input type="tel" id="telephone" class="form-control" formControlName="telephone"
+                placeholder="Ex: +243900000000">
+              <div *ngIf="userForm.get('telephone')?.invalid && userForm.get('telephone')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('telephone')?.errors?.['required']">Le téléphone est requis</div>
+                <div *ngIf="userForm.get('telephone')?.errors?.['pattern']">Format invalide (8-15 chiffres)</div>
+              </div>
+            </div>
+
+            <!-- Téléphone d'urgence -->
+            <div class="col-md-6 mb-3">
+              <label for="telephone_urgence" class="form-label">Téléphone d'urgence</label>
+              <input type="tel" id="telephone_urgence" class="form-control" formControlName="telephone_urgence"
+                placeholder="Ex: +243900000000">
+              <div *ngIf="userForm.get('telephone_urgence')?.invalid && userForm.get('telephone_urgence')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('telephone_urgence')?.errors?.['pattern']">Format invalide (8-15 chiffres)
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Signature -->
-      <div class="mb-3">
-        <label for="signature" class="form-label">Signature</label>
-        <textarea id="signature" class="form-control" formControlName="signature" rows="3"
-          placeholder="Signature de l'utilisateur..."></textarea>
+      <!-- Section 4: Adresse -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-map-pin me-2"></i>Adresse
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Province -->
+            <div class="col-md-6 mb-3">
+              <label for="province" class="form-label">Province *</label>
+              <input type="text" id="province" class="form-control" formControlName="province"
+                placeholder="Ex: Kinshasa">
+              <div *ngIf="userForm.get('province')?.invalid && userForm.get('province')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('province')?.errors?.['required']">La province est requise</div>
+              </div>
+            </div>
+
+            <!-- Ville -->
+            <div class="col-md-6 mb-3">
+              <label for="ville" class="form-label">Ville *</label>
+              <input type="text" id="ville" class="form-control" formControlName="ville" placeholder="Ex: Kinshasa">
+              <div *ngIf="userForm.get('ville')?.invalid && userForm.get('ville')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('ville')?.errors?.['required']">La ville est requise</div>
+              </div>
+            </div>
+
+            <!-- Commune -->
+            <div class="col-md-6 mb-3">
+              <label for="commune" class="form-label">Commune *</label>
+              <input type="text" id="commune" class="form-control" formControlName="commune" placeholder="Ex: Gombe">
+              <div *ngIf="userForm.get('commune')?.invalid && userForm.get('commune')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('commune')?.errors?.['required']">La commune est requise</div>
+              </div>
+            </div>
+
+            <!-- Quartier -->
+            <div class="col-md-6 mb-3">
+              <label for="quartier" class="form-label">Quartier *</label>
+              <input type="text" id="quartier" class="form-control" formControlName="quartier"
+                placeholder="Ex: Socimat">
+              <div *ngIf="userForm.get('quartier')?.invalid && userForm.get('quartier')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('quartier')?.errors?.['required']">Le quartier est requis</div>
+              </div>
+            </div>
+
+            <!-- Avenue -->
+            <div class="col-md-6 mb-3">
+              <label for="avenue" class="form-label">Avenue</label>
+              <input type="text" id="avenue" class="form-control" formControlName="avenue"
+                placeholder="Ex: Avenue de la Paix">
+            </div>
+
+            <!-- Numéro -->
+            <div class="col-md-6 mb-3">
+              <label for="numero" class="form-label">Numéro</label>
+              <input type="text" id="numero" class="form-control" formControlName="numero" placeholder="Ex: 123">
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Mots de passe (seulement pour création) -->
-      <div *ngIf="!editingUser">
-        <div class="mb-3">
-          <label for="password" class="form-label">Mot de passe *</label>
-          <input type="password" id="password" class="form-control" formControlName="password"
-            placeholder="Minimum 6 caractères">
-          <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched" class="text-danger small">
-            <div *ngIf="userForm.get('password')?.errors?.['required']">Le mot de passe est requis</div>
-            <div *ngIf="userForm.get('password')?.errors?.['minlength']">Le mot de passe doit contenir au moins 6 caractères</div>
-          </div>
+      <!-- Section 5: Informations professionnelles -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-briefcase me-2"></i>Informations professionnelles
+          </h6>
         </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Matricule -->
+            <div class="col-md-6 mb-3">
+              <label for="matricule" class="form-label">Matricule *</label>
+              <input type="text" id="matricule" class="form-control" formControlName="matricule"
+                placeholder="Ex: MAT123456">
+              <div *ngIf="userForm.get('matricule')?.invalid && userForm.get('matricule')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('matricule')?.errors?.['required']">Le matricule est requis</div>
+                <div *ngIf="userForm.get('matricule')?.errors?.['pattern']">Format invalide (5-15 caractères
+                  alphanumériques)</div>
+              </div>
+            </div>
 
-        <div class="mb-3">
-          <label for="password_confirm" class="form-label">Confirmer le mot de passe *</label>
-          <input type="password" id="password_confirm" class="form-control" formControlName="password_confirm"
-            placeholder="Confirmer le mot de passe">
-          <div *ngIf="userForm.get('password_confirm')?.invalid && userForm.get('password_confirm')?.touched" class="text-danger small">
-            <div *ngIf="userForm.get('password_confirm')?.errors?.['required']">La confirmation est requise</div>
-            <div *ngIf="userForm.get('password_confirm')?.errors?.['passwordMismatch']">Les mots de passe ne correspondent pas</div>
+            <!-- Grade -->
+            <div class="col-md-6 mb-3">
+              <label for="grade" class="form-label">Grade *</label>
+              <input type="text" id="grade" class="form-control" formControlName="grade"
+                placeholder="Ex: Agent de 1ère classe">
+              <div *ngIf="userForm.get('grade')?.invalid && userForm.get('grade')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('grade')?.errors?.['required']">Le grade est requis</div>
+              </div>
+            </div>
+
+            <!-- Fonction -->
+            <div class="col-md-6 mb-3">
+              <label for="fonction" class="form-label">Fonction *</label>
+              <input type="text" id="fonction" class="form-control" formControlName="fonction"
+                placeholder="Ex: Secrétaire">
+              <div *ngIf="userForm.get('fonction')?.invalid && userForm.get('fonction')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('fonction')?.errors?.['required']">La fonction est requise</div>
+              </div>
+            </div>
+
+            <!-- Service -->
+            <div class="col-md-6 mb-3">
+              <label for="service" class="form-label">Service *</label>
+              <input type="text" id="service" class="form-control" formControlName="service"
+                placeholder="Ex: Administration">
+              <div *ngIf="userForm.get('service')?.invalid && userForm.get('service')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('service')?.errors?.['required']">Le service est requis</div>
+              </div>
+            </div>
+
+            <!-- Direction -->
+            <div class="col-md-6 mb-3">
+              <label for="direction" class="form-label">Direction *</label>
+              <input type="text" id="direction" class="form-control" formControlName="direction"
+                placeholder="Ex: Direction Générale">
+              <div *ngIf="userForm.get('direction')?.invalid && userForm.get('direction')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('direction')?.errors?.['required']">La direction est requise</div>
+              </div>
+            </div>
+
+            <!-- Ministère -->
+            <div class="col-md-6 mb-3">
+              <label for="ministere" class="form-label">Ministère *</label>
+              <input type="text" id="ministere" class="form-control" formControlName="ministere"
+                placeholder="Ex: Ministère des Finances">
+              <div *ngIf="userForm.get('ministere')?.invalid && userForm.get('ministere')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('ministere')?.errors?.['required']">Le ministère est requis</div>
+              </div>
+            </div>
+
+            <!-- Date de recrutement -->
+            <div class="col-md-6 mb-3">
+              <label for="date_recrutement" class="form-label">Date de recrutement *</label>
+              <input type="date" id="date_recrutement" class="form-control" formControlName="date_recrutement">
+              <div *ngIf="userForm.get('date_recrutement')?.invalid && userForm.get('date_recrutement')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('date_recrutement')?.errors?.['required']">La date de recrutement est requise
+                </div>
+              </div>
+            </div>
+
+            <!-- Date de prise de service -->
+            <div class="col-md-6 mb-3">
+              <label for="date_prise_service" class="form-label">Date de prise de service *</label>
+              <input type="date" id="date_prise_service" class="form-control" formControlName="date_prise_service">
+              <div *ngIf="userForm.get('date_prise_service')?.invalid && userForm.get('date_prise_service')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('date_prise_service')?.errors?.['required']">La date de prise de service est
+                  requise</div>
+              </div>
+            </div>
+
+            <!-- Type d'agent -->
+            <div class="col-md-6 mb-3">
+              <label for="type_agent" class="form-label">Type d'agent *</label>
+              <select id="type_agent" class="form-control" formControlName="type_agent">
+                <option *ngFor="let type of typeAgents" [value]="type.value">{{ type.label }}</option>
+              </select>
+              <div *ngIf="userForm.get('type_agent')?.invalid && userForm.get('type_agent')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('type_agent')?.errors?.['required']">Le type d'agent est requis</div>
+              </div>
+            </div>
+
+            <!-- Statut -->
+            <div class="col-md-6 mb-3">
+              <label for="statut" class="form-label">Statut *</label>
+              <select id="statut" class="form-control" formControlName="statut">
+                <option *ngFor="let statut of statuts" [value]="statut.value">{{ statut.label }}</option>
+              </select>
+              <div *ngIf="userForm.get('statut')?.invalid && userForm.get('statut')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('statut')?.errors?.['required']">Le statut est requis</div>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+
+      <!-- Section 6: Formation et éducation -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-school me-2"></i>Formation et éducation
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Niveau d'étude -->
+            <div class="col-md-6 mb-3">
+              <label for="niveau_etude" class="form-label">Niveau d'étude</label>
+              <select id="niveau_etude" class="form-control" formControlName="niveau_etude">
+                <option value="">-- Sélectionner --</option>
+                <option *ngFor="let niveau of niveauxEtude" [value]="niveau.value">{{ niveau.label }}</option>
+              </select>
+            </div>
+
+            <!-- Diplôme de base -->
+            <div class="col-md-6 mb-3">
+              <label for="diplome_base" class="form-label">Diplôme de base</label>
+              <input type="text" id="diplome_base" class="form-control" formControlName="diplome_base"
+                placeholder="Ex: Licence en Informatique">
+            </div>
+
+            <!-- Université/École -->
+            <div class="col-md-6 mb-3">
+              <label for="universite_ecole" class="form-label">Université/École</label>
+              <input type="text" id="universite_ecole" class="form-control" formControlName="universite_ecole"
+                placeholder="Ex: Université de Kinshasa">
+            </div>
+
+            <!-- Année d'obtention -->
+            <div class="col-md-6 mb-3">
+              <label for="annee_obtention" class="form-label">Année d'obtention</label>
+              <input type="number" id="annee_obtention" class="form-control" formControlName="annee_obtention"
+                min="1950" max="2030" placeholder="Ex: 2020">
+              <div *ngIf="userForm.get('annee_obtention')?.invalid && userForm.get('annee_obtention')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('annee_obtention')?.errors?.['min']">L'année ne peut pas être antérieure à 1950
+                </div>
+                <div *ngIf="userForm.get('annee_obtention')?.errors?.['max']">L'année ne peut pas être dans le futur
+                </div>
+              </div>
+            </div>
+
+            <!-- Spécialisation -->
+            <div class="col-12 mb-3">
+              <label for="specialisation" class="form-label">Spécialisation</label>
+              <input type="text" id="specialisation" class="form-control" formControlName="specialisation"
+                placeholder="Ex: Génie logiciel">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 7: Informations bancaires -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-credit-card me-2"></i>Informations bancaires
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Numéro bancaire -->
+            <div class="col-md-6 mb-3">
+              <label for="numero_bancaire" class="form-label">Numéro de compte bancaire</label>
+              <input type="text" id="numero_bancaire" class="form-control" formControlName="numero_bancaire"
+                placeholder="Ex: 1234567890123456">
+              <div *ngIf="userForm.get('numero_bancaire')?.invalid && userForm.get('numero_bancaire')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('numero_bancaire')?.errors?.['pattern']">Format invalide (10-20 chiffres)</div>
+              </div>
+            </div>
+
+            <!-- Banque -->
+            <div class="col-md-6 mb-3">
+              <label for="banque" class="form-label">Banque</label>
+              <input type="text" id="banque" class="form-control" formControlName="banque" placeholder="Ex: BCDC">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 8: Informations de sécurité sociale -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-shield me-2"></i>Sécurité sociale
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Numéro CNSS -->
+            <div class="col-md-6 mb-3">
+              <label for="numero_cnss" class="form-label">Numéro CNSS</label>
+              <input type="text" id="numero_cnss" class="form-control" formControlName="numero_cnss"
+                placeholder="Ex: 1234567890">
+              <div *ngIf="userForm.get('numero_cnss')?.invalid && userForm.get('numero_cnss')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('numero_cnss')?.errors?.['pattern']">Format invalide (10-15 chiffres)</div>
+              </div>
+            </div>
+
+            <!-- Numéro ONEM -->
+            <div class="col-md-6 mb-3">
+              <label for="numero_onem" class="form-label">Numéro ONEM</label>
+              <input type="text" id="numero_onem" class="form-control" formControlName="numero_onem"
+                placeholder="Ex: 1234567890">
+              <div *ngIf="userForm.get('numero_onem')?.invalid && userForm.get('numero_onem')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('numero_onem')?.errors?.['pattern']">Format invalide (10-15 chiffres)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 9: Documents et photos -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-file me-2"></i>Documents et photos
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Photo de profil -->
+            <div class="col-md-6 mb-3">
+              <label for="photo_profil" class="form-label">Photo de profil</label>
+              <input type="url" id="photo_profil" class="form-control" formControlName="photo_profil"
+                placeholder="URL de la photo">
+            </div>
+
+            <!-- CV Document -->
+            <div class="col-md-6 mb-3">
+              <label for="cv_document" class="form-label">CV (Document)</label>
+              <input type="url" id="cv_document" class="form-control" formControlName="cv_document"
+                placeholder="URL du CV">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 10: Informations système -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-settings me-2"></i>Informations système
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Rôle -->
+            <div class="col-md-6 mb-3">
+              <label for="role" class="form-label">Rôle *</label>
+              <select id="role" class="form-control" formControlName="role">
+                <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
+              </select>
+              <div *ngIf="userForm.get('role')?.invalid && userForm.get('role')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('role')?.errors?.['required']">Le rôle est requis</div>
+              </div>
+            </div>
+
+            <!-- Permission -->
+            <div class="col-md-6 mb-3">
+              <label for="permission" class="form-label">Permission *</label>
+              <select id="permission" class="form-control" formControlName="permission">
+                <option *ngFor="let permission of permissions" [value]="permission.value">{{ permission.label }}
+                </option>
+              </select>
+              <div *ngIf="userForm.get('permission')?.invalid && userForm.get('permission')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('permission')?.errors?.['required']">La permission est requise</div>
+              </div>
+            </div>
+
+            <!-- Statut -->
+            <div class="col-md-6 mb-3">
+              <label for="status" class="form-label">Statut du compte</label>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="status" formControlName="status">
+                <label class="form-check-label" for="status">
+                  Compte actif
+                </label>
+              </div>
+            </div>
+
+            <!-- Signature -->
+            <div class="col-12 mb-3">
+              <label for="signature" class="form-label">Signature</label>
+              <textarea id="signature" class="form-control" formControlName="signature" rows="3"
+                placeholder="Signature électronique ou note"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 11: Informations de connexion (uniquement pour création) -->
+      <div class="card border mb-3" *ngIf="!editingUser">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-key me-2"></i>Informations de connexion
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Mot de passe -->
+            <div class="col-md-6 mb-3">
+              <label for="password" class="form-label">Mot de passe *</label>
+              <input type="password" id="password" class="form-control" formControlName="password"
+                placeholder="Mot de passe">
+              <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('password')?.errors?.['required']">Le mot de passe est requis</div>
+                <div *ngIf="userForm.get('password')?.errors?.['minlength']">Le mot de passe doit contenir au moins 6
+                  caractères</div>
+              </div>
+            </div>
+
+            <!-- Confirmation mot de passe -->
+            <div class="col-md-6 mb-3">
+              <label for="password_confirm" class="form-label">Confirmer le mot de passe *</label>
+              <input type="password" id="password_confirm" class="form-control" formControlName="password_confirm"
+                placeholder="Confirmer le mot de passe">
+              <div *ngIf="userForm.get('password_confirm')?.invalid && userForm.get('password_confirm')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('password_confirm')?.errors?.['required']">La confirmation est requise</div>
+                <div *ngIf="userForm.get('password_confirm')?.errors?.['passwordMismatch']">Les mots de passe ne
+                  correspondent pas</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Validation errors -->
+      <div class="alert alert-danger" *ngIf="userForm.errors && userForm.touched">
+        <ul class="mb-0">
+          <li *ngIf="userForm.errors?.['dateNaissanceFuture']">La date de naissance ne peut pas être dans le futur</li>
+          <li *ngIf="userForm.errors?.['recrutementTropJeune']">L'agent doit être majeur (18 ans) au moment du
+            recrutement</li>
+          <li *ngIf="userForm.errors?.['priseServiceAvantRecrutement']">La date de prise de service ne peut pas être
+            antérieure au recrutement</li>
+          <li *ngIf="userForm.errors?.['cniExpirationInvalide']">La date d'expiration de la CNI doit être postérieure à
+            l'émission</li>
+        </ul>
       </div>
 
       <!-- Actions -->
-      <div class="d-grid gap-2">
-        <button type="submit" class="btn btn-primary" [disabled]="isSaving || userForm.invalid">
-          <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-          <i *ngIf="!isSaving" class="ti ti-device-floppy me-2"></i>
-          {{ isSaving ? 'Enregistrement...' : (editingUser ? 'Modifier' : 'Créer') }}
+      <div class="d-grid gap-2 mb-3">
+        <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid || isSaving">
+          <i class="ti ti-device-floppy me-2" *ngIf="!isSaving"></i>
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="isSaving"></span>
+          {{ editingUser ? 'Modifier' : 'Créer' }} l'utilisateur
         </button>
         <button type="button" class="btn btn-outline-secondary" (click)="closeAddOffcanvas()">
           <i class="ti ti-x me-2"></i>Annuler
@@ -408,7 +1014,8 @@
           placeholder="Ex: +243 900 000 000">
         <div *ngIf="userForm.get('telephone')?.invalid && userForm.get('telephone')?.touched" class="text-danger small">
           <div *ngIf="userForm.get('telephone')?.errors?.['required']">Le téléphone est requis</div>
-          <div *ngIf="userForm.get('telephone')?.errors?.['minlength']">Le téléphone doit contenir au moins 8 caractères</div>
+          <div *ngIf="userForm.get('telephone')?.errors?.['minlength']">Le téléphone doit contenir au moins 8 caractères
+          </div>
         </div>
       </div>
 
@@ -463,6 +1070,127 @@
     </form>
   </div>
 </div>
+<!-- /User Form Offcanvas -->
+
+<!-- Edit User Form Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas_edit">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">
+      <i class="ti ti-user-edit me-2"></i>
+      Modifier l'Utilisateur
+    </h5>
+    <button type="button" class="btn-close" (click)="closeEditOffcanvas()"></button>
+  </div>
+
+  <div class="offcanvas-body">
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()">
+
+      <!-- Note: Utilise le même formulaire que pour l'ajout, mais pré-rempli -->
+      <!-- Section 1: Informations personnelles de base -->
+      <div class="card border mb-3">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="ti ti-user me-2"></i>Informations personnelles
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Nom -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_nom" class="form-label">Nom *</label>
+              <input type="text" id="edit_nom" class="form-control" formControlName="nom" placeholder="Ex: Dupont">
+              <div *ngIf="userForm.get('nom')?.invalid && userForm.get('nom')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('nom')?.errors?.['required']">Le nom est requis</div>
+                <div *ngIf="userForm.get('nom')?.errors?.['minlength']">Le nom doit contenir au moins 2 caractères</div>
+              </div>
+            </div>
+
+            <!-- Post-nom -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_postnom" class="form-label">Post-nom *</label>
+              <input type="text" id="edit_postnom" class="form-control" formControlName="postnom" placeholder="Ex: wa">
+              <div *ngIf="userForm.get('postnom')?.invalid && userForm.get('postnom')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('postnom')?.errors?.['required']">Le post-nom est requis</div>
+                <div *ngIf="userForm.get('postnom')?.errors?.['minlength']">Le post-nom doit contenir au moins 2
+                  caractères</div>
+              </div>
+            </div>
+
+            <!-- Prénom -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_prenom" class="form-label">Prénom *</label>
+              <input type="text" id="edit_prenom" class="form-control" formControlName="prenom" placeholder="Ex: Jean">
+              <div *ngIf="userForm.get('prenom')?.invalid && userForm.get('prenom')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('prenom')?.errors?.['required']">Le prénom est requis</div>
+                <div *ngIf="userForm.get('prenom')?.errors?.['minlength']">Le prénom doit contenir au moins 2 caractères
+                </div>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_email" class="form-label">Email *</label>
+              <input type="email" id="edit_email" class="form-control" formControlName="email"
+                placeholder="Ex: jean.dupont@example.com">
+              <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('email')?.errors?.['required']">L'email est requis</div>
+                <div *ngIf="userForm.get('email')?.errors?.['email']">L'email n'est pas valide</div>
+              </div>
+            </div>
+
+            <!-- Rôle -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_role" class="form-label">Rôle *</label>
+              <select id="edit_role" class="form-control" formControlName="role">
+                <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
+              </select>
+              <div *ngIf="userForm.get('role')?.invalid && userForm.get('role')?.touched" class="text-danger small">
+                <div *ngIf="userForm.get('role')?.errors?.['required']">Le rôle est requis</div>
+              </div>
+            </div>
+
+            <!-- Permission -->
+            <div class="col-md-6 mb-3">
+              <label for="edit_permission" class="form-label">Permission *</label>
+              <select id="edit_permission" class="form-control" formControlName="permission">
+                <option *ngFor="let permission of permissions" [value]="permission.value">{{ permission.label }}
+                </option>
+              </select>
+              <div *ngIf="userForm.get('permission')?.invalid && userForm.get('permission')?.touched"
+                class="text-danger small">
+                <div *ngIf="userForm.get('permission')?.errors?.['required']">La permission est requise</div>
+              </div>
+            </div>
+
+            <!-- Statut -->
+            <div class="col-12 mb-3">
+              <label for="edit_status" class="form-label">Statut du compte</label>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="edit_status" formControlName="status">
+                <label class="form-check-label" for="edit_status">
+                  Compte actif
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-grid gap-2 mb-3">
+        <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid || isSaving">
+          <i class="ti ti-device-floppy me-2" *ngIf="!isSaving"></i>
+          <span class="spinner-border spinner-border-sm me-2" *ngIf="isSaving"></span>
+          Modifier l'utilisateur
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="closeEditOffcanvas()">
+          <i class="ti ti-x me-2"></i>Annuler
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 <!-- /Edit User Form Offcanvas -->
 
 <!-- View User Details Offcanvas -->
@@ -476,150 +1204,490 @@
   </div>
 
   <div class="offcanvas-body" *ngIf="viewingUser">
-    <div class="card border-0">
-      <!-- Avatar et nom -->
-      <div class="text-center mb-4">
+    <!-- Avatar et informations principales -->
+    <div class="card border-0 bg-light mb-4">
+      <div class="card-body text-center">
         <div class="avatar avatar-xl mx-auto mb-3">
-          <span class="avatar-title bg-primary text-white rounded-circle fs-2">
+          <img *ngIf="hasProfilePhoto(viewingUser)" [src]="getUserAvatar(viewingUser)" [alt]="getFullName(viewingUser)"
+            class="avatar-img rounded-circle">
+          <span *ngIf="!hasProfilePhoto(viewingUser)" class="avatar-title bg-primary text-white rounded-circle fs-2">
             {{ getInitials(viewingUser) }}
           </span>
         </div>
         <h4 class="mb-1">{{ getFullName(viewingUser) }}</h4>
-        <span [class]="getRoleBadgeClass(viewingUser.role)">
-          {{ viewingUser.role }}
-        </span>
-      </div>
-
-      <!-- Informations personnelles -->
-      <div class="card border mb-3">
-        <div class="card-header">
-          <h6 class="mb-0">
-            <i class="ti ti-user me-2"></i>Informations personnelles
-          </h6>
+        <div class="mb-2">
+          <span [class]="getRoleBadgeClass(viewingUser.role)" class="me-2">
+            {{ viewingUser.role }}
+          </span>
+          <span [class]="getTypeAgentBadgeClass(viewingUser.type_agent)">
+            {{ viewingUser.type_agent }}
+          </span>
         </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-12 mb-3">
-              <label class="form-label text-muted">Email</label>
-              <div class="fw-medium">
-                <a [href]="'mailto:' + viewingUser.email" class="text-decoration-none">
-                  <i class="ti ti-mail me-2"></i>{{ viewingUser.email }}
-                </a>
-              </div>
+        <div class="text-muted">
+          <i class="ti ti-id-badge me-1"></i>{{ viewingUser.matricule }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 1: Informations personnelles de base -->
+    <div class="card border mb-3">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-user me-2"></i>Informations personnelles
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Nom</label>
+            <div class="fw-medium">{{ viewingUser.nom }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Post-nom</label>
+            <div class="fw-medium">{{ viewingUser.postnom }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Prénom</label>
+            <div class="fw-medium">{{ viewingUser.prenom }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Sexe</label>
+            <div class="fw-medium">
+              <i class="ti ti-gender-{{ viewingUser.sexe === 'M' ? 'male' : 'female' }} me-1"></i>
+              {{ viewingUser.sexe === 'M' ? 'Masculin' : 'Féminin' }}
             </div>
-            <div class="col-12 mb-3">
-              <label class="form-label text-muted">Téléphone</label>
-              <div class="fw-medium">
-                <a [href]="'tel:' + viewingUser.telephone" class="text-decoration-none">
-                  <i class="ti ti-phone me-2"></i>{{ viewingUser.telephone }}
-                </a>
-              </div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.date_naissance">
+            <label class="form-label text-muted">Date de naissance</label>
+            <div class="fw-medium">
+              <i class="ti ti-calendar me-1"></i>{{ formatDate(viewingUser.date_naissance) }}
+              <span class="text-muted small">({{ getAge(viewingUser.date_naissance) }} ans)</span>
             </div>
-            <div class="col-12 mb-3">
-              <label class="form-label text-muted">Statut</label>
-              <div>
-                <span [class]="getStatusBadgeClass(viewingUser.status)">
-                  <i class="ti ti-circle-check me-1" *ngIf="viewingUser.status"></i>
-                  <i class="ti ti-circle-x me-1" *ngIf="!viewingUser.status"></i>
-                  {{ viewingUser.status ? 'Actif' : 'Inactif' }}
-                </span>
-              </div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.lieu_naissance">
+            <label class="form-label text-muted">Lieu de naissance</label>
+            <div class="fw-medium">
+              <i class="ti ti-map-pin me-1"></i>{{ viewingUser.lieu_naissance }}
+            </div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.etat_civil">
+            <label class="form-label text-muted">État civil</label>
+            <div class="fw-medium">{{ viewingUser.etat_civil }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.nombre_enfants !== undefined">
+            <label class="form-label text-muted">Nombre d'enfants</label>
+            <div class="fw-medium">{{ viewingUser.nombre_enfants }}</div>
+          </div>
+          <div class="col-12 mb-3">
+            <label class="form-label text-muted">Nationalité</label>
+            <div class="fw-medium">
+              <i class="ti ti-flag me-1"></i>{{ viewingUser.nationalite }}
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Permissions et accès -->
-      <div class="card border mb-3">
-        <div class="card-header">
-          <h6 class="mb-0">
-            <i class="ti ti-shield-check me-2"></i>Permissions et accès
-          </h6>
+    <!-- Section 2: Documents d'identité -->
+    <div class="card border mb-3"
+      *ngIf="viewingUser.numero_cni || viewingUser.date_emission_cni || viewingUser.date_expiration_cni">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-id me-2"></i>Documents d'identité
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12 mb-3" *ngIf="viewingUser.numero_cni">
+            <label class="form-label text-muted">Numéro CNI</label>
+            <div class="fw-medium">{{ viewingUser.numero_cni }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.date_emission_cni">
+            <label class="form-label text-muted">Date d'émission</label>
+            <div class="fw-medium">{{ formatDate(viewingUser.date_emission_cni) }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.date_expiration_cni">
+            <label class="form-label text-muted">Date d'expiration</label>
+            <div class="fw-medium">
+              {{ formatDate(viewingUser.date_expiration_cni) }}
+              <span *ngIf="isCNIExpiringSoon(viewingUser.date_expiration_cni)" class="badge bg-warning ms-2">
+                <i class="ti ti-alert-triangle me-1"></i>Expire bientôt
+              </span>
+            </div>
+          </div>
+          <div class="col-12 mb-3" *ngIf="viewingUser.lieu_emission_cni">
+            <label class="form-label text-muted">Lieu d'émission</label>
+            <div class="fw-medium">{{ viewingUser.lieu_emission_cni }}</div>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-12 mb-3">
-              <label class="form-label text-muted">Rôle</label>
-              <div>
-                <span [class]="getRoleBadgeClass(viewingUser.role)">
-                  {{ viewingUser.role }}
-                </span>
-              </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Contacts -->
+    <div class="card border mb-3">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-phone me-2"></i>Contacts
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12 mb-3">
+            <label class="form-label text-muted">Email</label>
+            <div class="fw-medium">
+              <a [href]="'mailto:' + viewingUser.email" class="text-decoration-none">
+                <i class="ti ti-mail me-2"></i>{{ viewingUser.email }}
+              </a>
             </div>
-            <div class="col-12 mb-3">
-              <label class="form-label text-muted">Permissions</label>
-              <div>
-                <span [class]="getPermissionBadgeClass(viewingUser.permission)">
-                  {{ viewingUser.permission }}
-                </span>
-              </div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Téléphone</label>
+            <div class="fw-medium">
+              <a [href]="'tel:' + viewingUser.telephone" class="text-decoration-none">
+                <i class="ti ti-phone me-1"></i>{{ viewingUser.telephone }}
+              </a>
             </div>
-            <div class="col-12 mb-3" *ngIf="getPermissionDescription(viewingUser.permission)">
-              <label class="form-label text-muted">Description des permissions</label>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.telephone_urgence">
+            <label class="form-label text-muted">Téléphone d'urgence</label>
+            <div class="fw-medium">
+              <a [href]="'tel:' + viewingUser.telephone_urgence" class="text-decoration-none">
+                <i class="ti ti-phone me-1"></i>{{ viewingUser.telephone_urgence }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Adresse -->
+    <div class="card border mb-3">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-map-pin me-2"></i>Adresse
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Province</label>
+            <div class="fw-medium">{{ viewingUser.province }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Ville</label>
+            <div class="fw-medium">{{ viewingUser.ville }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Commune</label>
+            <div class="fw-medium">{{ viewingUser.commune }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Quartier</label>
+            <div class="fw-medium">{{ viewingUser.quartier }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.avenue">
+            <label class="form-label text-muted">Avenue</label>
+            <div class="fw-medium">{{ viewingUser.avenue }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.numero">
+            <label class="form-label text-muted">Numéro</label>
+            <div class="fw-medium">{{ viewingUser.numero }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Informations professionnelles -->
+    <div class="card border mb-3">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-briefcase me-2"></i>Informations professionnelles
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Matricule</label>
+            <div class="fw-medium">
+              <span class="badge bg-secondary">{{ viewingUser.matricule }}</span>
+            </div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Grade</label>
+            <div class="fw-medium">{{ viewingUser.grade }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Fonction</label>
+            <div class="fw-medium">{{ viewingUser.fonction }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Service</label>
+            <div class="fw-medium">{{ viewingUser.service }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Direction</label>
+            <div class="fw-medium">{{ viewingUser.direction }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Ministère</label>
+            <div class="fw-medium">{{ viewingUser.ministere }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.date_recrutement">
+            <label class="form-label text-muted">Date de recrutement</label>
+            <div class="fw-medium">
+              {{ formatDate(viewingUser.date_recrutement) }}
               <div class="text-muted small">
-                {{ getPermissionDescription(viewingUser.permission) }}
+                Ancienneté: {{ getAnciennete(viewingUser.date_recrutement) }}
               </div>
+            </div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.date_prise_service">
+            <label class="form-label text-muted">Date de prise de service</label>
+            <div class="fw-medium">{{ formatDate(viewingUser.date_prise_service) }}</div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Type d'agent</label>
+            <div class="fw-medium">
+              <span [class]="getTypeAgentBadgeClass(viewingUser.type_agent)">
+                {{ viewingUser.type_agent }}
+              </span>
+            </div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Statut professionnel</label>
+            <div class="fw-medium">
+              <span [class]="getStatutBadgeClass(viewingUser.statut)">
+                {{ viewingUser.statut }}
+              </span>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Signature -->
-      <div class="card border mb-3" *ngIf="viewingUser.signature">
-        <div class="card-header">
-          <h6 class="mb-0">
-            <i class="ti ti-signature me-2"></i>Signature
-          </h6>
-        </div>
-        <div class="card-body">
-          <div class="p-3 bg-light rounded">
-            {{ viewingUser.signature }}
+    <!-- Section 6: Formation et éducation -->
+    <div class="card border mb-3"
+      *ngIf="viewingUser.niveau_etude || viewingUser.diplome_base || viewingUser.universite_ecole">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-school me-2"></i>Formation et éducation
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 mb-3" *ngIf="viewingUser.niveau_etude">
+            <label class="form-label text-muted">Niveau d'étude</label>
+            <div class="fw-medium">{{ viewingUser.niveau_etude }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.diplome_base">
+            <label class="form-label text-muted">Diplôme de base</label>
+            <div class="fw-medium">{{ viewingUser.diplome_base }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.universite_ecole">
+            <label class="form-label text-muted">Université/École</label>
+            <div class="fw-medium">{{ viewingUser.universite_ecole }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.annee_obtention">
+            <label class="form-label text-muted">Année d'obtention</label>
+            <div class="fw-medium">{{ viewingUser.annee_obtention }}</div>
+          </div>
+          <div class="col-12 mb-3" *ngIf="viewingUser.specialisation">
+            <label class="form-label text-muted">Spécialisation</label>
+            <div class="fw-medium">{{ viewingUser.specialisation }}</div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Informations système -->
-      <div class="card border mb-3" *ngIf="viewingUser.created_at || viewingUser.updated_at">
-        <div class="card-header">
-          <h6 class="mb-0">
-            <i class="ti ti-info-circle me-2"></i>Informations système
-          </h6>
+    <!-- Section 7: Informations bancaires -->
+    <div class="card border mb-3" *ngIf="viewingUser.numero_bancaire || viewingUser.banque">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-credit-card me-2"></i>Informations bancaires
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 mb-3" *ngIf="viewingUser.numero_bancaire">
+            <label class="form-label text-muted">Numéro de compte</label>
+            <div class="fw-medium">{{ viewingUser.numero_bancaire }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.banque">
+            <label class="form-label text-muted">Banque</label>
+            <div class="fw-medium">{{ viewingUser.banque }}</div>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-12 mb-2" *ngIf="viewingUser.created_at">
-              <label class="form-label text-muted">Créé le</label>
-              <div class="small">
-                <i class="ti ti-calendar me-2"></i>
-                {{ viewingUser.created_at | date:'dd/MM/yyyy à HH:mm' }}
-              </div>
+      </div>
+    </div>
+
+    <!-- Section 8: Sécurité sociale -->
+    <div class="card border mb-3" *ngIf="viewingUser.numero_cnss || viewingUser.numero_onem">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-shield me-2"></i>Sécurité sociale
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 mb-3" *ngIf="viewingUser.numero_cnss">
+            <label class="form-label text-muted">Numéro CNSS</label>
+            <div class="fw-medium">{{ viewingUser.numero_cnss }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.numero_onem">
+            <label class="form-label text-muted">Numéro ONEM</label>
+            <div class="fw-medium">{{ viewingUser.numero_onem }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 9: Documents -->
+    <div class="card border mb-3" *ngIf="viewingUser.cv_document || viewingUser.qr_code">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-file me-2"></i>Documents
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-12 mb-3" *ngIf="viewingUser.cv_document">
+            <label class="form-label text-muted">CV Document</label>
+            <div class="fw-medium">
+              <a [href]="viewingUser.cv_document" target="_blank" class="btn btn-outline-primary btn-sm">
+                <i class="ti ti-download me-1"></i>Télécharger CV
+              </a>
             </div>
-            <div class="col-12 mb-2" *ngIf="viewingUser.updated_at">
-              <label class="form-label text-muted">Dernière modification</label>
-              <div class="small">
-                <i class="ti ti-calendar-event me-2"></i>
-                {{ viewingUser.updated_at | date:'dd/MM/yyyy à HH:mm' }}
-              </div>
+          </div>
+          <div class="col-12 mb-3" *ngIf="viewingUser.qr_code">
+            <label class="form-label text-muted">QR Code</label>
+            <div class="fw-medium">
+              <img [src]="viewingUser.qr_code" [alt]="'QR Code de ' + getFullName(viewingUser)" class="img-fluid"
+                style="max-width: 200px;">
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Actions -->
-      <div class="d-grid gap-2">
-        <button type="button" class="btn btn-primary" 
-                (click)="editUser(viewingUser); closeViewOffcanvas()"
-                *ngIf="canEditUser()">
-          <i class="ti ti-edit me-2"></i>Modifier cet utilisateur
-        </button>
-        <button type="button" class="btn btn-outline-danger" 
-                (click)="deleteUser(viewingUser); closeViewOffcanvas()"
-                *ngIf="canDeleteUser()">
-          <i class="ti ti-trash me-2"></i>Supprimer cet utilisateur
-        </button>
-        <button type="button" class="btn btn-outline-secondary" (click)="closeViewOffcanvas()">
-          <i class="ti ti-x me-2"></i>Fermer
-        </button>
+    <!-- Section 10: Informations système -->
+    <div class="card border mb-3">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-settings me-2"></i>Informations système
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Rôle</label>
+            <div>
+              <span [class]="getRoleBadgeClass(viewingUser.role)">
+                {{ viewingUser.role }}
+              </span>
+            </div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Permissions</label>
+            <div>
+              <span [class]="getPermissionBadgeClass(viewingUser.permission)">
+                {{ viewingUser.permission }}
+              </span>
+            </div>
+          </div>
+          <div class="col-6 mb-3">
+            <label class="form-label text-muted">Statut du compte</label>
+            <div>
+              <span [class]="getStatusBadgeClass(viewingUser.status)">
+                <i class="ti ti-circle-check me-1" *ngIf="viewingUser.status"></i>
+                <i class="ti ti-circle-x me-1" *ngIf="!viewingUser.status"></i>
+                {{ viewingUser.status ? 'Actif' : 'Inactif' }}
+              </span>
+            </div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.dernier_acces">
+            <label class="form-label text-muted">Dernier accès</label>
+            <div class="fw-medium">{{ formatDate(viewingUser.dernier_acces) }}</div>
+          </div>
+          <div class="col-6 mb-3" *ngIf="viewingUser.nombre_connexions">
+            <label class="form-label text-muted">Connexions</label>
+            <div class="fw-medium">{{ viewingUser.nombre_connexions }} fois</div>
+          </div>
+          <div class="col-12 mb-3" *ngIf="getPermissionDescription(viewingUser.permission)">
+            <label class="form-label text-muted">Description des permissions</label>
+            <div class="text-muted small">
+              {{ getPermissionDescription(viewingUser.permission) }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 11: Signature -->
+    <div class="card border mb-3" *ngIf="viewingUser?.signature">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-signature me-2"></i>Signature
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="p-3 bg-light rounded">
+          {{ viewingUser.signature }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 12: Informations d'audit -->
+    <div class="card border mb-3" *ngIf="viewingUser?.created_at || viewingUser?.updated_at">
+      <div class="card-header">
+        <h6 class="mb-0">
+          <i class="ti ti-info-circle me-2"></i>Informations d'audit
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-6 mb-2" *ngIf="viewingUser?.created_at">
+            <label class="form-label text-muted">Créé le</label>
+            <div class="small">
+              <i class="ti ti-calendar me-2"></i>
+              {{ viewingUser.created_at | date:'dd/MM/yyyy à HH:mm' }}
+            </div>
+          </div>
+          <div class="col-6 mb-2" *ngIf="viewingUser?.updated_at">
+            <label class="form-label text-muted">Modifié le</label>
+            <div class="small">
+              <i class="ti ti-calendar-event me-2"></i>
+              {{ viewingUser.updated_at | date:'dd/MM/yyyy à HH:mm' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div> <!-- Actions -->
+    <div class="d-grid gap-2">
+      <button type="button" class="btn btn-primary" (click)="viewingUser && editUser(viewingUser); closeViewOffcanvas()"
+        *ngIf="canEditUser()">
+        <i class="ti ti-edit me-2"></i>Modifier cet utilisateur
+      </button>
+      <button type="button" class="btn btn-outline-danger"
+        (click)="viewingUser && deleteUser(viewingUser); closeViewOffcanvas()" *ngIf="canDeleteUser()">
+        <i class="ti ti-trash me-2"></i>Supprimer cet utilisateur
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="closeViewOffcanvas()">
+        <i class="ti ti-x me-2"></i>Fermer
+      </button>
+      <div class="col-6 mb-3" *ngIf="viewingUser?.permission">
+        <label class="form-label text-muted">Permissions</label>
+        <div>
+          <span [class]="getPermissionBadgeClass(viewingUser.permission || '')">
+            {{ viewingUser.permission }}
+          </span>
+        </div>
+      </div>
+      <div class="col-12 mb-3"
+        *ngIf="viewingUser?.permission && getPermissionDescription(viewingUser.permission || '')">
+        <label class="form-label text-muted">Description des permissions</label>
+        <div class="text-muted small">
+          {{ getPermissionDescription(viewingUser.permission || '') }}
+        </div>
       </div>
     </div>
   </div>

@@ -7,7 +7,7 @@
       <div class="row">
         <div class="col-sm-12">
           <ul class="breadcrumb">
-            <li class="breadcrumb-item"><a [routerLink]="'/web/dashboard'">Tableau de bord</a></li>
+            <li class="breadcrumb-item"><a routerLink="/web/dashboard">Tableau de bord</a></li>
             <li class="breadcrumb-item active">Géolocalisations</li>
           </ul>
         </div>
@@ -17,19 +17,25 @@
 
     <!-- Enterprise Info Section -->
     <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-info border-0 mb-0">
-                <div class="row align-items-center">
-                    <div class="col-auto">
-                        <i class="ti ti-map-pin fs-3"></i>
-                    </div>
-                    <div class="col">
-                        <h6 class="mb-1">Géolocalisations</h6>
-                        <small class="text-muted">Suivi des positions géographiques des migrants</small>
-                    </div>
-                </div>
+      <div class="col-12">
+        <div class="alert alert-info border-0 mb-0">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <i class="ti ti-map-pin fs-3"></i>
             </div>
+            <div class="col">
+              <h6 class="mb-1">Géolocalisations</h6>
+              <small class="text-muted">Suivi des positions géographiques des migrants</small>
+            </div>
+            <div class="col-auto" *ngIf="geolocationStats">
+              <div class="text-end">
+                <h5 class="mb-0">{{ getTotalGeolocations() }}</h5>
+                <small class="text-muted">Total géolocalisations</small>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
     <!-- /Enterprise Info Section -->
 
@@ -42,10 +48,10 @@
                 <h4 class="card-title">Liste des Géolocalisations</h4>
               </div>
               <div class="col-auto">
-                <a href="javascript:void(0);" class="btn btn-primary" 
-                  (click)="prepareNewGeolocation(); openAddOffcanvas()">
+                <button class="btn btn-primary" (click)="prepareNewGeolocation()" data-bs-toggle="offcanvas"
+                  data-bs-target="#addGeolocationOffcanvas" #offcanvasToggle>
                   <i class="ti ti-plus me-2"></i>Ajouter une géolocalisation
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -72,24 +78,27 @@
                         <label class="form-label">Type de localisation :</label>
                         <select class="form-control" [(ngModel)]="selectedTypeLocalisation" (change)="applyFilters()">
                           <option value="">Tous les types</option>
-                          <option *ngFor="let type of typeLocalisationOptions" [value]="type.value">{{ type.label }}</option>
+                          <option *ngFor="let type of typeLocalisationOptions" [value]="type.value">{{ type.label }}
+                          </option>
                         </select>
                       </div>
                     </div>
                     <div class="col-md-3">
                       <div class="input-block mb-3">
                         <label class="form-label">Pays :</label>
-                        <input type="text" class="form-control" placeholder="Nom du pays"
-                          [(ngModel)]="selectedPays" (ngModelChange)="applyFilters()">
+                        <select class="form-control" [(ngModel)]="selectedPays" (change)="applyFilters()">
+                          <option value="">Tous les pays</option>
+                          <option *ngFor="let pays of paysOptions" [value]="pays">{{ pays }}</option>
+                        </select>
                       </div>
                     </div>
                     <div class="col-md-3">
                       <div class="input-block mb-3">
-                        <label class="form-label">Statut :</label>
-                        <select class="form-control" [(ngModel)]="selectedActif" (change)="applyFilters()">
-                          <option value="">Tous</option>
-                          <option value="true">Actif</option>
-                          <option value="false">Inactif</option>
+                        <label class="form-label">Type de mouvement :</label>
+                        <select class="form-control" [(ngModel)]="selectedTypeMouvement" (change)="applyFilters()">
+                          <option value="">Tous les mouvements</option>
+                          <option *ngFor="let type of typeMouvementOptions" [value]="type.value">{{ type.label }}
+                          </option>
                         </select>
                       </div>
                     </div>
@@ -123,423 +132,399 @@
 
             <!-- Table -->
             <div class="table-responsive custom-table" *ngIf="!isLoadingData">
-              <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
-                class="mat-elevation-z2 table tasks-activity tasks">
-
-                <!-- Migrant Column -->
-                <ng-container matColumnDef="migrant">
-                  <th mat-header-cell *matHeaderCellDef> Migrant </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="d-flex align-items-center">
-                      <div class="avatar avatar-sm me-2">
-                        <span class="avatar-title bg-primary text-white rounded-circle">
-                          {{ getMigrantInitials(element.migrant_uuid) }}
-                        </span>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Migrant</th>
+                    <th>Type localisation</th>
+                    <th>Coordonnées</th>
+                    <th>Pays</th>
+                    <th>Ville</th>
+                    <th>Type mouvement</th>
+                    <th>Date création</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let geolocation of geolocations; trackBy: trackByGeolocationUuid">
+                    <!-- Migrant -->
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div class="avatar avatar-sm me-2">
+                          <span class="avatar-title bg-primary text-white rounded-circle">
+                            {{ geolocation.migrant ? getInitials(geolocation.migrant) : 'N/A' }}
+                          </span>
+                        </div>
+                        <div>
+                          <strong>{{ getMigrantName(geolocation) }}</strong>
+                        </div>
                       </div>
-                      <div>
-                        <strong>{{ getMigrantName(element.migrant_uuid) }}</strong>
+                    </td>
+
+                    <!-- Type de localisation -->
+                    <td>
+                      <span class="badge bg-info">{{ getTypeLocalisationLabel(geolocation.type_localisation) }}</span>
+                    </td>
+
+                    <!-- Coordonnées -->
+                    <td>
+                      <small class="text-muted">{{ formatCoordinates(geolocation.latitude, geolocation.longitude)
+                        }}</small>
+                    </td>
+
+                    <!-- Pays -->
+                    <td>{{ geolocation.pays }}</td>
+
+                    <!-- Ville -->
+                    <td>{{ geolocation.ville || '-' }}</td>
+
+                    <!-- Type de mouvement -->
+                    <td>
+                      <span *ngIf="geolocation.type_mouvement"
+                        [class]="getTypeMouvementBadgeClass(geolocation.type_mouvement)">
+                        {{ getTypeMouvementLabel(geolocation.type_mouvement) }}
+                      </span>
+                      <span *ngIf="!geolocation.type_mouvement" class="text-muted">-</span>
+                    </td>
+
+                    <!-- Date création -->
+                    <td>{{ geolocation.created_at }}</td>
+
+                    <!-- Actions -->
+                    <td>
+                      <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary" (click)="openViewModal(geolocation)"
+                          data-bs-toggle="modal" data-bs-target="#viewGeolocationModal">
+                          <i class="ti ti-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" (click)="prepareEditGeolocation(geolocation)"
+                          data-bs-toggle="offcanvas" data-bs-target="#addGeolocationOffcanvas">
+                          <i class="ti ti-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deleteGeolocation(geolocation)">
+                          <i class="ti ti-trash"></i>
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <!-- Type de localisation Column -->
-                <ng-container matColumnDef="type_localisation">
-                  <th mat-header-cell *matHeaderCellDef> Type </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span class="badge bg-info">{{ getTypeLocalisationLabel(element.type_localisation) }}</span>
-                  </td>
-                </ng-container>
-
-                <!-- Coordonnées Column -->
-                <ng-container matColumnDef="coordonnees">
-                  <th mat-header-cell *matHeaderCellDef> Coordonnées </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="small">
-                      <div><strong>Lat:</strong> {{ element.latitude.toFixed(6) }}</div>
-                      <div><strong>Lon:</strong> {{ element.longitude.toFixed(6) }}</div>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <!-- Pays Column -->
-                <ng-container matColumnDef="pays">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Pays </th>
-                  <td mat-cell *matCellDef="let element">
-                    {{ element.pays }}
-                  </td>
-                </ng-container>
-
-                <!-- Ville Column -->
-                <ng-container matColumnDef="ville">
-                  <th mat-header-cell *matHeaderCellDef> Ville </th>
-                  <td mat-cell *matCellDef="let element">
-                    {{ element.ville || '-' }}
-                  </td>
-                </ng-container>
-
-                <!-- Date enregistrement Column -->
-                <ng-container matColumnDef="date_enregistrement">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Date </th>
-                  <td mat-cell *matCellDef="let element">
-                    {{ formatDate(element.date_enregistrement) }}
-                  </td>
-                </ng-container>
-
-                <!-- Méthode capture Column -->
-                <ng-container matColumnDef="methode_capture">
-                  <th mat-header-cell *matHeaderCellDef> Méthode </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span class="badge bg-secondary">{{ getMethodeCaptureLabel(element.methode_capture) }}</span>
-                  </td>
-                </ng-container>
-
-                <!-- Fiabilité source Column -->
-                <ng-container matColumnDef="fiabilite_source">
-                  <th mat-header-cell *matHeaderCellDef> Fiabilité </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span [class]="getFiabiliteBadgeClass(element.fiabilite_source)">
-                      {{ getFiabiliteLabel(element.fiabilite_source) }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <!-- Actif Column -->
-                <ng-container matColumnDef="actif">
-                  <th mat-header-cell *matHeaderCellDef> Statut </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span [class]="getStatusBadgeClass(element.actif)">
-                      {{ element.actif ? 'Actif' : 'Inactif' }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <!-- Actions Column -->
-                <ng-container matColumnDef="actions">
-                  <th mat-header-cell *matHeaderCellDef> Actions </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="dropdown dropdown-action">
-                      <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="material-icons">more_vert</i>
-                      </a>
-                      <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item" href="javascript:void(0);" (click)="openViewModal(element)">
-                          <i class="ti ti-eye me-2"></i>Voir détails
-                        </a>
-                        <a class="dropdown-item" href="javascript:void(0);" 
-                          (click)="prepareEditGeolocation(element); openEditOffcanvas()">
-                          <i class="ti ti-edit me-2"></i>Modifier
-                        </a>
-                        <a class="dropdown-item" href="javascript:void(0);" 
-                          (click)="validateGeolocation(element)" *ngIf="!element.date_validation">
-                          <i class="ti ti-check me-2"></i>Valider
-                        </a>
-                        <a class="dropdown-item text-danger" href="javascript:void(0);" 
-                          (click)="deleteGeolocation(element)">
-                          <i class="ti ti-trash me-2"></i>Supprimer
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </td>
+                  </tr>
+                </tbody>
               </table>
             </div>
-            <!-- /Table -->
 
             <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="!isLoadingData && geolocations.length > 0">
-              <div class="text-muted">
-                Affichage de {{ ((current_page - 1) * page_size) + 1 }} à 
-                {{ Math.min(current_page * page_size, total_records) }} sur {{ total_records }} entrées
+            <div class="d-flex justify-content-between align-items-center mt-3"
+              *ngIf="!isLoadingData && geolocations.length > 0">
+              <div>
+                <span class="text-muted">
+                  Affichage de {{ (current_page - 1) * page_size + 1 }} à {{ Math.min(current_page * page_size,
+                  total_records) }}
+                  sur {{ total_records }} géolocalisations
+                </span>
               </div>
-              <mat-paginator 
-                [length]="total_records"
-                [pageSize]="page_size"
-                [pageIndex]="current_page - 1"
-                [pageSizeOptions]="[15, 25, 50, 100]"
-                (page)="onPageChange($event)"
-                showFirstLastButtons>
-              </mat-paginator>
+
+              <!-- Custom Pagination -->
+              <nav aria-label="Pagination">
+                <ul class="pagination">
+                  <li class="page-item" [class.disabled]="current_page === 1">
+                    <a class="page-link" (click)="current_page > 1 && changePage(current_page - 1)"
+                      href="javascript:void(0);">
+                      <i class="ti ti-chevron-left"></i>
+                    </a>
+                  </li>
+
+                  <!-- First page -->
+                  <li class="page-item" [class.active]="current_page === 1">
+                    <a class="page-link" (click)="changePage(1)" href="javascript:void(0);">1</a>
+                  </li>
+
+                  <!-- Previous pages -->
+                  <li class="page-item" *ngIf="current_page > 3">
+                    <span class="page-link">...</span>
+                  </li>
+
+                  <li class="page-item" *ngIf="current_page > 2" [class.active]="false">
+                    <a class="page-link" (click)="changePage(current_page - 1)" href="javascript:void(0);">{{
+                      current_page - 1 }}</a>
+                  </li>
+
+                  <!-- Current page (if not first) -->
+                  <li class="page-item active" *ngIf="current_page > 1">
+                    <a class="page-link" href="javascript:void(0);">{{ current_page }}</a>
+                  </li>
+
+                  <!-- Next pages -->
+                  <li class="page-item" *ngIf="current_page < getTotalPages()" [class.active]="false">
+                    <a class="page-link" (click)="changePage(current_page + 1)" href="javascript:void(0);">{{
+                      current_page + 1 }}</a>
+                  </li>
+
+                  <li class="page-item" *ngIf="current_page < getTotalPages() - 2">
+                    <span class="page-link">...</span>
+                  </li>
+
+                  <!-- Last page -->
+                  <li class="page-item" *ngIf="getTotalPages() > 1" [class.active]="current_page === getTotalPages()">
+                    <a class="page-link" (click)="changePage(getTotalPages())" href="javascript:void(0);">{{
+                      getTotalPages() }}</a>
+                  </li>
+
+                  <li class="page-item" [class.disabled]="current_page === getTotalPages()">
+                    <a class="page-link" (click)="current_page < getTotalPages() && changePage(current_page + 1)"
+                      href="javascript:void(0);">
+                      <i class="ti ti-chevron-right"></i>
+                    </a>
+                  </li>
+                </ul>
+              </nav>
             </div>
-            <!-- /Pagination -->
 
             <!-- No Data -->
-            <div *ngIf="!isLoadingData && geolocations.length === 0" class="text-center py-4">
-              <div class="text-muted">
-                <i class="ti ti-map-pin fs-1 d-block mb-3"></i>
-                <h5>Aucune géolocalisation trouvée</h5>
-                <p>Commencez par ajouter une géolocalisation.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Add/Edit Geolocation Form Modal -->
-    <div class="modal fade" id="geolocationModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">{{ editingGeolocation ? 'Modifier' : 'Ajouter' }} une géolocalisation</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <form [formGroup]="geolocationForm" (ngSubmit)="onSubmit()">
-            <div class="modal-body">
-              <!-- Error Alert -->
-              <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-
-              <div class="row">
-                <!-- Migrant -->
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Migrant <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="migrant_uuid"
-                      [class.is-invalid]="isFieldInvalid('migrant_uuid')">
-                      <option value="">Sélectionner un migrant</option>
-                      <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                        {{ migrant.nom }} {{ migrant.prenom }} - {{ migrant.numero_identifiant }}
-                      </option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('migrant_uuid')" class="invalid-feedback">
-                      {{ getFieldError('migrant_uuid') }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Type de localisation -->
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Type de localisation <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="type_localisation"
-                      [class.is-invalid]="isFieldInvalid('type_localisation')">
-                      <option value="">Sélectionner</option>
-                      <option *ngFor="let type of typeLocalisationOptions" [value]="type.value">{{ type.label }}</option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('type_localisation')" class="invalid-feedback">
-                      {{ getFieldError('type_localisation') }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Coordonnées -->
-                <div class="col-12">
-                  <h6 class="mb-3">Coordonnées GPS</h6>
-                  <div class="d-flex justify-content-end mb-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary" (click)="getCurrentLocation()">
-                      <i class="ti ti-current-location me-1"></i>Position actuelle
-                    </button>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Latitude <span class="text-danger">*</span></label>
-                    <input type="number" step="0.000001" class="form-control" formControlName="latitude"
-                      [class.is-invalid]="isFieldInvalid('latitude')" placeholder="-90 à 90">
-                    <div *ngIf="isFieldInvalid('latitude')" class="invalid-feedback">
-                      {{ getFieldError('latitude') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Longitude <span class="text-danger">*</span></label>
-                    <input type="number" step="0.000001" class="form-control" formControlName="longitude"
-                      [class.is-invalid]="isFieldInvalid('longitude')" placeholder="-180 à 180">
-                    <div *ngIf="isFieldInvalid('longitude')" class="invalid-feedback">
-                      {{ getFieldError('longitude') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Altitude (m)</label>
-                    <input type="number" class="form-control" formControlName="altitude">
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Précision (m)</label>
-                    <input type="number" class="form-control" formControlName="precision">
-                  </div>
-                </div>
-
-                <!-- Localisation -->
-                <div class="col-12">
-                  <h6 class="mb-3 mt-3">Informations de localisation</h6>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Pays <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" formControlName="pays"
-                      [class.is-invalid]="isFieldInvalid('pays')">
-                    <div *ngIf="isFieldInvalid('pays')" class="invalid-feedback">
-                      {{ getFieldError('pays') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Ville</label>
-                    <input type="text" class="form-control" formControlName="ville">
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Adresse</label>
-                    <textarea class="form-control" formControlName="adresse" rows="2"></textarea>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Code postal</label>
-                    <input type="text" class="form-control" formControlName="code_postal">
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Date d'enregistrement <span class="text-danger">*</span></label>
-                    <input type="date" class="form-control" formControlName="date_enregistrement"
-                      [class.is-invalid]="isFieldInvalid('date_enregistrement')">
-                    <div *ngIf="isFieldInvalid('date_enregistrement')" class="invalid-feedback">
-                      {{ getFieldError('date_enregistrement') }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Métadonnées -->
-                <div class="col-12">
-                  <h6 class="mb-3 mt-3">Métadonnées de capture</h6>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Méthode de capture</label>
-                    <select class="form-control" formControlName="methode_capture">
-                      <option *ngFor="let methode of methodeCaptureOptions" [value]="methode.value">{{ methode.label }}</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Fiabilité de la source</label>
-                    <select class="form-control" formControlName="fiabilite_source">
-                      <option *ngFor="let fiabilite of fiabiliteSourceOptions" [value]="fiabilite.value">{{ fiabilite.label }}</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Dispositif source</label>
-                    <input type="text" class="form-control" formControlName="dispositif_source">
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Type de mouvement</label>
-                    <select class="form-control" formControlName="type_mouvement">
-                      <option value="">Sélectionner</option>
-                      <option *ngFor="let mouvement of typeMouvementOptions" [value]="mouvement.value">{{ mouvement.label }}</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-control" formControlName="description" rows="2"></textarea>
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <div class="input-block mb-3">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" formControlName="actif" id="actif">
-                      <label class="form-check-label" for="actif">Actif</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-              <button type="submit" class="btn btn-primary" [disabled]="geolocationForm.invalid || isSaving">
-                <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-                {{ editingGeolocation ? 'Modifier' : 'Ajouter' }}
+            <div *ngIf="!isLoadingData && geolocations.length === 0" class="text-center py-5">
+              <i class="ti ti-map-pin-off display-4 text-muted"></i>
+              <h5 class="mt-3">Aucune géolocalisation trouvée</h5>
+              <p class="text-muted">Commencez par ajouter une géolocalisation pour un migrant.</p>
+              <button class="btn btn-primary" (click)="prepareNewGeolocation()" data-bs-toggle="offcanvas"
+                data-bs-target="#addGeolocationOffcanvas">
+                <i class="ti ti-plus me-2"></i>Ajouter une géolocalisation
               </button>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- View Geolocation Modal -->
-    <div class="modal fade" id="viewGeolocationModal" tabindex="-1" *ngIf="viewingGeolocation">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Détails de la géolocalisation</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" (click)="closeViewModal()"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row">
-              <div class="col-md-6">
-                <h6>Informations générales</h6>
-                <p><strong>Migrant :</strong> {{ getMigrantName(viewingGeolocation.migrant_uuid) }}</p>
-                <p><strong>Type :</strong> {{ getTypeLocalisationLabel(viewingGeolocation.type_localisation) }}</p>
-                <p><strong>Date :</strong> {{ formatDate(viewingGeolocation.date_enregistrement) }}</p>
-                <p><strong>Pays :</strong> {{ viewingGeolocation.pays }}</p>
-                <p><strong>Ville :</strong> {{ viewingGeolocation.ville || '-' }}</p>
-                <p><strong>Adresse :</strong> {{ viewingGeolocation.adresse || '-' }}</p>
-              </div>
-              <div class="col-md-6">
-                <h6>Coordonnées GPS</h6>
-                <p><strong>Latitude :</strong> {{ viewingGeolocation.latitude.toFixed(6) }}</p>
-                <p><strong>Longitude :</strong> {{ viewingGeolocation.longitude.toFixed(6) }}</p>
-                <p><strong>Altitude :</strong> {{ viewingGeolocation.altitude ? (viewingGeolocation.altitude + ' m') : '-' }}</p>
-                <p><strong>Précision :</strong> {{ viewingGeolocation.precision ? (viewingGeolocation.precision + ' m') : '-' }}</p>
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-6">
-                <h6>Métadonnées</h6>
-                <p><strong>Méthode :</strong> {{ getMethodeCaptureLabel(viewingGeolocation.methode_capture) }}</p>
-                <p><strong>Fiabilité :</strong> {{ getFiabiliteLabel(viewingGeolocation.fiabilite_source) }}</p>
-                <p><strong>Dispositif :</strong> {{ viewingGeolocation.dispositif_source || '-' }}</p>
-                <p><strong>Statut :</strong> {{ viewingGeolocation.actif ? 'Actif' : 'Inactif' }}</p>
-              </div>
-              <div class="col-md-6">
-                <h6>Validation</h6>
-                <p><strong>Validé :</strong> {{ viewingGeolocation.date_validation ? 'Oui' : 'Non' }}</p>
-                <p *ngIf="viewingGeolocation.date_validation"><strong>Date validation :</strong> {{ formatDate(viewingGeolocation.date_validation) }}</p>
-                <p *ngIf="viewingGeolocation.valide_par"><strong>Validé par :</strong> {{ viewingGeolocation.valide_par }}</p>
-                <p *ngIf="viewingGeolocation.commentaire"><strong>Commentaire :</strong> {{ viewingGeolocation.commentaire }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="closeViewModal()">
-              Fermer
-            </button>
           </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
+<!-- Add/Edit Geolocation Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="addGeolocationOffcanvas">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">
+      {{ editingGeolocation ? 'Modifier la géolocalisation' : 'Ajouter une géolocalisation' }}
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+    <form [formGroup]="geolocationForm" (ngSubmit)="onSubmit()">
+      <!-- Error Alert -->
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <!-- Migrant Selection -->
+      <div class="input-block mb-3">
+        <label class="form-label">Migrant <span class="text-danger">*</span></label>
+        <select class="form-control" formControlName="migrant_uuid" [class.is-invalid]="isFieldInvalid('migrant_uuid')">
+          <option value="">Sélectionner un migrant</option>
+          <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
+            {{ migrant.nom }} {{ migrant.prenom }} - {{ migrant.numero_identifiant }}
+          </option>
+        </select>
+        <div *ngIf="isFieldInvalid('migrant_uuid')" class="invalid-feedback">
+          Veuillez sélectionner un migrant
+        </div>
+      </div>
+
+      <!-- Coordinates -->
+      <div class="row">
+        <div class="col-md-6">
+          <div class="input-block mb-3">
+            <label class="form-label">Latitude <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" formControlName="latitude" step="0.000001" min="-90" max="90"
+              placeholder="Ex: -4.325" [class.is-invalid]="isFieldInvalid('latitude')">
+            <div *ngIf="isFieldInvalid('latitude')" class="invalid-feedback">
+              Latitude requise (entre -90 et 90)
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="input-block mb-3">
+            <label class="form-label">Longitude <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" formControlName="longitude" step="0.000001" min="-180" max="180"
+              placeholder="Ex: 15.313" [class.is-invalid]="isFieldInvalid('longitude')">
+            <div *ngIf="isFieldInvalid('longitude')" class="invalid-feedback">
+              Longitude requise (entre -180 et 180)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Type de localisation -->
+      <div class="input-block mb-3">
+        <label class="form-label">Type de localisation <span class="text-danger">*</span></label>
+        <select class="form-control" formControlName="type_localisation"
+          [class.is-invalid]="isFieldInvalid('type_localisation')">
+          <option value="">Sélectionner un type</option>
+          <option *ngFor="let type of typeLocalisationOptions" [value]="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+        <div *ngIf="isFieldInvalid('type_localisation')" class="invalid-feedback">
+          Veuillez sélectionner un type de localisation
+        </div>
+      </div>
+
+      <!-- Location Details -->
+      <div class="input-block mb-3">
+        <label class="form-label">Pays <span class="text-danger">*</span></label>
+        <select class="form-control" formControlName="pays" [class.is-invalid]="isFieldInvalid('pays')">
+          <option value="">Sélectionner un pays</option>
+          <option *ngFor="let pays of paysOptions" [value]="pays">{{ pays }}</option>
+        </select>
+        <div *ngIf="isFieldInvalid('pays')" class="invalid-feedback">
+          Veuillez sélectionner un pays
+        </div>
+      </div>
+
+      <div class="input-block mb-3">
+        <label class="form-label">Ville</label>
+        <input type="text" class="form-control" formControlName="ville" placeholder="Nom de la ville">
+      </div>
+
+      <div class="input-block mb-3">
+        <label class="form-label">Adresse</label>
+        <textarea class="form-control" formControlName="adresse" rows="2" placeholder="Adresse complète"></textarea>
+      </div>
+
+      <!-- Movement Information -->
+      <div class="input-block mb-3">
+        <label class="form-label">Type de mouvement</label>
+        <select class="form-control" formControlName="type_mouvement">
+          <option value="">Sélectionner un type de mouvement</option>
+          <option *ngFor="let type of typeMouvementOptions" [value]="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div class="input-block mb-3">
+            <label class="form-label">Durée de séjour (jours)</label>
+            <input type="number" class="form-control" formControlName="duree_sejour" min="0"
+              placeholder="Nombre de jours">
+          </div>
+        </div>
+      </div>
+
+      <div class="input-block mb-3">
+        <label class="form-label">Prochaine destination</label>
+        <input type="text" class="form-control" formControlName="prochaine_destination"
+          placeholder="Destination prévue">
+      </div>
+
+      <div class="input-block mb-3">
+        <label class="form-label">Description</label>
+        <textarea class="form-control" formControlName="description" rows="3"
+          placeholder="Description de la localisation"></textarea>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">
+          Annuler
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="geolocationForm.invalid || isSaving">
+          <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+          {{ editingGeolocation ? 'Modifier' : 'Ajouter' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- View Geolocation Modal -->
+<div class="modal fade" id="viewGeolocationModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Détails de la géolocalisation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" *ngIf="viewingGeolocation">
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Informations générales</h6>
+            <table class="table table-borderless">
+              <tr>
+                <td><strong>Migrant:</strong></td>
+                <td>{{ getMigrantName(viewingGeolocation) }}</td>
+              </tr>
+              <tr>
+                <td><strong>Type:</strong></td>
+                <td>{{ getTypeLocalisationLabel(viewingGeolocation.type_localisation) }}</td>
+              </tr>
+              <tr>
+                <td><strong>Pays:</strong></td>
+                <td>{{ viewingGeolocation.pays || '-' }}</td>
+              </tr>
+              <tr>
+                <td><strong>Ville:</strong></td>
+                <td>{{ viewingGeolocation.ville || '-' }}</td>
+              </tr>
+              <tr>
+                <td><strong>Adresse:</strong></td>
+                <td>{{ viewingGeolocation.adresse || '-' }}</td>
+              </tr>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h6>Coordonnées et mouvement</h6>
+            <table class="table table-borderless">
+              <tr>
+                <td><strong>Latitude:</strong></td>
+                <td>{{ viewingGeolocation.latitude || '-' }}</td>
+              </tr>
+              <tr>
+                <td><strong>Longitude:</strong></td>
+                <td>{{ viewingGeolocation.longitude || '-' }}</td>
+              </tr>
+              <tr>
+                <td><strong>Type mouvement:</strong></td>
+                <td>
+                  <span *ngIf="viewingGeolocation && viewingGeolocation.type_mouvement"
+                    [class]="getTypeMouvementBadgeClass(viewingGeolocation.type_mouvement)">
+                    {{ getTypeMouvementLabel(viewingGeolocation.type_mouvement) }}
+                  </span>
+                  <span *ngIf="!viewingGeolocation || !viewingGeolocation.type_mouvement">-</span>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Durée séjour:</strong></td>
+                <td>{{ viewingGeolocation && viewingGeolocation.duree_sejour ? viewingGeolocation.duree_sejour + ' jours' : '-' }}</td>
+              </tr>
+              <tr>
+                <td><strong>Prochaine destination:</strong></td>
+                <td>{{ viewingGeolocation && viewingGeolocation.prochaine_destination || '-' }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="row" *ngIf="viewingGeolocation?.description">
+          <div class="col-12">
+            <h6>Description</h6>
+            <p>{{ viewingGeolocation.description }}</p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12">
+            <h6>Métadonnées</h6>
+            <small class="text-muted">
+              Créé le {{ viewingGeolocation ? viewingGeolocation.created_at : '-' }}
+              <span *ngIf="viewingGeolocation && viewingGeolocation.updated_at !== viewingGeolocation.created_at">
+                • Modifié le {{ viewingGeolocation.updated_at }}
+              </span>
+            </small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-warning"
+          (click)="prepareEditGeolocation(viewingGeolocation!); closeViewModal()" data-bs-toggle="offcanvas"
+          data-bs-target="#addGeolocationOffcanvas">
+          <i class="ti ti-edit me-2"></i>Modifier
+        </button>
+      </div>
+    </div>
   </div>
 </div>

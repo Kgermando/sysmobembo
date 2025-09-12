@@ -1,560 +1,130 @@
-<!-- Page Wrapper -->
-<div class="page-wrapper">
-  <div class="content">
-
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="row">
-        <div class="col-sm-12">
-          <ul class="breadcrumb">
-            <li class="breadcrumb-item"><a [routerLink]="'/web/dashboard'">Tableau de bord</a></li>
-            <li class="breadcrumb-item active">Alertes</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-    <!-- /Page Header -->
-
-    <!-- Enterprise Info Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-warning border-0 mb-0">
-                <div class="row align-items-center">
-                    <div class="col-auto">
-                        <i class="ti ti-alert-triangle fs-3"></i>
-                    </div>
-                    <div class="col">
-                        <h6 class="mb-1">Système d'Alertes</h6>
-                        <small class="text-muted">Gestion et suivi des alertes concernant les migrants</small>
-                    </div>
-                    <div class="col-auto">
-                        <div class="d-flex gap-3">
-                            <div class="text-center">
-                                <div class="h4 mb-0 text-warning">{{ getActiveAlertsCount() }}</div>
-                                <small class="text-muted">Actives</small>
+<!-- Modal de détails d'alerte corrigé -->
+<div class="modal fade" id="alertDetailsModal" tabindex="-1" *ngIf="viewingAlert">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="ti ti-alert-circle me-2"></i>Détails de l'alerte
+                </h5>
+                <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Migrant</label>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar avatar-sm bg-primary text-white rounded-circle me-2">
+                                    {{ getMigrantInitials(viewingAlert!.migrant_uuid) }}
+                                </div>
+                                <div>{{ getMigrantName(viewingAlert!.migrant_uuid) }}</div>
                             </div>
-                            <div class="text-center">
-                                <div class="h4 mb-0 text-danger">{{ getCriticalAlertsCount() }}</div>
-                                <small class="text-muted">Critiques</small>
-                            </div>
-                            <div class="text-center">
-                                <div class="h4 mb-0 text-info">{{ getExpiredAlertsCount() }}</div>
-                                <small class="text-muted">Expirées</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Type d'alerte</label>
+                            <div>
+                                <span [class]="getTypeAlerteBadgeClass(viewingAlert!.type_alerte)">
+                                    <i class="{{ getTypeAlerteInfo(viewingAlert!.type_alerte).icon }} me-1"></i>
+                                    {{ getTypeAlerteInfo(viewingAlert!.type_alerte).label }}
+                                </span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <!-- /Enterprise Info Section -->
 
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="row align-items-center">
-              <div class="col">
-                <h4 class="card-title">Liste des Alertes</h4>
-              </div>
-              <div class="col-auto">
-                <a href="javascript:void(0);" class="btn btn-danger" 
-                  (click)="prepareNewAlert(); openAddOffcanvas()">
-                  <i class="ti ti-plus me-2"></i>Créer une alerte
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div class="card-body">
-            <!-- Search & Filters -->
-            <div class="row">
-              <div class="col-md-12">
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-3">
-                      <div class="input-block mb-3">
-                        <label class="form-label">Migrant :</label>
-                        <select class="form-control" [(ngModel)]="selectedMigrant" (change)="applyFilters()">
-                          <option value="">Tous les migrants</option>
-                          <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                            {{ migrant.nom }} {{ migrant.prenom }}
-                          </option>
-                        </select>
-                      </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Niveau de gravité</label>
+                            <div>
+                                <span [class]="getAlertBadgeClass(viewingAlert!.niveau_gravite)">
+                                    {{ getNiveauGraviteInfo(viewingAlert!.niveau_gravite).label }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                      <div class="input-block mb-3">
-                        <label class="form-label">Type d'alerte :</label>
-                        <select class="form-control" [(ngModel)]="selectedTypeAlerte" (change)="applyFilters()">
-                          <option value="">Tous les types</option>
-                          <option *ngFor="let type of typeAlerteOptions" [value]="type.value">{{ type.label }}</option>
-                        </select>
-                      </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Statut</label>
+                            <div>
+                                <span [class]="getStatutBadgeClass(viewingAlert!.statut)">
+                                    {{ getStatutInfo(viewingAlert!.statut).label }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                      <div class="input-block mb-3">
-                        <label class="form-label">Niveau de gravité :</label>
-                        <select class="form-control" [(ngModel)]="selectedNiveauGravite" (change)="applyFilters()">
-                          <option value="">Tous les niveaux</option>
-                          <option *ngFor="let niveau of niveauGraviteOptions" [value]="niveau.value">{{ niveau.label }}</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="input-block mb-3">
-                        <label class="form-label">Statut :</label>
-                        <select class="form-control" [(ngModel)]="selectedStatut" (change)="applyFilters()">
-                          <option value="">Tous les statuts</option>
-                          <option *ngFor="let statut of statutOptions" [value]="statut.value">{{ statut.label }}</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-12">
-                      <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary" (click)="resetFilters()">
-                          <i class="ti ti-refresh me-2"></i>Réinitialiser
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- /Search & Filters -->
-
-            <!-- Error Alert -->
-            <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
-              {{ error }}
-              <button type="button" class="btn-close" (click)="error = null"></button>
-            </div>
-
-            <!-- Loading -->
-            <div *ngIf="isLoadingData" class="text-center py-4">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Chargement...</span>
-              </div>
-            </div>
-
-            <!-- Table -->
-            <div class="table-responsive custom-table" *ngIf="!isLoadingData">
-              <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
-                class="mat-elevation-z2 table tasks-activity tasks">
-
-                <!-- Migrant Column -->
-                <ng-container matColumnDef="migrant">
-                  <th mat-header-cell *matHeaderCellDef> Migrant </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="d-flex align-items-center">
-                      <div class="avatar avatar-sm me-2">
-                        <span class="avatar-title bg-primary text-white rounded-circle">
-                          {{ getMigrantInitials(element.migrant_uuid) }}
-                        </span>
-                      </div>
-                      <div>
-                        <strong>{{ getMigrantName(element.migrant_uuid) }}</strong>
-                      </div>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <!-- Type d'alerte Column -->
-                <ng-container matColumnDef="type_alerte">
-                  <th mat-header-cell *matHeaderCellDef> Type </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span [class]="getTypeAlerteBadgeClass(element.type_alerte)">
-                      <i [class]="getTypeAlerteInfo(element.type_alerte).icon + ' me-1'"></i>
-                      {{ getTypeAlerteInfo(element.type_alerte).label }}
-                    </span>
-                  </td>
-                </ng-container>
-
-                <!-- Niveau de gravité Column -->
-                <ng-container matColumnDef="niveau_gravite">
-                  <th mat-header-cell *matHeaderCellDef> Gravité </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span [class]="getAlertBadgeClass(element.niveau_gravite)">
-                      {{ getNiveauGraviteInfo(element.niveau_gravite).label }}
-                    </span>
-                    <i *ngIf="isAlertCritical(element)" class="ti ti-exclamation-circle text-danger ms-1" 
-                       title="Alerte critique"></i>
-                  </td>
-                </ng-container>
-
-                <!-- Titre Column -->
-                <ng-container matColumnDef="titre">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Titre </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="fw-bold">{{ element.titre }}</div>
-                    <div class="text-muted small text-truncate" style="max-width: 200px;">
-                      {{ element.description }}
-                    </div>
-                  </td>
-                </ng-container>
-
-                <!-- Statut Column -->
-                <ng-container matColumnDef="statut">
-                  <th mat-header-cell *matHeaderCellDef> Statut </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span [class]="getStatutBadgeClass(element.statut)">
-                      {{ getStatutInfo(element.statut).label }}
-                    </span>
-                    <div *ngIf="isAlertExpired(element)" class="text-danger small mt-1">
-                      <i class="ti ti-clock"></i> Expirée
-                    </div>
-                  </td>
-                </ng-container>
-
-                <!-- Date expiration Column -->
-                <ng-container matColumnDef="date_expiration">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Expiration </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div *ngIf="element.date_expiration; else noExpiration">
-                      {{ formatDate(element.date_expiration) }}
-                      <div *ngIf="isAlertExpired(element)" class="text-danger small">
-                        <i class="ti ti-alert-triangle"></i> Expirée
-                      </div>
-                    </div>
-                    <ng-template #noExpiration>
-                      <span class="text-muted">-</span>
-                    </ng-template>
-                  </td>
-                </ng-container>
-
-                <!-- Personne responsable Column -->
-                <ng-container matColumnDef="personne_responsable">
-                  <th mat-header-cell *matHeaderCellDef> Responsable </th>
-                  <td mat-cell *matCellDef="let element">
-                    {{ element.personne_responsable || '-' }}
-                  </td>
-                </ng-container>
-
-                <!-- Actions Column -->
-                <ng-container matColumnDef="actions">
-                  <th mat-header-cell *matHeaderCellDef> Actions </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="dropdown dropdown-action">
-                      <a href="#" class="action-icon dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="material-icons">more_vert</i>
-                      </a>
-                      <div class="dropdown-menu dropdown-menu-right">
-                        <a class="dropdown-item" href="javascript:void(0);" (click)="openViewModal(element)">
-                          <i class="ti ti-eye me-2"></i>Voir détails
-                        </a>
-                        <a class="dropdown-item" href="javascript:void(0);" 
-                          (click)="prepareEditAlert(element); openEditOffcanvas()">
-                          <i class="ti ti-edit me-2"></i>Modifier
-                        </a>
-                        <a class="dropdown-item text-success" href="javascript:void(0);" 
-                          (click)="resolveAlert(element)" *ngIf="element.statut === 'active'">
-                          <i class="ti ti-check me-2"></i>Résoudre
-                        </a>
-                        <a class="dropdown-item text-danger" href="javascript:void(0);" 
-                          (click)="deleteAlert(element)">
-                          <i class="ti ti-trash me-2"></i>Supprimer
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;" 
-                    [class.table-danger]="isAlertCritical(row)"
-                    [class.table-warning]="isAlertExpired(row)"></tr>
-              </table>
-            </div>
-            <!-- /Table -->
-
-            <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="!isLoadingData && alerts.length > 0">
-              <div class="text-muted">
-                Affichage de {{ ((current_page - 1) * page_size) + 1 }} à 
-                {{ Math.min(current_page * page_size, total_records) }} sur {{ total_records }} entrées
-              </div>
-              <mat-paginator 
-                [length]="total_records"
-                [pageSize]="page_size"
-                [pageIndex]="current_page - 1"
-                [pageSizeOptions]="[15, 25, 50, 100]"
-                (page)="onPageChange($event)"
-                showFirstLastButtons>
-              </mat-paginator>
-            </div>
-            <!-- /Pagination -->
-
-            <!-- No Data -->
-            <div *ngIf="!isLoadingData && alerts.length === 0" class="text-center py-4">
-              <div class="text-muted">
-                <i class="ti ti-alert-triangle fs-1 d-block mb-3"></i>
-                <h5>Aucune alerte trouvée</h5>
-                <p>Commencez par créer une alerte.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Add/Edit Alert Form Modal -->
-    <div class="modal fade" id="alertModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">{{ editingAlert ? 'Modifier' : 'Créer' }} une alerte</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <form [formGroup]="alertForm" (ngSubmit)="onSubmit()">
-            <div class="modal-body">
-              <!-- Error Alert -->
-              <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
-
-              <div class="row">
-                <!-- Migrant -->
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Migrant concerné <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="migrant_uuid"
-                      [class.is-invalid]="isFieldInvalid('migrant_uuid')">
-                      <option value="">Sélectionner un migrant</option>
-                      <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                        {{ migrant.nom }} {{ migrant.prenom }} - {{ migrant.numero_identifiant }}
-                      </option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('migrant_uuid')" class="invalid-feedback">
-                      {{ getFieldError('migrant_uuid') }}
-                    </div>
-                  </div>
                 </div>
 
-                <!-- Type d'alerte -->
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Type d'alerte <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="type_alerte"
-                      [class.is-invalid]="isFieldInvalid('type_alerte')">
-                      <option value="">Sélectionner</option>
-                      <option *ngFor="let type of typeAlerteOptions" [value]="type.value">
-                        {{ type.label }}
-                      </option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('type_alerte')" class="invalid-feedback">
-                      {{ getFieldError('type_alerte') }}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Titre</label>
+                    <div>{{ viewingAlert!.titre }}</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Description</label>
+                    <div class="p-3 bg-light rounded">{{ viewingAlert!.description }}</div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Date d'expiration</label>
+                            <div>{{ viewingAlert!.date_expiration! }}</div>
+                        </div>
                     </div>
-                  </div>
-                </div>
-
-                <!-- Niveau de gravité -->
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Niveau de gravité <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="niveau_gravite"
-                      [class.is-invalid]="isFieldInvalid('niveau_gravite')">
-                      <option value="">Sélectionner</option>
-                      <option *ngFor="let niveau of niveauGraviteOptions" [value]="niveau.value">
-                        {{ niveau.label }}
-                      </option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('niveau_gravite')" class="invalid-feedback">
-                      {{ getFieldError('niveau_gravite') }}
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Personne responsable</label>
+                            <div>{{ viewingAlert!.personne_responsable || 'Non assigné' }}</div>
+                        </div>
                     </div>
-                  </div>
                 </div>
 
-                <!-- Date d'expiration -->
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Date d'expiration</label>
-                    <input type="date" class="form-control" formControlName="date_expiration">
-                    <small class="text-muted">Laissez vide si l'alerte n'expire pas</small>
-                  </div>
+                <div *ngIf="viewingAlert!.action_requise" class="mb-3">
+                    <label class="form-label fw-semibold">Action requise</label>
+                    <div class="p-3 bg-light rounded">{{ viewingAlert!.action_requise }}</div>
                 </div>
 
-                <!-- Titre -->
-                <div class="col-12">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Titre de l'alerte <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" formControlName="titre"
-                      [class.is-invalid]="isFieldInvalid('titre')" placeholder="Titre court et descriptif">
-                    <div *ngIf="isFieldInvalid('titre')" class="invalid-feedback">
-                      {{ getFieldError('titre') }}
+                <div *ngIf="viewingAlert!.date_resolution || viewingAlert!.commentaire_resolution" class="mb-3">
+                    <label class="form-label fw-semibold">Résolution</label>
+                    <div class="p-3 bg-light rounded">
+                        <div *ngIf="viewingAlert!.date_resolution" class="mb-2">
+                            <strong>Date de résolution:</strong> {{ viewingAlert!.date_resolution | date: 'dd/MM/yyyy' }}
+                        </div>
+                        <div *ngIf="viewingAlert!.commentaire_resolution">
+                            <strong>Commentaire:</strong> {{ viewingAlert!.commentaire_resolution }}
+                        </div>
                     </div>
-                  </div>
                 </div>
 
-                <!-- Description -->
-                <div class="col-12">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Description détaillée <span class="text-danger">*</span></label>
-                    <textarea class="form-control" formControlName="description" rows="4"
-                      [class.is-invalid]="isFieldInvalid('description')" 
-                      placeholder="Description détaillée de l'alerte et du contexte"></textarea>
-                    <div *ngIf="isFieldInvalid('description')" class="invalid-feedback">
-                      {{ getFieldError('description') }}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Créée le</label>
+                            <div>{{ viewingAlert!.created_at | date: 'dd/MM/yyyy' }}</div>
+                        </div>
                     </div>
-                  </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Modifiée le</label>
+                            <div>{{ viewingAlert!.updated_at | date: 'dd/MM/yyyy' }}</div>
+                        </div>
+                    </div> 
                 </div>
-
-                <!-- Action requise -->
-                <div class="col-12">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Action requise</label>
-                    <textarea class="form-control" formControlName="action_requise" rows="2"
-                      placeholder="Décrivez les actions à entreprendre"></textarea>
-                  </div>
-                </div>
-
-                <!-- Personne responsable -->
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Personne responsable</label>
-                    <input type="text" class="form-control" formControlName="personne_responsable"
-                      placeholder="Nom de la personne responsable du suivi">
-                  </div>
-                </div>
-
-                <!-- Localisation -->
-                <div class="col-12">
-                  <h6 class="mb-3 mt-3">Localisation (optionnelle)</h6>
-                  <div class="d-flex justify-content-end mb-2">
-                    <button type="button" class="btn btn-sm btn-outline-primary" (click)="getCurrentLocation()">
-                      <i class="ti ti-current-location me-1"></i>Position actuelle
-                    </button>
-                  </div>
-                </div>
-
-                <div class="col-md-4">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Latitude</label>
-                    <input type="number" step="0.000001" class="form-control" formControlName="latitude">
-                  </div>
-                </div>
-
-                <div class="col-md-4">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Longitude</label>
-                    <input type="number" step="0.000001" class="form-control" formControlName="longitude">
-                  </div>
-                </div>
-
-                <div class="col-md-4">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Adresse</label>
-                    <input type="text" class="form-control" formControlName="adresse">
-                  </div>
-                </div>
-
-                <!-- Options -->
-                <div class="col-12">
-                  <div class="input-block mb-3">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" formControlName="notifier_autorites" 
-                             id="notifier_autorites">
-                      <label class="form-check-label" for="notifier_autorites">
-                        Notifier les autorités compétentes
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-              <button type="submit" class="btn btn-danger" [disabled]="alertForm.invalid || isSaving">
-                <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-                {{ editingAlert ? 'Modifier' : 'Créer' }} l'alerte
-              </button>
+                <button type="button" class="btn btn-secondary" (click)="closeViewModal()">Fermer</button>
+                <button type="button" class="btn btn-primary"
+                    (click)="prepareEditAlert(viewingAlert!); closeViewModal(); openEditOffcanvas()">
+                    <i class="ti ti-edit me-2"></i>Modifier
+                </button>
+                <button *ngIf="viewingAlert!.statut === 'active'" type="button" class="btn btn-success"
+                    (click)="resolveAlert(viewingAlert!); closeViewModal()">
+                    <i class="ti ti-check me-2"></i>Résoudre
+                </button>
             </div>
-          </form>
         </div>
-      </div>
     </div>
-
-    <!-- View Alert Modal -->
-    <div class="modal fade" id="viewAlertModal" tabindex="-1" *ngIf="viewingAlert">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Détails de l'alerte</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" (click)="closeViewModal()"></button>
-          </div>
-          <div class="modal-body">
-            <div class="alert alert-info">
-              <div class="d-flex align-items-center">
-                <i [class]="getTypeAlerteInfo(viewingAlert.type_alerte).icon + ' fs-3 me-3'"></i>
-                <div>
-                  <h6 class="mb-1">{{ viewingAlert.titre }}</h6>
-                  <span [class]="getAlertBadgeClass(viewingAlert.niveau_gravite)">
-                    {{ getNiveauGraviteInfo(viewingAlert.niveau_gravite).label }}
-                  </span>
-                  <span [class]="getStatutBadgeClass(viewingAlert.statut)" class="ms-2">
-                    {{ getStatutInfo(viewingAlert.statut).label }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6">
-                <h6>Informations générales</h6>
-                <p><strong>Migrant :</strong> {{ getMigrantName(viewingAlert.migrant_uuid) }}</p>
-                <p><strong>Type :</strong> {{ getTypeAlerteInfo(viewingAlert.type_alerte).label }}</p>
-                <p><strong>Créée le :</strong> {{ formatDateTime(viewingAlert.created_at) }}</p>
-                <p><strong>Modifiée le :</strong> {{ formatDateTime(viewingAlert.updated_at) }}</p>
-                <p *ngIf="viewingAlert.date_expiration"><strong>Expire le :</strong> {{ formatDateTime(viewingAlert.date_expiration) }}</p>
-              </div>
-              <div class="col-md-6">
-                <h6>Responsabilité</h6>
-                <p><strong>Responsable :</strong> {{ viewingAlert.personne_responsable || '-' }}</p>
-                <p><strong>Notifier autorités :</strong> {{ viewingAlert.notifier_autorites ? 'Oui' : 'Non' }}</p>
-                <p *ngIf="viewingAlert.date_resolution"><strong>Résolue le :</strong> {{ formatDateTime(viewingAlert.date_resolution) }}</p>
-              </div>
-            </div>
-
-            <div class="row mt-3">
-              <div class="col-12">
-                <h6>Description</h6>
-                <p class="text-muted">{{ viewingAlert.description }}</p>
-              </div>
-            </div>
-
-            <div class="row mt-3" *ngIf="viewingAlert.action_requise">
-              <div class="col-12">
-                <h6>Action requise</h6>
-                <p class="text-muted">{{ viewingAlert.action_requise }}</p>
-              </div>
-            </div>
-
-            <div class="row mt-3" *ngIf="viewingAlert.commentaire_resolution">
-              <div class="col-12">
-                <h6>Commentaire de résolution</h6>
-                <p class="text-muted">{{ viewingAlert.commentaire_resolution }}</p>
-              </div>
-            </div>
-
-            <div class="row mt-3" *ngIf="viewingAlert.latitude && viewingAlert.longitude">
-              <div class="col-12">
-                <h6>Localisation</h6>
-                <p><strong>Coordonnées :</strong> {{ viewingAlert.latitude.toFixed(6) }}, {{ viewingAlert.longitude.toFixed(6) }}</p>
-                <p *ngIf="viewingAlert.adresse"><strong>Adresse :</strong> {{ viewingAlert.adresse }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="closeViewModal()">
-              Fermer
-            </button>
-            <button type="button" class="btn btn-success" 
-                    (click)="resolveAlert(viewingAlert); closeViewModal()" 
-                    *ngIf="viewingAlert.statut === 'active'">
-              <i class="ti ti-check me-2"></i>Résoudre
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
 </div>

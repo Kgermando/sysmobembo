@@ -98,6 +98,10 @@ export interface UserFormData {
   signature?: string;
   password?: string;
   password_confirm?: string;
+
+  // Audit et suivi (lecture seule, générés par le backend)
+  dernier_acces?: string;
+  nombre_connexions?: number;
 }
 
 /**

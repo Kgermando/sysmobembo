@@ -1,15 +1,15 @@
 export interface IMigrant {
   uuid: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date;
 
   numero_identifiant: string;
 
   // Informations personnelles
   nom: string;
   prenom: string;
-  date_naissance: string;
+  date_naissance: Date;
   lieu_naissance: string;
   sexe: 'M' | 'F';
   nationalite: string;
@@ -17,8 +17,8 @@ export interface IMigrant {
   // Documents d'identité
   type_document: 'passport' | 'carte_identite' | 'permis_conduire';
   numero_document: string;
-  date_emission_document?: string;
-  date_expiration_document?: string;
+  date_emission_document?: Date;
+  date_expiration_document?: Date;
   autorite_emission?: string;
 
   // Informations de contact
@@ -36,7 +36,7 @@ export interface IMigrant {
 
   // Statut migration
   statut_migratoire: 'regulier' | 'irregulier' | 'demandeur_asile' | 'refugie';
-  date_entree?: string;
+  date_entree?: Date;
   point_entree?: string;
   pays_origine: string;
   pays_destination?: string;
@@ -53,9 +53,9 @@ export interface IMigrant {
 
 export interface IMotifDeplacement {
   uuid: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date;
 
   // Identification et libellés
   code: string;
@@ -73,9 +73,9 @@ export interface IMotifDeplacement {
 
 export interface IBiometrie {
   uuid: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date;
 
   migrant_uuid: string;
 
@@ -89,19 +89,19 @@ export interface IBiometrie {
   taille_fichier: number;
 
   // Métadonnées de capture
-  date_capture: string;
+  date_capture: Date;
   dispositif_capture?: string;
   resolution_capture?: string;
   operateur_capture?: string;
 
   // Validation et vérification
   verifie: boolean;
-  date_verification?: string;
+  date_verification?: Date;
   score_confiance?: number;
 
   // Sécurité
   chiffre: boolean;
-  date_expiration?: string;
+  date_expiration?: Date;
 
   // Relation
   migrant?: IMigrant;
@@ -109,17 +109,15 @@ export interface IBiometrie {
 
 export interface IGeolocalisation {
   uuid: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date;
 
   migrant_uuid: string;
 
   // Coordonnées géographiques
   latitude: number;
   longitude: number;
-  altitude?: number;
-  precision?: number;
 
   // Informations contextuelles
   type_localisation: 'residence_actuelle' | 'lieu_travail' | 'point_passage' | 'frontiere' | 'centre_accueil' | 'urgence';
@@ -127,19 +125,6 @@ export interface IGeolocalisation {
   adresse?: string;
   ville?: string;
   pays: string;
-  code_postal?: string;
-
-  // Métadonnées de capture
-  date_enregistrement: string;
-  methode_capture: 'gps' | 'manuel' | 'automatique';
-  dispositif_source?: string;
-  fiabilite_source: 'elevee' | 'moyenne' | 'faible';
-
-  // Statut et validité
-  actif: boolean;
-  date_validation?: string;
-  valide_par?: string;
-  commentaire?: string;
 
   // Informations de mouvement
   type_mouvement?: 'arrivee' | 'depart' | 'transit' | 'residence_temporaire' | 'residence_permanente';
@@ -148,13 +133,13 @@ export interface IGeolocalisation {
 
   // Relation
   migrant?: IMigrant;
-}
+} 
 
 export interface IAlert {
   uuid: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date;
 
   migrant_uuid: string;
 
@@ -166,19 +151,13 @@ export interface IAlert {
 
   // Statut et traitement
   statut: 'active' | 'resolved' | 'dismissed' | 'expired';
-  date_expiration?: string;
+  date_expiration?: Date;
   action_requise?: string;
   personne_responsable?: string;
 
   // Métadonnées de traitement
-  date_resolution?: string;
+  date_resolution?: Date;
   commentaire_resolution?: string;
-  notifier_autorites: boolean;
-
-  // Géolocalisation de l'alerte
-  latitude?: number;
-  longitude?: number;
-  adresse?: string;
 
   // Relation
   migrant?: IMigrant;
@@ -188,14 +167,14 @@ export interface IAlert {
 export interface IMigrantFormData {
   nom: string;
   prenom: string;
-  date_naissance: string;
+  date_naissance: string; // Gardé en string pour les formulaires HTML
   lieu_naissance: string;
   sexe: string;
   nationalite: string;
   type_document: string;
   numero_document: string;
-  date_emission_document?: string;
-  date_expiration_document?: string;
+  date_emission_document?: Date; // Gardé en string pour les formulaires HTML
+  date_expiration_document?: Date; // Gardé en string pour les formulaires HTML
   autorite_emission?: string;
   telephone?: string;
   email?: string;
@@ -207,7 +186,7 @@ export interface IMigrantFormData {
   personne_contact?: string;
   telephone_contact?: string;
   statut_migratoire: string;
-  date_entree?: string;
+  date_entree?: Date; // Gardé en string pour les formulaires HTML
   point_entree?: string;
   pays_origine: string;
   pays_destination?: string;
@@ -233,10 +212,10 @@ export interface IBackendPaginationResponse<T> {
     genre?: string;
     actif?: string;
     type_document?: string;
-    date_creation_debut?: string;
-    date_creation_fin?: string;
-    date_naissance_debut?: string;
-    date_naissance_fin?: string;
+    date_creation_debut?: Date; // Gardé en string pour les filtres de formulaire
+    date_creation_fin?: Date; // Gardé en string pour les filtres de formulaire
+    date_naissance_debut?: Date; // Gardé en string pour les filtres de formulaire
+    date_naissance_fin?: Date; // Gardé en string pour les filtres de formulaire
   };
 }
 
@@ -277,4 +256,67 @@ export interface IMigrantStats {
   irregular_migrants: number;
   refugee_migrants: number;
   asylum_seekers: number;
+}
+
+// Utilitaires pour la conversion de dates
+export class DateUtils {
+  // Convertit les dates string en Date pour les données reçues de l'API
+  static parseApiDates<T extends Record<string, any>>(data: T): T {
+    const result = { ...data } as any;
+    const dateFields = ['created_at', 'updated_at', 'deleted_at', 'date_naissance', 
+                       'date_emission_document', 'date_expiration_document', 'date_entree',
+                       'date_capture', 'date_verification', 'date_expiration',
+                       'date_resolution'];
+    
+    dateFields.forEach(field => {
+      if (result[field] && typeof result[field] === 'string') {
+        result[field] = new Date(result[field]);
+      }
+    });
+    
+    return result;
+  }
+
+  // Convertit les dates Date en string pour l'envoi à l'API
+  static stringifyDates<T extends Record<string, any>>(data: T): T {
+    const result = { ...data } as any;
+    const dateFields = ['created_at', 'updated_at', 'deleted_at', 'date_naissance', 
+                       'date_emission_document', 'date_expiration_document', 'date_entree',
+                       'date_capture', 'date_verification', 'date_expiration',
+                       'date_resolution'];
+    
+    dateFields.forEach(field => {
+      if (result[field] && result[field] instanceof Date) {
+        result[field] = (result[field] as Date).toISOString();
+      }
+    });
+    
+    return result;
+  }
+
+  // Formate une date pour l'affichage
+  static formatDate(date: Date | string | undefined, locale: string = 'fr-FR'): string {
+    if (!date) return '-';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString(locale);
+  }
+
+  // Formate une date et heure pour l'affichage
+  static formatDateTime(date: Date | string | undefined, locale: string = 'fr-FR'): string {
+    if (!date) return '-';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleString(locale);
+  }
+
+  // Convertit une Date en string pour les inputs HTML
+  static toInputDate(date: Date | undefined): string {
+    if (!date) return '';
+    return date.toISOString().split('T')[0];
+  }
+
+  // Convertit un string d'input HTML en Date
+  static fromInputDate(dateString: string | undefined): Date | undefined {
+    if (!dateString) return undefined;
+    return new Date(dateString);
+  }
 }

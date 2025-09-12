@@ -20,8 +20,8 @@ export class UsersComponent implements OnInit, OnDestroy {
   // Angular Material Table
   dataSource = new MatTableDataSource<IUser>();
   displayedColumns: string[] = [
-    'nom', 'postnom', 'prenom', 'email', 'telephone', 'matricule', 
-    'role', 'permission', 'status', 'actions'
+    'photo_profil', 'nom', 'postnom', 'prenom', 'email', 'telephone', 
+    'matricule', 'grade', 'fonction', 'role', 'permission', 'status', 'actions'
   ];
 
   // Data
@@ -55,7 +55,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 
   // Roles disponibles (selon le backend Go)
   roles = [
-    { value: 'Admin', label: 'Administrateur' },
+    { value: 'Administrator', label: 'Administrateur' },
     { value: 'Supervisor', label: 'Superviseur' },
     { value: 'Manager', label: 'Manager' },
     { value: 'Agent', label: 'Agent' }
@@ -68,12 +68,28 @@ export class UsersComponent implements OnInit, OnDestroy {
     { value: 'Stagiaire', label: 'Stagiaire' }
   ];
 
-  // Statuts
+  // Statuts professionnels
   statuts = [
     { value: 'Actif', label: 'Actif' },
     { value: 'Retraité', label: 'Retraité' },
     { value: 'Suspendu', label: 'Suspendu' },
     { value: 'Révoqué', label: 'Révoqué' }
+  ];
+
+  // États civils
+  etatsCivils = [
+    { value: 'Célibataire', label: 'Célibataire' },
+    { value: 'Marié(e)', label: 'Marié(e)' },
+    { value: 'Divorcé(e)', label: 'Divorcé(e)' },
+    { value: 'Veuf(ve)', label: 'Veuf(ve)' }
+  ];
+
+  // Niveaux d'étude
+  niveauxEtude = [
+    { value: 'Primaire', label: 'Primaire' },
+    { value: 'Secondaire', label: 'Secondaire' },
+    { value: 'Universitaire', label: 'Universitaire' },
+    { value: 'Post-universitaire', label: 'Post-universitaire' }
   ];
 
   // Permissions disponibles
@@ -124,31 +140,79 @@ export class UsersComponent implements OnInit, OnDestroy {
     return fullName.charAt(0).toUpperCase();
   }
 
+  // Calcul de l'âge
+  getAge(dateNaissance: string): number {
+    if (!dateNaissance) return 0;
+    const today = new Date();
+    const birthDate = new Date(dateNaissance);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  // Calcul de l'ancienneté de service
+  getAnciennete(dateRecrutement: string): string {
+    if (!dateRecrutement) return 'N/A';
+    const today = new Date();
+    const recruitDate = new Date(dateRecrutement);
+    const diffTime = Math.abs(today.getTime() - recruitDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    
+    if (years > 0) {
+      return `${years} an${years > 1 ? 's' : ''} ${months > 0 ? `et ${months} mois` : ''}`;
+    } else if (months > 0) {
+      return `${months} mois`;
+    } else {
+      return `${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+    }
+  }
+
+  // Formater la date pour l'affichage
+  formatDate(dateString: string): string {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('fr-FR');
+  }
+
+  // Vérifier si le CNI expire bientôt (dans 30 jours)
+  isCNIExpiringSoon(dateExpiration: string): boolean {
+    if (!dateExpiration) return false;
+    const expirationDate = new Date(dateExpiration);
+    const today = new Date();
+    const diffTime = expirationDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 30 && diffDays >= 0;
+  }
+
   private createForm(): FormGroup {
     return this.fb.group({
       // Informations personnelles de base
-      nom: ['', [Validators.required, Validators.minLength(2)]],
-      postnom: ['', [Validators.required, Validators.minLength(2)]],
-      prenom: ['', [Validators.required, Validators.minLength(2)]],
+      nom: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      postnom: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      prenom: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       sexe: ['M', [Validators.required]],
       date_naissance: ['', [Validators.required]],
-      lieu_naissance: ['', [Validators.required]],
+      lieu_naissance: ['', [Validators.required, Validators.maxLength(100)]],
 
       // État civil
       etat_civil: ['Célibataire'],
-      nombre_enfants: [0, [Validators.min(0)]],
+      nombre_enfants: [0, [Validators.min(0), Validators.max(20)]],
 
-      // Nationalité
+      // Nationalité et documents d'identité
       nationalite: ['Congolaise', [Validators.required]],
-      numero_cni: [''],
+      numero_cni: ['', [Validators.pattern('^[0-9A-Z]{10,20}$')]],
       date_emission_cni: [''],
       date_expiration_cni: [''],
       lieu_emission_cni: [''],
 
       // Contacts
       email: ['', [Validators.required, Validators.email]],
-      telephone: ['', [Validators.required, Validators.minLength(8)]],
-      telephone_urgence: [''],
+      telephone: ['', [Validators.required, Validators.pattern('^[+]?[0-9]{8,15}$')]],
+      telephone_urgence: ['', [Validators.pattern('^[+]?[0-9]{8,15}$')]],
 
       // Adresse
       province: ['', [Validators.required]],
@@ -159,7 +223,7 @@ export class UsersComponent implements OnInit, OnDestroy {
       numero: [''],
 
       // Informations professionnelles
-      matricule: ['', [Validators.required]],
+      matricule: ['', [Validators.required, Validators.pattern('^[A-Z0-9]{5,15}$')]],
       grade: ['', [Validators.required]],
       fonction: ['', [Validators.required]],
       service: ['', [Validators.required]],
@@ -178,12 +242,12 @@ export class UsersComponent implements OnInit, OnDestroy {
       specialisation: [''],
 
       // Informations bancaires
-      numero_bancaire: [''],
+      numero_bancaire: ['', [Validators.pattern('^[0-9]{10,20}$')]],
       banque: [''],
 
       // Informations de sécurité sociale
-      numero_cnss: [''],
-      numero_onem: [''],
+      numero_cnss: ['', [Validators.pattern('^[0-9]{10,15}$')]],
+      numero_onem: ['', [Validators.pattern('^[0-9]{10,15}$')]],
 
       // Documents et photos
       photo_profil: [''],
@@ -197,7 +261,7 @@ export class UsersComponent implements OnInit, OnDestroy {
       password: ['', [Validators.required, Validators.minLength(6)]],
       password_confirm: ['', [Validators.required]]
     }, {
-      validators: this.passwordMatchValidator
+      validators: [this.passwordMatchValidator, this.dateValidator]
     });
   }
 
@@ -211,6 +275,49 @@ export class UsersComponent implements OnInit, OnDestroy {
       return { passwordMismatch: true };
     }
     return null;
+  }
+
+  // Validator pour vérifier la cohérence des dates
+  private dateValidator(form: FormGroup) {
+    const dateNaissance = form.get('date_naissance');
+    const dateRecrutement = form.get('date_recrutement');
+    const datePriseService = form.get('date_prise_service');
+    const dateEmissionCNI = form.get('date_emission_cni');
+    const dateExpirationCNI = form.get('date_expiration_cni');
+
+    const errors: any = {};
+    const today = new Date();
+
+    // Vérifier que la date de naissance n'est pas dans le futur
+    if (dateNaissance?.value && new Date(dateNaissance.value) > today) {
+      errors.dateNaissanceFuture = true;
+    }
+
+    // Vérifier que la date de recrutement n'est pas avant la majorité (18 ans)
+    if (dateNaissance?.value && dateRecrutement?.value) {
+      const birthDate = new Date(dateNaissance.value);
+      const recruitDate = new Date(dateRecrutement.value);
+      const age = recruitDate.getFullYear() - birthDate.getFullYear();
+      if (age < 18) {
+        errors.recrutementTropJeune = true;
+      }
+    }
+
+    // Vérifier que la date de prise de service n'est pas avant le recrutement
+    if (dateRecrutement?.value && datePriseService?.value) {
+      if (new Date(datePriseService.value) < new Date(dateRecrutement.value)) {
+        errors.priseServiceAvantRecrutement = true;
+      }
+    }
+
+    // Vérifier que la date d'expiration CNI est après l'émission
+    if (dateEmissionCNI?.value && dateExpirationCNI?.value) {
+      if (new Date(dateExpirationCNI.value) <= new Date(dateEmissionCNI.value)) {
+        errors.cniExpirationInvalide = true;
+      }
+    }
+
+    return Object.keys(errors).length > 0 ? errors : null;
   }
 
   async loadUsers(): Promise<void> {
@@ -300,6 +407,25 @@ export class UsersComponent implements OnInit, OnDestroy {
       case 'Supervisor': return 'badge bg-primary';
       case 'Manager': return 'badge bg-warning';
       case 'Agent': return 'badge bg-info';
+      default: return 'badge bg-secondary';
+    }
+  }
+
+  getStatutBadgeClass(statut: string): string {
+    switch (statut) {
+      case 'Actif': return 'badge bg-success';
+      case 'Retraité': return 'badge bg-secondary';
+      case 'Suspendu': return 'badge bg-warning';
+      case 'Révoqué': return 'badge bg-danger';
+      default: return 'badge bg-light';
+    }
+  }
+
+  getTypeAgentBadgeClass(typeAgent: string): string {
+    switch (typeAgent) {
+      case 'Fonctionnaire': return 'badge bg-primary';
+      case 'Contractuel': return 'badge bg-info';
+      case 'Stagiaire': return 'badge bg-warning';
       default: return 'badge bg-secondary';
     }
   }
@@ -652,5 +778,54 @@ export class UsersComponent implements OnInit, OnDestroy {
       'R': 'Lecture seule, aucune modification possible'
     };
     return permissionMap[permission] || '';
+  }
+
+  // Méthode pour obtenir l'avatar de l'utilisateur
+  getUserAvatar(user: IUser): string {
+    if (user.photo_profil) {
+      return user.photo_profil;
+    }
+    // Retourner une image par défaut basée sur le sexe
+    return user.sexe === 'F' 
+      ? '/assets/img/profiles/avatar-default-female.png' 
+      : '/assets/img/profiles/avatar-default-male.png';
+  }
+
+  // Méthode pour vérifier si l'utilisateur a une photo de profil
+  hasProfilePhoto(user: IUser): boolean {
+    return !!(user.photo_profil && user.photo_profil.trim());
+  }
+
+  // Méthode helper pour safely edit user
+  safeEditUser(): void {
+    if (this.viewingUser) {
+      this.editUser(this.viewingUser);
+      this.closeViewOffcanvas();
+    }
+  }
+
+  // Méthode helper pour safely delete user
+  safeDeleteUser(): void {
+    if (this.viewingUser) {
+      this.deleteUser(this.viewingUser);
+      this.closeViewOffcanvas();
+    }
+  }
+
+  // Méthode pour générer des statistiques sur les utilisateurs
+  getUserStats() {
+    const stats = {
+      total: this.users.length,
+      actifs: this.users.filter(u => u.status).length,
+      inactifs: this.users.filter(u => !u.status).length,
+      administrators: this.users.filter(u => u.role === 'Administrator').length,
+      supervisors: this.users.filter(u => u.role === 'Supervisor').length,
+      managers: this.users.filter(u => u.role === 'Manager').length,
+      agents: this.users.filter(u => u.role === 'Agent').length,
+      fonctionnaires: this.users.filter(u => u.type_agent === 'Fonctionnaire').length,
+      contractuels: this.users.filter(u => u.type_agent === 'Contractuel').length,
+      stagiaires: this.users.filter(u => u.type_agent === 'Stagiaire').length
+    };
+    return stats;
   }
 }

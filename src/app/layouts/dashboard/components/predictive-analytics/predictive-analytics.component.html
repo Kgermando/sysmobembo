@@ -8,16 +8,16 @@
             <div class="card-header d-flex justify-content-between align-items-center">
               <h5 class="card-title mb-0">
                 <i class="material-icons me-2">analytics</i>
-                Analyse Prédictive
+                Analyse Prédictive Avancée
               </h5>
 
               <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary btn-sm" (click)="updateFilters()" [disabled]="isLoading">
+                <button class="btn btn-outline-primary btn-sm" (click)="refreshData()" [disabled]="isLoading">
                   <i class="material-icons me-1">refresh</i>
                   Actualiser
                 </button>
 
-                <button class="btn btn-outline-success btn-sm" (click)="exportPredictiveData()">
+                <button class="btn btn-outline-success btn-sm" (click)="exportAdvancedData()">
                   <i class="material-icons me-1">download</i>
                   Exporter
                 </button>
@@ -27,9 +27,9 @@
             <!-- Filters -->
             <div class="card-body py-2">
               <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <label class="form-label">Période d'analyse</label>
-                  <select class="form-select" [(ngModel)]="filterParams.periode_days" (change)="updateFilters()">
+                  <select class="form-select" [(ngModel)]="filterParams.periode_days" (change)="onFilterChange()">
                     <option [value]="7">7 derniers jours</option>
                     <option [value]="30">30 derniers jours</option>
                     <option [value]="60">60 derniers jours</option>
@@ -37,16 +37,26 @@
                   </select>
                 </div>
 
-                <div class="col-md-4">
-                  <label class="form-label">Pays d'origine</label>
-                  <input type="text" class="form-control" [(ngModel)]="filterParams.pays_origine"
-                    placeholder="Tous les pays" (blur)="updateFilters()">
+                <div class="col-md-3">
+                  <label class="form-label">Tendances (mois)</label>
+                  <select class="form-select" [(ngModel)]="filterParams.period_months" (change)="onFilterChange()">
+                    <option [value]="6">6 mois</option>
+                    <option [value]="12">12 mois</option>
+                    <option [value]="18">18 mois</option>
+                    <option [value]="24">24 mois</option>
+                  </select>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
+                  <label class="form-label">Pays d'origine</label>
+                  <input type="text" class="form-control" [(ngModel)]="filterParams.pays_origine"
+                    placeholder="Tous les pays" (blur)="onFilterChange()">
+                </div>
+
+                <div class="col-md-3">
                   <label class="form-label">Pays de destination</label>
                   <input type="text" class="form-control" [(ngModel)]="filterParams.pays_destination"
-                    placeholder="Tous les pays" (blur)="updateFilters()">
+                    placeholder="Tous les pays" (blur)="onFilterChange()">
                 </div>
               </div>
             </div>
@@ -59,7 +69,7 @@
         <div class="spinner-border text-primary" role="status">
           <span class="visually-hidden">Chargement...</span>
         </div>
-        <p class="mt-2 text-muted">Génération des analyses prédictives...</p>
+        <p class="mt-2 text-muted">Génération des analyses prédictives avancées...</p>
       </div>
 
       <!-- Error state -->
@@ -70,32 +80,432 @@
 
       <!-- Main content -->
       <div *ngIf="!isLoading && !error">
-        <!-- Insights overview -->
-        <div class="row mb-4" *ngIf="insights.length > 0">
+        
+        <!-- Statistiques globales -->
+        <div class="row mb-4" *ngIf="globalStats">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="material-icons me-2">dashboard</i>
+                  Vue d'ensemble des Migrations
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <!-- Carte Total Migrants -->
+                  <div class="col-md-3">
+                    <div class="stat-card bg-primary text-white">
+                      <div class="stat-icon">
+                        <i class="material-icons">people</i>
+                      </div>
+                      <div class="stat-content">
+                        <h3>{{ formatNumber(globalStats.total_migrants) }}</h3>
+                        <p class="mb-0">Total Migrants</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Carte Nouveaux Migrants -->
+                  <div class="col-md-3">
+                    <div class="stat-card bg-success text-white">
+                      <div class="stat-icon">
+                        <i class="material-icons">person_add</i>
+                      </div>
+                      <div class="stat-content">
+                        <h3>{{ formatNumber(globalStats.nouveaux_migrants_30j) }}</h3>
+                        <p class="mb-0">Nouveaux (30j)</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Carte Taux de Croissance -->
+                  <div class="col-md-3">
+                    <div class="stat-card" [ngClass]="globalStats.taux_croissance_mensuel > 0 ? 'bg-warning' : 'bg-info'" class="text-white">
+                      <div class="stat-icon">
+                        <i class="material-icons">trending_up</i>
+                      </div>
+                      <div class="stat-content">
+                        <h3>{{ globalStats.taux_croissance_mensuel.toFixed(1) }}%</h3>
+                        <p class="mb-0">Croissance</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Carte Score de Vulnérabilité -->
+                  <div class="col-md-3">
+                    <div class="stat-card" [ngClass]="getRiskLevelInfo(globalStats.indicateurs_risque.score_vulnerabilite).level === 'critique' ? 'bg-danger' : 
+                                                     getRiskLevelInfo(globalStats.indicateurs_risque.score_vulnerabilite).level === 'eleve' ? 'bg-warning' : 'bg-success'" class="text-white">
+                      <div class="stat-icon">
+                        <i class="material-icons">security</i>
+                      </div>
+                      <div class="stat-content">
+                        <h3>{{ globalStats.indicateurs_risque.score_vulnerabilite.toFixed(1) }}</h3>
+                        <p class="mb-0">Score Vulnérabilité</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Indicateurs de risque détaillés -->
+                <div class="row mt-4">
+                  <div class="col-md-6">
+                    <h6>Indicateurs de Risque</h6>
+                    <div class="progress-list">
+                      <div class="progress-item">
+                        <div class="d-flex justify-content-between mb-1">
+                          <span>Risque Sécuritaire</span>
+                          <span>{{ globalStats.indicateurs_risque.risque_securitaire.toFixed(1) }}%</span>
+                        </div>
+                        <div class="progress">
+                          <div class="progress-bar bg-danger" [style.width.%]="globalStats.indicateurs_risque.risque_securitaire"></div>
+                        </div>
+                      </div>
+                      <div class="progress-item">
+                        <div class="d-flex justify-content-between mb-1">
+                          <span>Risque Humanitaire</span>
+                          <span>{{ globalStats.indicateurs_risque.risque_humanitaire.toFixed(1) }}%</span>
+                        </div>
+                        <div class="progress">
+                          <div class="progress-bar bg-warning" [style.width.%]="globalStats.indicateurs_risque.risque_humanitaire"></div>
+                        </div>
+                      </div>
+                      <div class="progress-item">
+                        <div class="d-flex justify-content-between mb-1">
+                          <span>Risque Santé</span>
+                          <span>{{ globalStats.indicateurs_risque.risque_sante.toFixed(1) }}%</span>
+                        </div>
+                        <div class="progress">
+                          <div class="progress-bar bg-info" [style.width.%]="globalStats.indicateurs_risque.risque_sante"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <h6>Top 5 Pays d'Origine</h6>
+                    <div class="country-list">
+                      <div *ngFor="let pays of globalStats.pays_origine_top10.slice(0, 5)" class="country-item d-flex justify-content-between">
+                        <span>{{ pays.pays }}</span>
+                        <span class="badge bg-primary">{{ formatNumber(pays.nombre) }} ({{ pays.pourcentage.toFixed(1) }}%)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alertes Prédictives -->
+        <div class="row mb-4" *ngIf="alertesPredictives && alertesPredictives.length > 0">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="card-title mb-0">
+                  <i class="material-icons me-2">warning</i>
+                  Alertes Prédictives
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div *ngFor="let alerte of alertesPredictives; trackBy: trackByAlertId" class="col-md-6">
+                    <div class="alert-card" [ngClass]="'alert-' + alerte.priorite.toLowerCase()">
+                      <div class="alert-header d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                          <i [class]="getAlertIcon(alerte.type)" class="me-2"></i>
+                          <span class="fw-bold">{{ alerte.type | titlecase }}</span>
+                        </div>
+                        <span class="badge" [ngClass]="'bg-' + (alerte.priorite === 'CRITIQUE' ? 'danger' : alerte.priorite === 'HAUTE' ? 'warning' : 'info')">
+                          {{ alerte.priorite }}
+                        </span>
+                      </div>
+                      <div class="alert-body">
+                        <p class="mb-2">{{ alerte.message }}</p>
+                        <div class="d-flex justify-content-between text-sm text-muted">
+                          <span>Probabilité: {{ formatProbability(alerte.probabilite) }}</span>
+                          <span>Zone: {{ alerte.zone_impact }}</span>
+                        </div>
+                        <div class="text-sm text-muted">
+                          Prévue le: {{ formatDate(alerte.date_prevue) }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglets d'analyse -->
+        <div class="row">
+          <div class="col-12">
+            <div class="card">
+              <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                  <li class="nav-item">
+                    <button class="nav-link" [class.active]="activeTab === 'global-stats'" 
+                            (click)="activeTab = 'global-stats'" type="button">
+                      <i class="material-icons me-1">pie_chart</i>
+                      Statistiques Globales
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" [class.active]="activeTab === 'predictive-models'" 
+                            (click)="activeTab = 'predictive-models'" type="button">
+                      <i class="material-icons me-1">model_training</i>
+                      Modèles Prédictifs
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" [class.active]="activeTab === 'risk-evolution'" 
+                            (click)="activeTab = 'risk-evolution'" type="button">
+                      <i class="material-icons me-1">trending_up</i>
+                      Évolution des Risques
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" [class.active]="activeTab === 'migration-trends'" 
+                            (click)="activeTab = 'migration-trends'" type="button">
+                      <i class="material-icons me-1">timeline</i>
+                      Tendances Migratoires
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" [class.active]="activeTab === 'scenarios'" 
+                            (click)="activeTab = 'scenarios'" type="button">
+                      <i class="material-icons me-1">psychology</i>
+                      Scénarios de Prévision
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="card-body">
+                <div class="tab-content">
+                  
+                  <!-- Onglet Statistiques Globales -->
+                  <div class="tab-pane fade" [class.show]="activeTab === 'global-stats'" [class.active]="activeTab === 'global-stats'">
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="chart-container">
+                          <apx-chart
+                            #advancedStatsChart
+                            [series]="advancedStatsChartOptions.series!"
+                            [chart]="advancedStatsChartOptions.chart!"
+                            [labels]="advancedStatsChartOptions.labels!"
+                            [colors]="advancedStatsChartOptions.colors!"
+                            [dataLabels]="advancedStatsChartOptions.dataLabels!"
+                            [plotOptions]="advancedStatsChartOptions.plotOptions!"
+                            [title]="advancedStatsChartOptions.title!"
+                            [legend]="advancedStatsChartOptions.legend!">
+                          </apx-chart>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <h6>Tendance Mensuelle (12 derniers mois)</h6>
+                        <div class="trend-list" *ngIf="globalStats">
+                          <div *ngFor="let tendance of globalStats.tendance_mensuelle_12m.slice(-6)" class="trend-item d-flex justify-content-between align-items-center">
+                            <span>{{ tendance.mois }} {{ tendance.annee }}</span>
+                            <div class="d-flex align-items-center">
+                              <span class="me-2">{{ formatNumber(tendance.nombre) }}</span>
+                              <span class="badge" [style.background-color]="getTrendColor(tendance.variation_pourcentage)">
+                                {{ tendance.variation_pourcentage.toFixed(1) }}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Onglet Modèles Prédictifs -->
+                  <div class="tab-pane fade" [class.show]="activeTab === 'predictive-models'" [class.active]="activeTab === 'predictive-models'">
+                    <div class="row">
+                      <div class="col-md-8">
+                        <div class="chart-container">
+                          <apx-chart
+                            #predictiveModelsChart
+                            [series]="predictiveModelsChartOptions.series!"
+                            [chart]="predictiveModelsChartOptions.chart!"
+                            [xaxis]="predictiveModelsChartOptions.xaxis!"
+                            [yaxis]="predictiveModelsChartOptions.yaxis!"
+                            [colors]="predictiveModelsChartOptions.colors!"
+                            [stroke]="predictiveModelsChartOptions.stroke!"
+                            [dataLabels]="predictiveModelsChartOptions.dataLabels!"
+                            [title]="predictiveModelsChartOptions.title!"
+                            [legend]="predictiveModelsChartOptions.legend!">
+                          </apx-chart>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <h6>Métriques de Performance</h6>
+                        <div class="performance-metrics" *ngIf="modelsPerformance">
+                          <div class="metric-item">
+                            <strong>Accuracy Globale:</strong>
+                            <span class="badge bg-success">{{ (modelsPerformance.accuracy_moyenne * 100).toFixed(1) }}%</span>
+                          </div>
+                          <div class="metric-item">
+                            <strong>Modèles Actifs:</strong>
+                            <span class="badge bg-primary">{{ modelsPerformance.modeles_actifs }}</span>
+                          </div>
+                          <div class="metric-item">
+                            <strong>Dernière Évaluation:</strong>
+                            <span>{{ formatDate(modelsPerformance.derniere_evaluation) }}</span>
+                          </div>
+                          
+                          <h6 class="mt-3">Recommandations IA</h6>
+                          <ul class="recommendations-list">
+                            <li *ngFor="let rec of modelsPerformance.recommandations_ia" class="recommendation-item">
+                              {{ rec }}
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Onglet Évolution des Risques -->
+                  <div class="tab-pane fade" [class.show]="activeTab === 'risk-evolution'" [class.active]="activeTab === 'risk-evolution'">
+                    <div class="row">
+                      <div class="col-md-8">
+                        <div class="chart-container">
+                          <apx-chart
+                            #riskEvolutionChart
+                            [series]="riskEvolutionChartOptions.series!"
+                            [chart]="riskEvolutionChartOptions.chart!"
+                            [xaxis]="riskEvolutionChartOptions.xaxis!"
+                            [yaxis]="riskEvolutionChartOptions.yaxis!"
+                            [colors]="riskEvolutionChartOptions.colors!"
+                            [stroke]="riskEvolutionChartOptions.stroke!"
+                            [fill]="riskEvolutionChartOptions.fill!"
+                            [dataLabels]="riskEvolutionChartOptions.dataLabels!"
+                            [title]="riskEvolutionChartOptions.title!">
+                          </apx-chart>
+                        </div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="risk-summary" *ngIf="advancedRiskAnalysis">
+                          <h6>Analyse de Risque Actuelle</h6>
+                          <div class="risk-score-card">
+                            <div class="risk-score" [style.color]="getRiskLevelInfo(advancedRiskAnalysis.score_global).color">
+                              {{ advancedRiskAnalysis.score_global.toFixed(1) }}
+                            </div>
+                            <div class="risk-level">
+                              Niveau: {{ getRiskLevelInfo(advancedRiskAnalysis.score_global).level | titlecase }}
+                            </div>
+                            <div class="risk-trend">
+                              Tendance: {{ advancedRiskAnalysis.tendance_risque | titlecase }}
+                            </div>
+                          </div>
+
+                          <h6 class="mt-3">Facteurs de Risque</h6>
+                          <ul class="risk-factors">
+                            <li *ngFor="let facteur of advancedRiskAnalysis.facteurs_risque">{{ facteur }}</li>
+                          </ul>
+
+                          <h6 class="mt-3">Recommandations</h6>
+                          <ul class="recommendations">
+                            <li *ngFor="let rec of advancedRiskAnalysis.recommandations">{{ rec }}</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Onglet Tendances Migratoires -->
+                  <div class="tab-pane fade" [class.show]="activeTab === 'migration-trends'" [class.active]="activeTab === 'migration-trends'">
+                    <div class="chart-container">
+                      <apx-chart
+                        [series]="trendsChartOptions.series!"
+                        [chart]="trendsChartOptions.chart!"
+                        [xaxis]="trendsChartOptions.xaxis!"
+                        [yaxis]="trendsChartOptions.yaxis!"
+                        [colors]="trendsChartOptions.colors!"
+                        [stroke]="trendsChartOptions.stroke!"
+                        [dataLabels]="trendsChartOptions.dataLabels!"
+                        [title]="trendsChartOptions.title!"
+                        [legend]="trendsChartOptions.legend!">
+                      </apx-chart>
+                    </div>
+                  </div>
+
+                  <!-- Onglet Scénarios de Prévision -->
+                  <div class="tab-pane fade" [class.show]="activeTab === 'scenarios'" [class.active]="activeTab === 'scenarios'">
+                    <div class="row">
+                      <div *ngFor="let scenario of scenariosPrevision; trackBy: trackByScenarioName" class="col-md-6">
+                        <div class="scenario-card">
+                          <div class="scenario-header">
+                            <h6 class="scenario-title">{{ scenario.nom }}</h6>
+                            <span class="badge" [ngClass]="scenario.impact === 'ELEVE' ? 'bg-danger' : scenario.impact === 'MODERE' ? 'bg-warning' : 'bg-success'">
+                              {{ scenario.impact }}
+                            </span>
+                          </div>
+                          <div class="scenario-body">
+                            <div class="probability-bar mb-2">
+                              <div class="d-flex justify-content-between mb-1">
+                                <span>Probabilité</span>
+                                <span>{{ formatProbability(scenario.probabilite) }}</span>
+                              </div>
+                              <div class="progress">
+                                <div class="progress-bar" [style.width.%]="scenario.probabilite * 100"></div>
+                              </div>
+                            </div>
+                            <p class="scenario-description">{{ scenario.description }}</p>
+                            <div class="scenario-measures">
+                              <h6>Mesures Recommandées:</h6>
+                              <ul>
+                                <li *ngFor="let mesure of scenario.mesures_recommandees">{{ mesure }}</li>
+                              </ul>
+                            </div>
+                            <div class="scenario-horizon text-muted">
+                              <i class="material-icons me-1">schedule</i>
+                              Horizon: {{ scenario.horizon_temporel }}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insights avancés -->
+        <div class="row mt-4" *ngIf="insights && insights.length > 0">
           <div class="col-12">
             <div class="card">
               <div class="card-header">
                 <h6 class="card-title mb-0">
                   <i class="material-icons me-2">lightbulb</i>
-                  Insights Prédictifs
+                  Insights Prédictifs Avancés
                 </h6>
               </div>
               <div class="card-body">
                 <div class="row g-3">
-                  <div *ngFor="let insight of insights; trackBy: trackByInsightTitle" class="col-md-6 col-lg-3">
+                  <div *ngFor="let insight of insights; trackBy: trackByInsightTitle" class="col-md-6">
                     <div class="insight-card" [attr.data-type]="insight.type">
-                      <div class="insight-icon">
-                        <i class="material-icons" [style.color]="getInsightColor(insight.type)">
-                          {{ getInsightIcon(insight.type) }}
+                      <div class="insight-header d-flex align-items-center">
+                        <i class="material-icons me-2" [style.color]="insight.type === 'positive' ? '#28a745' : insight.type === 'negative' ? '#dc3545' : '#6c757d'">
+                          {{ insight.type === 'positive' ? 'trending_up' : insight.type === 'negative' ? 'trending_down' : 'info' }}
                         </i>
+                        <h6 class="mb-0">{{ insight.title }}</h6>
                       </div>
-                      <div class="insight-content">
-                        <h6>{{ insight.title }}</h6>
-                        <p>{{ insight.description }}</p>
-                        <div class="confidence-bar">
-                          <div class="confidence-fill" [style.width.%]="insight.confidence"></div>
+                      <div class="insight-body">
+                        <p class="mb-2">{{ insight.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                          <span class="text-muted">Confiance:</span>
+                          <div class="confidence-bar">
+                            <div class="progress">
+                              <div class="progress-bar" [style.width.%]="insight.confidence"></div>
+                            </div>
+                            <span class="confidence-text">{{ insight.confidence }}%</span>
+                          </div>
                         </div>
-                        <small class="text-muted">Confiance: {{ insight.confidence }}%</small>
                       </div>
                     </div>
                   </div>
@@ -105,239 +515,7 @@
           </div>
         </div>
 
-        <!-- Navigation tabs -->
-        <div class="row mb-3">
-          <div class="col-12">
-            <ul class="nav nav-pills nav-justified prediction-tabs">
-              <li class="nav-item">
-                <button class="nav-link" [class.active]="activeTab === 'migration-flow'"
-                  (click)="setActiveTab('migration-flow')">
-                  <i class="material-icons">trending_up</i>
-                  Flux Migratoires
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" [class.active]="activeTab === 'risk-analysis'"
-                  (click)="setActiveTab('risk-analysis')">
-                  <i class="material-icons">security</i>
-                  Analyse des Risques
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" [class.active]="activeTab === 'demographic'"
-                  (click)="setActiveTab('demographic')">
-                  <i class="material-icons">groups</i>
-                  Démographie
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" [class.active]="activeTab === 'movement-patterns'"
-                  (click)="setActiveTab('movement-patterns')">
-                  <i class="material-icons">route</i>
-                  Patterns de Mouvement
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Migration Flow Tab -->
-        <div *ngIf="activeTab === 'migration-flow'" class="row">
-          <div class="col-lg-8">
-            <div class="card">
-              <div class="card-header">
-                <h6 class="card-title mb-0">
-                  <i class="material-icons me-2">show_chart</i>
-                  Prédiction des Flux Migratoires
-                </h6>
-              </div>
-              <div class="card-body">
-                <apx-chart #migrationFlowChart [series]="migrationFlowChartOptions.series!"
-                  [chart]="migrationFlowChartOptions.chart!" [xaxis]="migrationFlowChartOptions.xaxis!"
-                  [yaxis]="migrationFlowChartOptions.yaxis!" [colors]="migrationFlowChartOptions.colors!"
-                  [title]="migrationFlowChartOptions.title!" [stroke]="migrationFlowChartOptions.stroke!"
-                  [legend]="migrationFlowChartOptions.legend!" [dataLabels]="migrationFlowChartOptions.dataLabels!">
-                </apx-chart>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-4">
-            <div class="card" *ngIf="migrationFlowData">
-              <div class="card-header">
-                <h6 class="card-title mb-0">Métriques de Prédiction</h6>
-              </div>
-              <div class="card-body">
-                <div class="metric-item">
-                  <div class="metric-label">Moyenne historique</div>
-                  <div class="metric-value">{{ migrationFlowData.base_average | number:'1.0-0' }}</div>
-                </div>
-
-                <div class="metric-item">
-                  <div class="metric-label">Période d'analyse</div>
-                  <div class="metric-value">{{ migrationFlowData.analysis_period }} jours</div>
-                </div>
-
-                <div class="metric-item" *ngIf="migrationFlowData.predictions.length > 0">
-                  <div class="metric-label">Prochaine prédiction</div>
-                  <div class="metric-value">{{ migrationFlowData.predictions[0].predicted_count | number:'1.0-0' }}
-                  </div>
-                  <div class="metric-trend">
-                    <span class="badge badge-info">{{ migrationFlowData.predictions[0].confidence }}% confiance</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Risk Analysis Tab -->
-        <div *ngIf="activeTab === 'risk-analysis'" class="row">
-          <div class="col-lg-8">
-            <div class="card">
-              <div class="card-header">
-                <h6 class="card-title mb-0">
-                  <i class="material-icons me-2">radar</i>
-                  Analyse des Zones à Risque
-                </h6>
-              </div>
-              <div class="card-body">
-                <apx-chart #riskAnalysisChart [series]="riskAnalysisChartOptions.series!"
-                  [chart]="riskAnalysisChartOptions.chart!" [xaxis]="riskAnalysisChartOptions.xaxis!"
-                  [colors]="riskAnalysisChartOptions.colors!" [title]="riskAnalysisChartOptions.title!"
-                  [plotOptions]="riskAnalysisChartOptions.plotOptions!"
-                  [dataLabels]="riskAnalysisChartOptions.dataLabels!">
-                </apx-chart>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-4">
-            <div class="card" *ngIf="riskAnalysisData">
-              <div class="card-header">
-                <h6 class="card-title mb-0">Top Zones à Risque</h6>
-              </div>
-              <div class="card-body p-0">
-                <div class="risk-zones-list">
-                  <div *ngFor="let zone of riskAnalysisData.zone_risks.slice(0, 5); trackBy: trackByZoneName"
-                    class="risk-zone-item" [class.high-risk]="zone.risk_score > 50"
-                    [class.medium-risk]="zone.risk_score > 25 && zone.risk_score <= 50">
-
-                    <div class="zone-info">
-                      <h6>{{ zone.ville }}</h6>
-                      <small class="text-muted">{{ zone.pays }}</small>
-                    </div>
-
-                    <div class="risk-score">
-                      <div class="score-circle" [attr.data-score]="zone.risk_score">
-                        {{ zone.risk_score | number:'1.0-0' }}%
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Demographic Tab -->
-        <div *ngIf="activeTab === 'demographic'" class="row">
-          <div class="col-lg-6">
-            <div class="card">
-              <div class="card-header">
-                <h6 class="card-title mb-0">
-                  <i class="material-icons me-2">donut_small</i>
-                  Répartition Démographique
-                </h6>
-              </div>
-              <div class="card-body">
-                <apx-chart #demographicChart [series]="demographicChartOptions.series!"
-                  [chart]="demographicChartOptions.chart!" [labels]="demographicChartOptions.labels!"
-                  [colors]="demographicChartOptions.colors!" [title]="demographicChartOptions.title!"
-                  [legend]="demographicChartOptions.legend!" [dataLabels]="demographicChartOptions.dataLabels!">
-                </apx-chart>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-6">
-            <div class="card" *ngIf="demographicData">
-              <div class="card-header">
-                <h6 class="card-title mb-0">Tendances par Nationalité</h6>
-              </div>
-              <div class="card-body p-0">
-                <div class="nationality-trends">
-                  <div *ngFor="let trend of demographicData.nationality_trends.slice(0, 6); trackBy: trackByNationality"
-                    class="nationality-item">
-
-                    <div class="nationality-info">
-                      <h6>{{ trend.nationalite }}</h6>
-                      <small class="text-muted">{{ trend.current_count }} migrants actuels</small>
-                    </div>
-
-                    <div class="growth-indicator">
-                      <span class="growth-badge" [class.positive]="trend.monthly_growth > 0"
-                        [class.negative]="trend.monthly_growth < 0">
-                        <i class="material-icons">
-                          {{ trend.monthly_growth > 0 ? 'trending_up' : trend.monthly_growth < 0 ? 'trending_down'
-                            : 'trending_flat' }} </i>
-                            {{ trend.monthly_growth | number:'1.1-1' }}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Movement Patterns Tab -->
-        <div *ngIf="activeTab === 'movement-patterns'" class="row">
-          <div class="col-lg-8">
-            <div class="card">
-              <div class="card-header">
-                <h6 class="card-title mb-0">
-                  <i class="material-icons me-2">calendar_view_month</i>
-                  Analyse Saisonnière
-                </h6>
-              </div>
-              <div class="card-body">
-                <apx-chart #seasonalChart [series]="seasonalChartOptions.series!" [chart]="seasonalChartOptions.chart!"
-                  [xaxis]="seasonalChartOptions.xaxis!" [colors]="seasonalChartOptions.colors!"
-                  [title]="seasonalChartOptions.title!" [dataLabels]="seasonalChartOptions.dataLabels!">
-                </apx-chart>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-4">
-            <div class="card" *ngIf="movementPatternData">
-              <div class="card-header">
-                <h6 class="card-title mb-0">Routes Principales</h6>
-              </div>
-              <div class="card-body p-0">
-                <div class="migration-routes">
-                  <div *ngFor="let route of movementPatternData.migration_routes.slice(0, 5); trackBy: trackByRouteId"
-                    class="route-item">
-
-                    <div class="route-path">
-                      <span class="origin">{{ route.pays_origine }}</span>
-                      <i class="material-icons text-muted">arrow_forward</i>
-                      <span class="destination">{{ route.pays_destination }}</span>
-                    </div>
-
-                    <div class="route-stats">
-                      <div class="migrant-count">{{ route.count }} migrants</div>
-                      <div class="percentage">{{ route.pourcentage_total | number:'1.1-1' }}%</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
-
   </div>
 </div>

@@ -11,7 +11,7 @@ import {
   BiometricService, 
   IBiometricFormData, 
   IBiometricVerificationData,
-  IBiometricSearchFilters 
+  IBiometricStats
 } from '../../core/migration/biometric.service';
 import { MigrantService } from '../../core/migration/migrant.service';
 import { IBiometrie, IMigrant } from '../../shared/models/migrant.model';
@@ -26,6 +26,9 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
+  // Math for template
+  Math = Math;
+
   displayedColumns: string[] = [
     'migrant_nom',
     'type_biometrie',
@@ -35,13 +38,13 @@ export class BiometricsComponent implements OnInit, OnDestroy {
     'dispositif_capture',
     'verifie',
     'score_confiance',
+    'chiffre',
     'actions'
   ];
 
   dataSource = new MatTableDataSource<IBiometrie>();
   biometricForm!: FormGroup;
   verificationForm!: FormGroup;
-  searchForm!: FormGroup;
   
   // States
   isLoading = false;
@@ -58,14 +61,14 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   migrants: IMigrant[] = [];
   
   // Statistics
-  stats = {
+  stats: IBiometricStats = {
     total_biometrics: 0,
     verified_biometrics: 0,
     encrypted_biometrics: 0,
-    biometric_types: [] as Array<{type_biometrie: string; count: number}>,
-    quality_distribution: [] as Array<{qualite_donnee: string; count: number}>,
+    biometric_types: [],
+    quality_distribution: [],
     avg_confidence_score: 0,
-    capture_devices: [] as Array<{dispositif_capture: string; count: number}>
+    capture_devices: []
   };
 
   // Filter options based on backend validation
@@ -112,11 +115,10 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   totalItems = 0;
   totalPages = 0;
 
-  // Search & Filter
-  searchTerm = '';
-  selectedType = '';
-  selectedQuality = '';
-  selectedVerificationStatus = '';
+  // Backend supported filters (based on API endpoints)
+  migrantUuidFilter = '';
+  typeBiometrieFilter = '';
+  verifieFilter = '';
 
   constructor(
     private fb: FormBuilder,
@@ -147,15 +149,6 @@ export class BiometricsComponent implements OnInit, OnDestroy {
       operateur_verification: ['', Validators.required]
     });
 
-    this.searchForm = this.fb.group({
-      type_biometrie: [''],
-      qualite: [''],
-      verifie: [''],
-      date_from: [''],
-      date_to: [''],
-      min_confidence: ['']
-    });
-
     // Watch type_biometrie changes to handle finger index requirement
     this.biometricForm.get('type_biometrie')?.valueChanges.subscribe(type => {
       const indexDoigtControl = this.biometricForm.get('index_doigt');
@@ -183,44 +176,30 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   loadBiometrics(): void {
     this.isLoading = true;
     
-    const searchFilters = this.buildSearchFilters();
-    const hasFilters = Object.values(searchFilters).some(value => value);
-
-    if (hasFilters) {
-      this.biometricService.searchBiometrics(searchFilters)
-        .pipe(finalize(() => this.isLoading = false))
-        .subscribe({
-          next: (response) => {
-            if (response.status === 'success') {
-              this.biometrics = response.data;
-              this.dataSource.data = response.data;
-              this.totalItems = response.data.length;
-            }
-          },
-          error: (error) => {
-            console.error('Error searching biometrics:', error);
-            this.showMessage('Erreur lors de la recherche', 'error');
+    // Use backend supported filters directly
+    this.biometricService.getPaginatedBiometrics(
+      this.currentPage, 
+      this.pageSize,
+      this.migrantUuidFilter || undefined,
+      this.typeBiometrieFilter || undefined,
+      this.verifieFilter || undefined
+    )
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => {
+          if (response.status === 'success') {
+            this.biometrics = response.data;
+            this.dataSource.data = response.data;
+            this.totalItems = response.pagination.total_records;
+            this.totalPages = response.pagination.total_pages;
+            this.dataSource.paginator = this.paginator;
           }
-        });
-    } else {
-      this.biometricService.getPaginatedBiometrics(this.currentPage, this.pageSize)
-        .pipe(finalize(() => this.isLoading = false))
-        .subscribe({
-          next: (response) => {
-            if (response.status === 'success') {
-              this.biometrics = response.data;
-              this.dataSource.data = response.data;
-              this.totalItems = response.pagination.total_records;
-              this.totalPages = response.pagination.total_pages;
-              this.dataSource.paginator = this.paginator;
-            }
-          },
-          error: (error) => {
-            console.error('Error loading biometrics:', error);
-            this.showMessage('Erreur lors du chargement', 'error');
-          }
-        });
-    }
+        },
+        error: (error) => {
+          console.error('Error loading biometrics:', error);
+          this.showMessage('Erreur lors du chargement', 'error');
+        }
+      });
   }
 
   loadMigrants(): void {
@@ -249,50 +228,23 @@ export class BiometricsComponent implements OnInit, OnDestroy {
     });
   }
 
-  buildSearchFilters(): IBiometricSearchFilters {
-    const formValue = this.searchForm.value;
-    const filters: IBiometricSearchFilters = {};
-    
-    if (formValue.type_biometrie) filters.type_biometrie = formValue.type_biometrie;
-    if (formValue.qualite) filters.qualite = formValue.qualite;
-    if (formValue.verifie) filters.verifie = formValue.verifie;
-    if (formValue.date_from) filters.date_from = formValue.date_from;
-    if (formValue.date_to) filters.date_to = formValue.date_to;
-    if (formValue.min_confidence) filters.min_confidence = formValue.min_confidence;
-    
-    return filters;
-  }
-
   onPageChange(event: any): void {
     this.currentPage = event.pageIndex + 1;
     this.pageSize = event.pageSize;
     this.loadBiometrics();
   }
 
-  onSearch(): void {
+  applyFilters(): void {
     this.currentPage = 1;
     this.loadBiometrics();
   }
 
-  clearSearch(): void {
-    this.searchForm.reset();
-    this.selectedType = '';
-    this.selectedQuality = '';
-    this.selectedVerificationStatus = '';
+  clearFilters(): void {
+    this.migrantUuidFilter = '';
+    this.typeBiometrieFilter = '';
+    this.verifieFilter = '';
+    this.currentPage = 1;
     this.loadBiometrics();
-  }
-
-  resetFilters(): void {
-    this.clearSearch();
-  }
-
-  applyFilters(): void {
-    this.searchForm.patchValue({
-      type_biometrie: this.selectedType,
-      qualite: this.selectedQuality,
-      verifie: this.selectedVerificationStatus
-    });
-    this.onSearch();
   }
 
   // Modal Operations
@@ -317,7 +269,7 @@ export class BiometricsComponent implements OnInit, OnDestroy {
       index_doigt: biometric.index_doigt,
       qualite_donnee: biometric.qualite_donnee,
       algorithme_encodage: biometric.algorithme_encodage,
-      date_capture: biometric.date_capture?.split('T')[0],
+      date_capture: biometric.date_capture,
       dispositif_capture: biometric.dispositif_capture,
       resolution_capture: biometric.resolution_capture,
       operateur_capture: biometric.operateur_capture
@@ -423,7 +375,10 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   verifyBiometric(): void {
     if (this.verificationForm.valid && this.verifyingBiometric) {
       this.isSaving = true;
-      const verificationData: IBiometricVerificationData = this.verificationForm.value;
+      const verificationData: IBiometricVerificationData = {
+        score_confiance: this.verificationForm.value.score_confiance / 100, // Convert percentage to decimal
+        operateur_verification: this.verificationForm.value.operateur_verification
+      };
       
       this.biometricService.verifyBiometric(this.verifyingBiometric.uuid, verificationData)
         .pipe(finalize(() => this.isSaving = false))
@@ -513,12 +468,6 @@ export class BiometricsComponent implements OnInit, OnDestroy {
       case 'faible': return 'danger';
       default: return 'secondary';
     }
-  }
-
-  formatDate(dateString: string): string {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR');
   }
 
   formatDateTime(dateString: string): string {

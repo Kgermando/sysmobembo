@@ -36,15 +36,6 @@ export interface IBiometricStats {
   capture_devices: Array<{dispositif_capture: string; count: number}>;
 }
 
-export interface IBiometricSearchFilters {
-  type_biometrie?: string;
-  qualite?: string;
-  verifie?: string;
-  date_from?: string;
-  date_to?: string;
-  min_confidence?: string;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -213,26 +204,5 @@ export class BiometricService {
       message: string;
       data: IBiometricStats;
     }>(`${this.apiUrl}/stats`);
-  }
-
-  // Search biometrics with filters
-  searchBiometrics(filters: IBiometricSearchFilters): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie[];
-  }> {
-    let params = new HttpParams();
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        params = params.set(key, value);
-      }
-    });
-
-    return this.http.get<{
-      status: string;
-      message: string;
-      data: IBiometrie[];
-    }>(`${this.apiUrl}/search`, { params });
   }
 }

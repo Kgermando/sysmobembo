@@ -1,20 +1,20 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject, firstValueFrom, takeUntil } from 'rxjs';
-import { IAlert, IMigrant } from '../../shared/models/migrant.model';
-import { AlertService, IAlertFormData } from '../../core/migration/alert.service';
+import { IAlert, IMigrant, DateUtils } from '../../shared/models/migrant.model';
+import { AlertService, IAlertFormData, IAlertFilters, IAlertStats } from '../../core/migration/alert.service';
 import { MigrantService } from '../../core/migration/migrant.service';
 
 @Component({
   selector: 'app-alerts',
   standalone: false,
   templateUrl: './alerts.component.html',
-  styleUrl: './alerts.component.scss'
+  styleUrls: ['./alerts.component.scss']
 })
-export class AlertsComponent implements OnInit, OnDestroy {
+export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
   private destroy$ = new Subject<void>();
 
   // Math reference for template
@@ -30,6 +30,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
   // Data
   alerts: IAlert[] = [];
   migrants: IMigrant[] = [];
+  alertStats: IAlertStats | null = null;
 
   // Form
   alertForm: FormGroup;
@@ -48,7 +49,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
   current_page = 1;
 
   // Filters and search
-  search = '';
+  searchTerm = '';
   selectedMigrant = '';
   selectedTypeAlerte = '';
   selectedNiveauGravite = '';
@@ -60,19 +61,19 @@ export class AlertsComponent implements OnInit, OnDestroy {
     { value: 'sante', label: 'Santé', icon: 'ti-heart', color: 'warning' },
     { value: 'juridique', label: 'Juridique', icon: 'ti-scale', color: 'info' },
     { value: 'administrative', label: 'Administrative', icon: 'ti-file-text', color: 'primary' },
-    { value: 'humanitaire', label: 'Humanitaire', icon: 'ti-heart-handshake', color: 'success' }
+    { value: 'humanitaire', label: 'Humanitaire', icon: 'ti-users', color: 'success' }
   ];
 
   niveauGraviteOptions = [
     { value: 'info', label: 'Information', color: 'info' },
-    { value: 'warning', label: 'Avertissement', color: 'warning' },
+    { value: 'warning', label: 'Attention', color: 'warning' },
     { value: 'danger', label: 'Danger', color: 'danger' },
     { value: 'critical', label: 'Critique', color: 'dark' }
   ];
 
   statutOptions = [
-    { value: 'active', label: 'Active', color: 'warning' },
-    { value: 'resolved', label: 'Résolue', color: 'success' },
+    { value: 'active', label: 'Active', color: 'success' },
+    { value: 'resolved', label: 'Résolue', color: 'primary' },
     { value: 'dismissed', label: 'Ignorée', color: 'secondary' },
     { value: 'expired', label: 'Expirée', color: 'danger' }
   ];
@@ -88,11 +89,16 @@ export class AlertsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadData();
     this.loadMigrants();
+    this.loadStats();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  ngAfterViewInit(): void {
+    // Setup any additional UI interactions
   }
 
   private createForm(): FormGroup {
@@ -104,11 +110,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
       description: ['', [Validators.required, Validators.minLength(10)]],
       date_expiration: [''],
       action_requise: [''],
-      personne_responsable: [''],
-      notifier_autorites: [false],
-      latitude: [''],
-      longitude: [''],
-      adresse: ['']
+      personne_responsable: ['']
     });
   }
 
@@ -117,28 +119,26 @@ export class AlertsComponent implements OnInit, OnDestroy {
     this.error = null;
 
     try {
+      // Build filters object
+      const filters: IAlertFilters = {};
+      if (this.searchTerm) filters.search = this.searchTerm;
+      if (this.selectedMigrant) filters.migrant_uuid = this.selectedMigrant;
+      if (this.selectedStatut) filters.statut = this.selectedStatut;
+      if (this.selectedNiveauGravite) filters.gravite = this.selectedNiveauGravite;
+
       const response = await firstValueFrom(
-        this.alertService.getPaginatedAlerts(
-          this.current_page, 
-          this.page_size,
-          this.selectedMigrant,
-          this.selectedTypeAlerte,
-          this.selectedNiveauGravite,
-          this.selectedStatut,
-          this.search
-        ).pipe(takeUntil(this.destroy$))
+        this.alertService.getPaginatedAlerts(this.current_page, this.page_size, filters)
+          .pipe(takeUntil(this.destroy$))
       );
 
       if (response.status === 'success') {
         this.alerts = response.data;
         this.dataSource.data = response.data;
         this.total_records = response.pagination.total_records;
-        this.current_page = response.pagination.current_page;
-        this.page_size = response.pagination.page_size;
       }
     } catch (error: any) {
-      this.error = error.error?.message || 'Erreur lors du chargement des données';
-      console.error('Erreur lors du chargement des alertes:', error);
+      this.error = error.error?.message || 'Erreur lors du chargement des alertes';
+      console.error('Erreur lors du chargement:', error);
     } finally {
       this.isLoadingData = false;
     }
@@ -158,6 +158,20 @@ export class AlertsComponent implements OnInit, OnDestroy {
     }
   }
 
+  async loadStats(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.alertService.getAlertsStats().pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        this.alertStats = response.data;
+      }
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des statistiques:', error);
+    }
+  }
+
   async onSubmit(): Promise<void> {
     if (this.alertForm.invalid || this.isSaving) return;
 
@@ -167,27 +181,22 @@ export class AlertsComponent implements OnInit, OnDestroy {
     try {
       const formData: IAlertFormData = this.alertForm.value;
 
-      // Convertir les champs de date en format ISO string
-      const alertData = {
-        ...formData,
-        date_expiration: formData.date_expiration ? new Date(formData.date_expiration).toISOString() : ''
-      };
-
       let response;
       if (this.editingAlert) {
         response = await firstValueFrom(
-          this.alertService.updateAlert(this.editingAlert.uuid, alertData)
+          this.alertService.updateAlert(this.editingAlert.uuid, formData)
             .pipe(takeUntil(this.destroy$))
         );
       } else {
         response = await firstValueFrom(
-          this.alertService.createAlert(alertData)
+          this.alertService.createAlert(formData)
             .pipe(takeUntil(this.destroy$))
         );
       }
 
       if (response.status === 'success') {
         await this.loadData();
+        await this.loadStats();
         this.resetForm();
         this.closeOffcanvas();
       }
@@ -212,13 +221,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
       niveau_gravite: alert.niveau_gravite,
       titre: alert.titre,
       description: alert.description,
-      date_expiration: alert.date_expiration ? alert.date_expiration.split('T')[0] : '',
+      date_expiration: DateUtils.toInputDate(alert.date_expiration),
       action_requise: alert.action_requise,
-      personne_responsable: alert.personne_responsable,
-      notifier_autorites: alert.notifier_autorites,
-      latitude: alert.latitude,
-      longitude: alert.longitude,
-      adresse: alert.adresse
+      personne_responsable: alert.personne_responsable
     });
   }
 
@@ -233,6 +238,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
       if (response.status === 'success') {
         await this.loadData();
+        await this.loadStats();
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors de la suppression';
@@ -253,6 +259,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
       if (response.status === 'success') {
         await this.loadData();
+        await this.loadStats();
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors de la résolution';
@@ -262,13 +269,16 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   resetForm(): void {
     this.alertForm.reset();
-    this.alertForm.patchValue({
-      notifier_autorites: false
-    });
     this.error = null;
   }
 
   // Search and filters
+  onSearchChange(searchTerm: string): void {
+    this.searchTerm = searchTerm;
+    this.current_page = 1;
+    this.loadData();
+  }
+
   applyFilters(): void {
     this.current_page = 1;
     this.loadData();
@@ -279,6 +289,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
     this.selectedTypeAlerte = '';
     this.selectedNiveauGravite = '';
     this.selectedStatut = '';
+    this.searchTerm = '';
     this.current_page = 1;
     this.loadData();
   }
@@ -288,6 +299,49 @@ export class AlertsComponent implements OnInit, OnDestroy {
     this.current_page = event.pageIndex + 1;
     this.page_size = event.pageSize;
     this.loadData();
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.current_page = page;
+      this.loadData();
+    }
+  }
+
+  getTotalPages(): number {
+    return Math.ceil(this.total_records / this.page_size);
+  }
+
+  getVisiblePages(): number[] {
+    const totalPages = this.getTotalPages();
+    const current = this.current_page;
+    const delta = 2;
+    const range = [];
+    
+    const rangeWithDots = [];
+    let l;
+
+    for (let i = Math.max(2, current - delta); 
+         i <= Math.min(totalPages - 1, current + delta); 
+         i++) {
+      range.push(i);
+    }
+
+    if (current - delta > 2) {
+      rangeWithDots.push(1, '...' as any);
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (current + delta < totalPages - 1) {
+      rangeWithDots.push('...' as any, totalPages);
+    } else {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots.filter((item, index, arr) => arr.indexOf(item) === index && item !== '...');
   }
 
   // Sorting
@@ -347,14 +401,12 @@ export class AlertsComponent implements OnInit, OnDestroy {
     return alert.niveau_gravite === 'critical' || alert.niveau_gravite === 'danger';
   }
 
-  formatDate(dateString: string): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-FR');
+  formatDate(date: Date | string | undefined): string {
+    return DateUtils.formatDate(date);
   }
 
-  formatDateTime(dateString: string): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('fr-FR');
+  formatDateTime(date: Date | string | undefined): string {
+    return DateUtils.formatDateTime(date);
   }
 
   // Form validation helpers
@@ -393,124 +445,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
     this.viewingAlert = null;
   }
 
-  // Get current location for alert
-  getCurrentLocation(): void {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          this.alertForm.patchValue({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error('Erreur de géolocalisation:', error);
-          alert('Impossible d\'obtenir votre position actuelle');
-        }
-      );
-    } else {
-      alert('La géolocalisation n\'est pas supportée par ce navigateur');
-    }
-  }
-
-  // Dashboard helpers
-  getActiveAlertsCount(): number {
-    return this.alerts.filter(a => a.statut === 'active').length;
-  }
-
-  getCriticalAlertsCount(): number {
-    return this.alerts.filter(a => a.niveau_gravite === 'critical' && a.statut === 'active').length;
-  }
-
-  getExpiredAlertsCount(): number {
-    return this.alerts.filter(a => this.isAlertExpired(a) && a.statut === 'active').length;
-  }
-
-  // Additional backend features
-  async loadActiveAlerts(): Promise<void> {
-    try {
-      const response = await firstValueFrom(
-        this.alertService.getActiveAlerts().pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.status === 'success') {
-        this.alerts = response.data;
-        this.dataSource.data = response.data;
-      }
-    } catch (error: any) {
-      this.error = error.error?.message || 'Erreur lors du chargement des alertes actives';
-      console.error('Erreur lors du chargement des alertes actives:', error);
-    }
-  }
-
-  async loadCriticalAlerts(): Promise<void> {
-    try {
-      const response = await firstValueFrom(
-        this.alertService.getCriticalAlerts().pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.status === 'success') {
-        this.alerts = response.data;
-        this.dataSource.data = response.data;
-      }
-    } catch (error: any) {
-      this.error = error.error?.message || 'Erreur lors du chargement des alertes critiques';
-      console.error('Erreur lors du chargement des alertes critiques:', error);
-    }
-  }
-
-  async loadAlertsByMigrant(migrantUuid: string): Promise<void> {
-    try {
-      const response = await firstValueFrom(
-        this.alertService.getAlertsByMigrant(migrantUuid).pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.status === 'success') {
-        this.alerts = response.data;
-        this.dataSource.data = response.data;
-      }
-    } catch (error: any) {
-      this.error = error.error?.message || 'Erreur lors du chargement des alertes du migrant';
-      console.error('Erreur lors du chargement des alertes du migrant:', error);
-    }
-  }
-
-  async searchAlerts(): Promise<void> {
-    try {
-      const filters: any = {};
-      
-      if (this.selectedTypeAlerte) filters.type_alerte = this.selectedTypeAlerte;
-      if (this.selectedNiveauGravite) filters.gravite = this.selectedNiveauGravite;
-      if (this.selectedStatut) filters.statut = this.selectedStatut;
-
-      const response = await firstValueFrom(
-        this.alertService.searchAlerts(filters).pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.status === 'success') {
-        this.alerts = response.data;
-        this.dataSource.data = response.data;
-      }
-    } catch (error: any) {
-      this.error = error.error?.message || 'Erreur lors de la recherche';
-      console.error('Erreur lors de la recherche d\'alertes:', error);
-    }
-  }
-
-  async autoExpireAlerts(): Promise<void> {
-    try {
-      const response = await firstValueFrom(
-        this.alertService.autoExpireAlerts().pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.status === 'success') {
-        await this.loadData();
-        alert(`${response.data.expired_count} alertes ont été automatiquement expirées.`);
-      }
-    } catch (error: any) {
-      this.error = error.error?.message || 'Erreur lors de l\'expiration automatique';
-      console.error('Erreur lors de l\'expiration automatique:', error);
-    }
+  // Stats helpers
+  getStatValue(statKey: string): number {
+    return this.alertStats ? (this.alertStats as any)[statKey] || 0 : 0;
   }
 
   // Quick filter buttons
@@ -529,5 +466,10 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   showAllAlerts(): void {
     this.resetFilters();
+  }
+
+  // TrackBy function for performance optimization
+  trackByAlertUuid(index: number, alert: IAlert): string {
+    return alert.uuid;
   }
 }

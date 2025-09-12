@@ -1,15 +1,271 @@
 // Styles spécifiques au composant migrants
 // Utilisation des styles globaux autant que possible
 
+// === SECTION FILTRES ===
+.filters-container {
+  .card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-header {
+      border-radius: 12px 12px 0 0 !important;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      
+      h6 {
+        color: #495057;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .filter-section {
+    position: relative;
+    padding-bottom: 20px;
+    
+    &:not(:last-child) {
+      border-bottom: 1px solid #e9ecef;
+      margin-bottom: 20px;
+    }
+    
+    .filter-section-title {
+      color: #495057;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e9ecef;
+      
+      i {
+        color: #6c757d;
+      }
+    }
+  }
+  
+  .input-block {
+    .form-label {
+      font-weight: 500;
+      color: #495057;
+      margin-bottom: 8px;
+      font-size: 13px;
+      
+      i {
+        color: #6c757d;
+        font-size: 14px;
+      }
+    }
+    
+    .form-control, .form-select {
+      border: 1px solid #e1e5e9;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      
+      &:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+      }
+      
+      &.form-control-lg {
+        padding: 12px 16px;
+        font-size: 15px;
+      }
+    }
+    
+    .btn {
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      
+      &.btn-lg {
+        padding: 12px 20px;
+        font-size: 15px;
+      }
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+  
+  .date-range-container {
+    .d-flex {
+      gap: 8px;
+      
+      .text-muted {
+        align-self: center;
+        font-weight: 500;
+        min-width: 20px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+// === SECTION TABLEAU ===
+.table-container {
+  margin-top: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table-responsive-custom {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+    position: relative;
+    
+    // Amélioration des styles pour la barre de défilement
+    &::-webkit-scrollbar {
+      height: 10px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f8f9fa;
+      border-radius: 5px;
+      margin: 0 10px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      border-radius: 5px;
+      border: 1px solid #e9ecef;
+      
+      &:hover {
+        background: linear-gradient(135deg, #0056b3, #004085);
+      }
+      
+      &:active {
+        background: linear-gradient(135deg, #004085, #002752);
+      }
+    }
+    
+    // Pour Firefox
+    scrollbar-width: thin;
+    scrollbar-color: #007bff #f8f9fa;
+    
+    // Indicateur de scroll pour les utilisateurs
+    &::before {
+      content: "← Faire défiler horizontalement pour voir plus de colonnes →";
+      position: absolute;
+      top: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 123, 255, 0.1);
+      color: #007bff;
+      padding: 4px 12px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      z-index: 10;
+      display: none;
+      
+      @media (max-width: 1400px) {
+        display: block;
+      }
+    }
+  }
+}
+
 .custom-table {
   .mat-elevation-z2 {
     box-shadow: none;
-    border: 1px solid #e9ecef;
+    border: none;
+    min-width: 1400px; // Largeur minimale augmentée pour forcer le scroll horizontal
+    width: 100%;
+    
+    &.table-striped {
+      tbody tr:nth-of-type(odd) {
+        background-color: rgba(0, 0, 0, 0.02);
+      }
+      
+      tbody tr {
+        transition: background-color 0.2s ease;
+        
+        &:hover {
+          background-color: rgba(0, 123, 255, 0.08) !important;
+        }
+      }
+    }
+  }
+  
+  // Largeurs minimales des colonnes pour une meilleure lisibilité
+  .min-width-100 {
+    min-width: 120px;
+    white-space: nowrap;
+  }
+  
+  .min-width-150 {
+    min-width: 170px;
+    white-space: nowrap;
+  }
+  
+  .min-width-200 {
+    min-width: 220px;
+  }
+  
+  // Nouvelles classes pour optimiser l'affichage
+  .min-width-130 {
+    min-width: 130px;
+    white-space: nowrap;
+  }
+  
+  .min-width-160 {
+    min-width: 160px;
+    white-space: nowrap;
   }
   
   th.mat-header-cell {
     font-weight: 600;
     color: #495057;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 12px;
+    
+    // Header collant pour le scroll vertical
+    &.mat-header-cell {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background-color: #f8f9fa;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    strong {
+      font-weight: 600;
+    }
+  }
+  
+  td.mat-cell {
+    padding: 12px;
+    border-bottom: 1px solid #f1f3f4;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+  
+  tr.mat-row {
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: rgba(13, 110, 253, 0.05);
+    }
   }
 }
 
@@ -21,6 +277,7 @@
     .avatar-title {
       font-size: 14px;
       font-weight: 600;
+      border-radius: 50%;
     }
   }
 }
@@ -28,6 +285,8 @@
 .badge {
   font-size: 11px;
   font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 20px;
   
   &.bg-info {
     background-color: #17a2b8 !important;
@@ -59,9 +318,40 @@
   .action-icon {
     color: #6c757d;
     font-size: 16px;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
     
     &:hover {
       color: #495057;
+      background-color: #f8f9fa;
+    }
+  }
+  
+  .dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 8px 0;
+    
+    .dropdown-item {
+      padding: 10px 16px;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background-color: #f8f9fa;
+      }
+      
+      &.text-danger:hover {
+        background-color: #fdf2f2;
+        color: #dc3545 !important;
+      }
+      
+      i {
+        width: 16px;
+        font-size: 14px;
+      }
     }
   }
 }
@@ -97,7 +387,299 @@
   height: 1rem;
 }
 
-// Responsive adjustments
+// === RESPONSIVE DESIGN ===
+@media (max-width: 1200px) {
+  .filters-container {
+    .filter-section {
+      .row {
+        .col-lg-4, .col-lg-3, .col-lg-6 {
+          margin-bottom: 15px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .filters-container {
+    .card-body {
+      padding: 1rem;
+    }
+    
+    .filter-section {
+      .filter-section-title {
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+    }
+    
+    .input-block {
+      margin-bottom: 15px !important;
+      
+      .btn {
+        width: 100%;
+        margin-bottom: 8px;
+      }
+    }
+    
+    .date-range-container {
+      .d-flex {
+        flex-direction: column;
+        gap: 8px;
+        
+        .text-muted {
+          display: none;
+        }
+      }
+    }
+  }
+  
+  .table-container {
+    margin: 15px -15px 0;
+    border-radius: 0;
+    
+    .table-responsive-custom {
+      border-radius: 0;
+    }
+  }
+  
+  .custom-table {
+    .mat-elevation-z2 {
+      min-width: 800px; // Réduit pour mobile mais garde le scroll
+    }
+    
+    th.mat-header-cell, td.mat-cell {
+      padding: 8px 6px;
+      font-size: 12px;
+    }
+    
+    .min-width-200 {
+      min-width: 150px;
+    }
+    
+    .min-width-150 {
+      min-width: 120px;
+    }
+    
+    .min-width-100 {
+      min-width: 80px;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .filters-container {
+    .card-header {
+      padding: 1rem;
+      
+      h6 {
+        font-size: 14px;
+      }
+    }
+  }
+  
+  .custom-table {
+    .avatar-sm {
+      width: 32px;
+      height: 32px;
+      
+      .avatar-title {
+        font-size: 12px;
+      }
+    }
+    
+    .badge {
+      font-size: 10px;
+      padding: 4px 8px;
+    }
+  }
+}
+
+// === ANIMATIONS ET TRANSITIONS ===
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.filters-container {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.table-container {
+  animation: fadeInUp 0.5s ease-out 0.1s both;
+}
+
+// === UTILITAIRES ===
+.text-nowrap {
+  white-space: nowrap;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+// === AMÉLIORATION DU SCROLL HORIZONTAL ===
+
+// Styles pour améliorer l'UX du scroll horizontal
+.table-container {
+  position: relative;
+  
+  // Indicateur de scroll à gauche
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.9), transparent);
+    z-index: 20;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  // Indicateur de scroll à droite
+  &::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.9), transparent);
+    z-index: 20;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+  
+  // Afficher l'indicateur gauche quand on scroll
+  &.scrolled-left::before {
+    opacity: 1;
+  }
+  
+  // Masquer l'indicateur droit quand on atteint la fin
+  &.scrolled-right::after {
+    opacity: 0;
+  }
+}
+
+// Styles spécifiques pour mobile
+@media (max-width: 768px) {
+  .table-responsive-custom {
+    .table-scroll-wrapper {
+      // Barre de scroll plus visible sur mobile
+      &::-webkit-scrollbar {
+        height: 12px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        border-radius: 6px;
+        border: 2px solid #fff;
+      }
+      
+      // Message d'aide plus visible sur mobile
+      &::before {
+        content: "⟵ Glissez pour voir plus ⟶";
+        display: block !important;
+        font-size: 11px;
+        padding: 6px 10px;
+        top: -30px;
+        animation: pulse 2s infinite;
+      }
+    }
+  }
+  
+  // Largeurs minimales réduites pour mobile
+  .custom-table {
+    .mat-elevation-z2 {
+      min-width: 1000px; // Réduit pour mobile
+    }
+    
+    .min-width-200 {
+      min-width: 180px;
+    }
+    
+    .min-width-170 {
+      min-width: 150px;
+    }
+    
+    .min-width-160 {
+      min-width: 140px;
+    }
+    
+    .min-width-130 {
+      min-width: 110px;
+    }
+    
+    .min-width-120 {
+      min-width: 100px;
+    }
+  }
+}
+
+// Styles pour les boutons de scroll
+.scroll-button {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  outline: none !important;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+  }
+  
+  &:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
+  }
+  
+  i {
+    font-size: 16px;
+    line-height: 1;
+  }
+}
+
+// Animation pour attirer l'attention sur l'indicateur de scroll
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateX(-50%) scale(1.02);
+  }
+}
+
+// === AMÉLIORATION DE L'ACCESSIBILITÉ ===
+.form-control:focus,
+.form-select:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.btn:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+
+// Responsive adjustments (legacy)
 @media (max-width: 768px) {
   .displayedColumns {
     display: none;
