@@ -6,6 +6,7 @@ import { AuthStateService } from '../../../core/auth/auth-state.service';
 import { ToastrService } from 'ngx-toastr';
 import { Subject, takeUntil } from 'rxjs';
 import { UserHelper } from '../../models/user-helper.model';
+import { DateUtils } from '../../utils/date.utils';
 
 export interface UserProfileDialogData {
   user: IUser;
@@ -138,15 +139,8 @@ export class UserProfileDialogComponent implements OnInit, OnDestroy {
     return UserHelper.getFullName(this.data.user);
   }
 
-  formatDate(dateString?: string): string {
-    if (!dateString) return 'Non défini';
-    
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('fr-FR');
-    } catch {
-      return 'Date invalide';
-    }
+  formatDate(date?: Date | string): string {
+    return DateUtils.toDisplayFormat(date);
   }
 
   formatCurrency(amount?: number, currency?: string): string {

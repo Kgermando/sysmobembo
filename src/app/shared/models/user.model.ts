@@ -6,16 +6,16 @@
 export interface IUser {
   // Identifiants principaux et audit GORM
   uuid: string;
-  created_at?: string;
-  updated_at?: string;
-  deleted_at?: string;
+  created_at?: Date;
+  updated_at?: Date;
+  deleted_at?: Date;
 
   // Informations personnelles de base
   nom: string;
   postnom: string;
   prenom: string;
   sexe: string; // M/F
-  date_naissance: string;
+  date_naissance: Date;
   lieu_naissance: string;
 
   // État civil
@@ -25,8 +25,8 @@ export interface IUser {
   // Nationalité et documents d'identité
   nationalite: string;
   numero_cni?: string; // Carte Nationale d'Identité
-  date_emission_cni?: string;
-  date_expiration_cni?: string;
+  date_emission_cni?: Date;
+  date_expiration_cni?: Date;
   lieu_emission_cni?: string;
 
   // Contacts
@@ -49,8 +49,8 @@ export interface IUser {
   service: string;
   direction: string;
   ministere: string;
-  date_recrutement: string;
-  date_prise_service: string;
+  date_recrutement: Date;
+  date_prise_service: Date;
   type_agent: string; // Fonctionnaire, Contractuel, Stagiaire
   statut: string; // Actif, Retraité, Suspendu, Révoqué
 
@@ -86,7 +86,7 @@ export interface IUser {
   signature?: string;
 
   // Audit et suivi
-  dernier_acces?: string;
+  dernier_acces?: Date;
   nombre_connexions?: number;
 }
 

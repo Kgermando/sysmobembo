@@ -1,4 +1,5 @@
 import { IUser } from './user.model';
+import { DateUtils } from '../utils/date.utils';
 import { UserRole } from './types.model';
 
 /**
@@ -61,7 +62,9 @@ export class UserHelper {
   static getAge(user: IUser): number | null {
     if (!user.date_naissance) return null;
     
-    const birthDate = new Date(user.date_naissance);
+    const birthDate = DateUtils.toDate(user.date_naissance);
+    if (!birthDate) return null;
+    
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -76,7 +79,9 @@ export class UserHelper {
   static getAnciennete(user: IUser): number {
     if (!user.date_recrutement) return 0;
     
-    const startDate = new Date(user.date_recrutement);
+    const startDate = DateUtils.toDate(user.date_recrutement);
+    if (!startDate) return 0;
+    
     const today = new Date();
     const diffTime = Math.abs(today.getTime() - startDate.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 365.25)); // années

@@ -7,6 +7,7 @@ import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 import { IGeolocalisation, IMigrant, IBackendPaginationResponse } from '../../shared/models/migrant.model';
 import { GeolocationService, IGeolocationFormData } from '../../core/migration/geolocation.service';
 import { MigrantService } from '../../core/migration/migrant.service';
+import { AutoGeolocationService, CustomGeolocationPosition, ReverseGeocodingResult, GeolocationError } from '../../core/services/auto-geolocation.service';
 import { PAYS_ORIGINE_COMMUNS } from '../../shared/utils';
 
 @Component({
@@ -44,7 +45,10 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
   isLoading = false;
   isLoadingData = false;
   isSaving = false;
+  isGettingLocation = false;
+  isReverseGeocoding = false;
   error: string | null = null;
+  locationError: string | null = null;
 
   // Pagination
   total_records = 0;
@@ -82,7 +86,8 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private fb: FormBuilder,
     private geolocationService: GeolocationService,
-    private migrantService: MigrantService
+    private migrantService: MigrantService,
+    private autoGeolocationService: AutoGeolocationService
   ) {
     this.geolocationForm = this.createForm();
   }
@@ -105,8 +110,8 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
   private createForm(): FormGroup {
     return this.fb.group({
       migrant_uuid: ['', Validators.required],
-      latitude: ['', [Validators.required, Validators.min(-90), Validators.max(90)]],
-      longitude: ['', [Validators.required, Validators.min(-180), Validators.max(180)]],
+      latitude: [null], // Sera rempli automatiquement
+      longitude: [null], // Sera rempli automatiquement
       type_localisation: ['', Validators.required],
       description: [''],
       adresse: [''],
@@ -177,6 +182,15 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async onSubmit(): Promise<void> {
+    // Vérifier que les coordonnées sont présentes
+    const latitude = this.geolocationForm.get('latitude')?.value;
+    const longitude = this.geolocationForm.get('longitude')?.value;
+    
+    if (!latitude || !longitude) {
+      this.locationError = 'Les coordonnées géographiques sont requises. Veuillez activer la géolocalisation.';
+      return;
+    }
+
     if (this.geolocationForm.invalid || this.isSaving) return;
 
     this.isSaving = true;
@@ -214,6 +228,8 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
   prepareNewGeolocation(): void {
     this.editingGeolocation = null;
     this.resetForm();
+    // Récupérer automatiquement la géolocalisation pour une nouvelle entrée
+    this.autoGetLocation();
   }
 
   prepareEditGeolocation(geolocation: IGeolocalisation): void {
@@ -255,6 +271,181 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.geolocationForm.reset();
     this.editingGeolocation = null;
     this.error = null;
+    this.locationError = null;
+  }
+
+  // Auto-geolocation methods
+  async autoGetLocation(): Promise<void> {
+    if (!this.autoGeolocationService.isGeolocationSupported()) {
+      this.locationError = 'La géolocalisation n\'est pas supportée par ce navigateur. Les coordonnées devront être saisies manuellement.';
+      return;
+    }
+
+    this.isGettingLocation = true;
+    this.locationError = null;
+
+    try {
+      const result = await firstValueFrom(
+        this.autoGeolocationService.getCurrentPositionWithAddress(true).pipe(takeUntil(this.destroy$))
+      );
+
+      // Mettre à jour le formulaire avec les coordonnées et l'adresse
+      this.geolocationForm.patchValue({
+        latitude: result.position.latitude,
+        longitude: result.position.longitude,
+        adresse: result.address.formattedAddress,
+        ville: result.address.city,
+        pays: result.address.countryCode || result.address.country
+      });
+
+    } catch (error: any) {
+      // Afficher le message d'erreur spécifique du service de géolocalisation
+      if (error?.message) {
+        this.locationError = error.message;
+      } else if (typeof error === 'string') {
+        this.locationError = error;
+      } else {
+        this.locationError = 'Impossible de récupérer automatiquement votre position. Vous pouvez réessayer avec les boutons ci-dessous.';
+      }
+      console.error('Erreur de géolocalisation automatique:', error);
+    } finally {
+      this.isGettingLocation = false;
+    }
+  }
+
+  async getCurrentLocation(): Promise<void> {
+    const check = this.autoGeolocationService.canUseGeolocation();
+    if (!check.canUse) {
+      this.locationError = check.reason || 'La géolocalisation n\'est pas disponible';
+      return;
+    }
+
+    this.isGettingLocation = true;
+    this.locationError = null;
+
+    try {
+      const position = await firstValueFrom(
+        this.autoGeolocationService.getCurrentPosition(true).pipe(takeUntil(this.destroy$))
+      );
+
+      // Mettre à jour le formulaire avec les coordonnées
+      this.geolocationForm.patchValue({
+        latitude: position.latitude,
+        longitude: position.longitude
+      });
+
+      // Optionnellement, récupérer l'adresse automatiquement
+      await this.reverseGeocodeCurrentPosition(position);
+
+    } catch (error: any) {
+      // Afficher le message d'erreur spécifique du service de géolocalisation
+      if (error?.message) {
+        this.locationError = error.message;
+      } else if (typeof error === 'string') {
+        this.locationError = error;
+      } else {
+        this.locationError = 'Erreur lors de la récupération de la position';
+      }
+      console.error('Erreur de géolocalisation:', error);
+    } finally {
+      this.isGettingLocation = false;
+    }
+  }
+
+  async getCurrentLocationWithAddress(): Promise<void> {
+    const check = this.autoGeolocationService.canUseGeolocation();
+    if (!check.canUse) {
+      this.locationError = check.reason || 'La géolocalisation n\'est pas disponible';
+      return;
+    }
+
+    this.isGettingLocation = true;
+    this.isReverseGeocoding = true;
+    this.locationError = null;
+
+    try {
+      const result = await firstValueFrom(
+        this.autoGeolocationService.getCurrentPositionWithAddress(true).pipe(takeUntil(this.destroy$))
+      );
+
+      // Mettre à jour le formulaire avec les coordonnées et l'adresse
+      this.geolocationForm.patchValue({
+        latitude: result.position.latitude,
+        longitude: result.position.longitude,
+        adresse: result.address.formattedAddress,
+        ville: result.address.city,
+        pays: result.address.countryCode || result.address.country
+      });
+
+    } catch (error: any) {
+      // Afficher le message d'erreur spécifique du service de géolocalisation
+      if (error?.message) {
+        this.locationError = error.message;
+      } else if (typeof error === 'string') {
+        this.locationError = error;
+      } else {
+        this.locationError = 'Erreur lors de la récupération de la position et de l\'adresse';
+      }
+      console.error('Erreur de géolocalisation avec adresse:', error);
+    } finally {
+      this.isGettingLocation = false;
+      this.isReverseGeocoding = false;
+    }
+  }
+
+  async reverseGeocodeCurrentPosition(position?: CustomGeolocationPosition): Promise<void> {
+    const lat = position?.latitude || this.geolocationForm.get('latitude')?.value;
+    const lng = position?.longitude || this.geolocationForm.get('longitude')?.value;
+
+    if (!lat || !lng) {
+      this.locationError = 'Coordonnées manquantes pour le géocodage inverse';
+      return;
+    }
+
+    this.isReverseGeocoding = true;
+    this.locationError = null;
+
+    try {
+      const address = await firstValueFrom(
+        this.autoGeolocationService.reverseGeocode(lat, lng).pipe(takeUntil(this.destroy$))
+      );
+
+      // Mettre à jour le formulaire avec l'adresse trouvée
+      this.geolocationForm.patchValue({
+        adresse: address.formattedAddress,
+        ville: address.city,
+        pays: address.countryCode || address.country
+      });
+
+    } catch (error: any) {
+      this.locationError = error.message || 'Erreur lors du géocodage inverse';
+      console.error('Erreur de géocodage inverse:', error);
+    } finally {
+      this.isReverseGeocoding = false;
+    }
+  }
+
+  clearLocationError(): void {
+    this.locationError = null;
+  }
+
+  // Helper methods for geolocation
+  isGeolocationSupported(): boolean {
+    return this.autoGeolocationService.isGeolocationSupported();
+  }
+
+  hasValidCoordinates(): boolean {
+    const lat = this.geolocationForm.get('latitude')?.value;
+    const lng = this.geolocationForm.get('longitude')?.value;
+    return lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng);
+  }
+
+  formatCoordinatesDisplay(lat: number, lng: number): string {
+    return this.autoGeolocationService.formatCoordinates(lat, lng);
+  }
+
+  getCoordinatesDMS(lat: number, lng: number): { latitude: string; longitude: string } {
+    return this.autoGeolocationService.toDMS(lat, lng);
   }
 
   // Search and filters
@@ -322,6 +513,11 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.offcanvasToggle) {
       this.offcanvasToggle.nativeElement.click();
     }
+  }
+
+  openNewGeolocationOffcanvas(): void {
+    this.prepareNewGeolocation();
+    this.openEditOffcanvas();
   }
 
   closeOffcanvas(): void {

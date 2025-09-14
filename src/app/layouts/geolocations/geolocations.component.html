@@ -170,8 +170,15 @@
 
                         <!-- Coordonnées -->
                         <td class="min-width-150">
-                          <small class="text-muted">{{ formatCoordinates(geolocation.latitude, geolocation.longitude)
-                            }}</small>
+                          <div class="text-wrap">
+                            <small class="text-dark fw-medium">{{ formatCoordinates(geolocation.latitude, geolocation.longitude) }}</small>
+                            <br>
+                            <small class="text-muted" style="font-size: 0.75rem;">
+                              {{ getCoordinatesDMS(geolocation.latitude, geolocation.longitude).latitude }}
+                              <br>
+                              {{ getCoordinatesDMS(geolocation.latitude, geolocation.longitude).longitude }}
+                            </small>
+                          </div>
                         </td>
 
                         <!-- Pays -->
@@ -229,9 +236,18 @@
               <!-- Custom Pagination -->
               <nav aria-label="Pagination">
                 <ul class="pagination">
+                  <!-- First page button -->
+                  <li class="page-item" [class.disabled]="current_page === 1">
+                    <a class="page-link" (click)="current_page > 1 && changePage(1)"
+                      href="javascript:void(0);" title="Première page">
+                      <i class="ti ti-chevrons-left"></i>
+                    </a>
+                  </li>
+
+                  <!-- Previous page -->
                   <li class="page-item" [class.disabled]="current_page === 1">
                     <a class="page-link" (click)="current_page > 1 && changePage(current_page - 1)"
-                      href="javascript:void(0);">
+                      href="javascript:void(0);" title="Page précédente">
                       <i class="ti ti-chevron-left"></i>
                     </a>
                   </li>
@@ -272,10 +288,19 @@
                       getTotalPages() }}</a>
                   </li>
 
+                  <!-- Next page -->
                   <li class="page-item" [class.disabled]="current_page === getTotalPages()">
                     <a class="page-link" (click)="current_page < getTotalPages() && changePage(current_page + 1)"
-                      href="javascript:void(0);">
+                      href="javascript:void(0);" title="Page suivante">
                       <i class="ti ti-chevron-right"></i>
+                    </a>
+                  </li>
+
+                  <!-- Last page button -->
+                  <li class="page-item" [class.disabled]="current_page === getTotalPages()">
+                    <a class="page-link" (click)="current_page < getTotalPages() && changePage(getTotalPages())"
+                      href="javascript:void(0);" title="Dernière page">
+                      <i class="ti ti-chevrons-right"></i>
                     </a>
                   </li>
                 </ul>
@@ -328,25 +353,96 @@
         </div>
       </div>
 
-      <!-- Coordinates -->
-      <div class="row">
-        <div class="col-md-6">
-          <div class="input-block mb-3">
-            <label class="form-label">Latitude <span class="text-danger">*</span></label>
-            <input type="number" class="form-control" formControlName="latitude" step="0.000001" min="-90" max="90"
-              placeholder="Ex: -4.325" [class.is-invalid]="isFieldInvalid('latitude')">
-            <div *ngIf="isFieldInvalid('latitude')" class="invalid-feedback">
-              Latitude requise (entre -90 et 90)
+      <!-- Auto-geolocation section -->
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+              <h6 class="mb-0">
+                <i class="ti ti-location me-2"></i>
+                Géolocalisation Automatique
+              </h6>
             </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="input-block mb-3">
-            <label class="form-label">Longitude <span class="text-danger">*</span></label>
-            <input type="number" class="form-control" formControlName="longitude" step="0.000001" min="-180" max="180"
-              placeholder="Ex: 15.313" [class.is-invalid]="isFieldInvalid('longitude')">
-            <div *ngIf="isFieldInvalid('longitude')" class="invalid-feedback">
-              Longitude requise (entre -180 et 180)
+            <div class="card-body">
+              <!-- Current coordinates display -->
+              <div class="row mb-3" *ngIf="geolocationForm.get('latitude')?.value && geolocationForm.get('longitude')?.value">
+                <div class="col-12">
+                  <div class="alert alert-success" role="alert">
+                    <i class="ti ti-check me-2"></i>
+                    <strong>Position récupérée:</strong>
+                    {{ formatCoordinatesDisplay(geolocationForm.get('latitude')?.value, geolocationForm.get('longitude')?.value) }}
+                    <br>
+                    <small class="text-muted">
+                      {{ getCoordinatesDMS(geolocationForm.get('latitude')?.value, geolocationForm.get('longitude')?.value).latitude }} - 
+                      {{ getCoordinatesDMS(geolocationForm.get('latitude')?.value, geolocationForm.get('longitude')?.value).longitude }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Geolocation buttons -->
+              <div class="row" *ngIf="isGeolocationSupported()">
+                <div class="col-12">
+                  <div class="d-flex gap-2 flex-wrap">
+                    <button type="button" class="btn btn-success btn-sm" 
+                      (click)="getCurrentLocation()" 
+                      [disabled]="isGettingLocation || isSaving">
+                      <i class="ti ti-current-location me-1" *ngIf="!isGettingLocation"></i>
+                      <span class="spinner-border spinner-border-sm me-1" *ngIf="isGettingLocation"></span>
+                      {{ isGettingLocation ? 'Localisation en cours...' : 'Obtenir ma position' }}
+                    </button>
+                    
+                    <button type="button" class="btn btn-primary btn-sm" 
+                      (click)="getCurrentLocationWithAddress()" 
+                      [disabled]="isGettingLocation || isReverseGeocoding || isSaving">
+                      <i class="ti ti-map-pin me-1" *ngIf="!isGettingLocation && !isReverseGeocoding"></i>
+                      <span class="spinner-border spinner-border-sm me-1" *ngIf="isGettingLocation || isReverseGeocoding"></span>
+                      {{ (isGettingLocation || isReverseGeocoding) ? 'Récupération en cours...' : 'Position + Adresse' }}
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-info btn-sm" 
+                      (click)="reverseGeocodeCurrentPosition()" 
+                      [disabled]="isReverseGeocoding || isSaving || !geolocationForm.get('latitude')?.value || !geolocationForm.get('longitude')?.value">
+                      <i class="ti ti-search me-1" *ngIf="!isReverseGeocoding"></i>
+                      <span class="spinner-border spinner-border-sm me-1" *ngIf="isReverseGeocoding"></span>
+                      {{ isReverseGeocoding ? 'Recherche d\'adresse...' : 'Rechercher l\'adresse' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Geolocation error message -->
+              <div class="row mt-3" *ngIf="locationError">
+                <div class="col-12">
+                  <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="ti ti-alert-triangle me-2"></i>
+                    {{ locationError }}
+                    <button type="button" class="btn-close" (click)="clearLocationError()"></button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Geolocation not supported warning -->
+              <div class="row mt-3" *ngIf="!isGeolocationSupported()">
+                <div class="col-12">
+                  <div class="alert alert-info" role="alert">
+                    <i class="ti ti-info-circle me-2"></i>
+                    La géolocalisation automatique n'est pas supportée par ce navigateur.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Loading indicator -->
+              <div class="row mt-3" *ngIf="isGettingLocation || isReverseGeocoding">
+                <div class="col-12">
+                  <div class="d-flex align-items-center">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                    <span class="text-muted">
+                      {{ isGettingLocation ? 'Récupération de votre position...' : 'Recherche de l\'adresse...' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -427,10 +523,19 @@
         <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">
           Annuler
         </button>
-        <button type="submit" class="btn btn-primary" [disabled]="geolocationForm.invalid || isSaving">
+        <button type="submit" class="btn btn-primary" 
+          [disabled]="geolocationForm.invalid || isSaving || !hasValidCoordinates()"
+          [title]="!hasValidCoordinates() ? 'Veuillez d\'abord récupérer votre position géographique' : ''">
           <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+          <i class="ti ti-device-floppy me-1" *ngIf="!isSaving"></i>
           {{ editingGeolocation ? 'Modifier' : 'Ajouter' }}
         </button>
+      </div>
+
+      <!-- Warning if no coordinates -->
+      <div class="alert alert-warning mt-3" *ngIf="!hasValidCoordinates() && !isGettingLocation && !locationError">
+        <i class="ti ti-alert-triangle me-2"></i>
+        <strong>Coordonnées manquantes :</strong> Veuillez utiliser les boutons de géolocalisation ci-dessus pour récupérer votre position avant d'enregistrer.
       </div>
     </form>
   </div>
@@ -476,11 +581,27 @@
             <table class="table table-borderless">
               <tr>
                 <td><strong>Latitude:</strong></td>
-                <td>{{ viewingGeolocation.latitude || '-' }}</td>
+                <td>
+                  <div>{{ viewingGeolocation.latitude || '-' }}</div>
+                  <small class="text-muted" *ngIf="viewingGeolocation && viewingGeolocation.latitude">
+                    {{ getCoordinatesDMS(viewingGeolocation.latitude, viewingGeolocation.longitude).latitude }}
+                  </small>
+                </td>
               </tr>
               <tr>
                 <td><strong>Longitude:</strong></td>
-                <td>{{ viewingGeolocation.longitude || '-' }}</td>
+                <td>
+                  <div>{{ viewingGeolocation.longitude || '-' }}</div>
+                  <small class="text-muted" *ngIf="viewingGeolocation && viewingGeolocation.longitude">
+                    {{ getCoordinatesDMS(viewingGeolocation.latitude, viewingGeolocation.longitude).longitude }}
+                  </small>
+                </td>
+              </tr>
+              <tr *ngIf="viewingGeolocation && viewingGeolocation.latitude && viewingGeolocation.longitude">
+                <td><strong>Coordonnées:</strong></td>
+                <td>
+                  <small class="text-muted">{{ formatCoordinatesDisplay(viewingGeolocation.latitude, viewingGeolocation.longitude) }}</small>
+                </td>
               </tr>
               <tr>
                 <td><strong>Type mouvement:</strong></td>

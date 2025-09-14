@@ -8,6 +8,7 @@ import { IMotifDeplacement, IMotifDeplacementFormData, IMotifDeplacementStats } 
 import { MotifDeplacementService } from '../../core/migration/motif-deplacement.service';
 import { MigrantService } from '../../core/migration/migrant.service';
 import { IMigrant } from '../../shared/models/migrant.model';
+import { DateUtils } from '../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-motif-deplacements',
@@ -191,12 +192,12 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
     this.error = null;
 
     try {
-      const formData: IMotifDeplacementFormData = this.motifForm.value;
+      const formData = this.motifForm.value;
 
-      // Convertir les champs de date
-      const motifData = {
+      // Convertir les champs de date string en Date pour correspondre au modèle
+      const motifData: IMotifDeplacementFormData = {
         ...formData,
-        date_declenchement: formData.date_declenchement ? new Date(formData.date_declenchement).toISOString() : ''
+        date_declenchement: DateUtils.toDate(formData.date_declenchement) || new Date()
       };
 
       let response;
@@ -241,7 +242,7 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
       description: motif.description,
       caractere_volontaire: motif.caractere_volontaire,
       urgence: motif.urgence,
-      date_declenchement: motif.date_declenchement ? motif.date_declenchement.split('T')[0] : '',
+      date_declenchement: motif.date_declenchement ? DateUtils.toInputFormat(motif.date_declenchement) : '',
       duree_estimee: motif.duree_estimee,
       conflit_arme: motif.conflit_arme,
       catastrophe_naturelle: motif.catastrophe_naturelle,
@@ -357,9 +358,9 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
     return volontaire ? 'badge-success' : 'badge-danger';
   }
 
-  formatDate(dateString: string | undefined): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-FR');
+  formatDate(date: Date | string | undefined): string {
+    if (!date) return '-';
+    return DateUtils.toDisplayFormat(date);
   }
 
   getFacteursExternes(motif: IMotifDeplacement): string[] {

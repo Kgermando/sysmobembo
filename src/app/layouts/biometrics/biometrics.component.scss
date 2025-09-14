@@ -1,287 +1,168 @@
-/* Biometrics Component Modern Styles */
+// Styles pour le composant biometrics
+// Réutilisation des styles globaux
 
-.page-wrapper {
-  .content {
-    padding: 20px;
-    background-color: #f8f9fa;
-  }
-}
-
-/* Enhanced Statistics Cards */
-.card {
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+.custom-table {
+  .mat-elevation-z2 {
+    box-shadow: none;
+    border: 1px solid #e9ecef;
   }
   
-  .card-body {
-    padding: 1.5rem;
-  }
-  
-  &.bg-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
-}
-
-/* Statistics Cards Colors */
-.bg-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-}
-
-.bg-success {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
-}
-
-.bg-warning {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
-}
-
-.bg-info {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
-}
-
-/* Alert styles */
-.alert-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 12px;
-}
-
-/* Badges with enhanced styling */
-.badge {
-  font-size: 0.75rem;
-  padding: 0.375rem 0.75rem;
-  border-radius: 6px;
-  font-weight: 500;
-  
-  &.bg-info {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  }
-  
-  &.bg-success {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) !important;
-  }
-  
-  &.bg-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  }
-  
-  &.bg-warning {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
-  }
-  
-  &.bg-danger {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%) !important;
-  }
-  
-  &.bg-secondary {
-    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%) !important;
-  }
-}
-
-/* Table enhancements */
-.table-responsive {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  
-  .table {
-    margin-bottom: 0;
-    
-    thead {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      
-      th {
-        color: white;
-        border: none;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        letter-spacing: 0.5px;
-        padding: 1rem 0.75rem;
-      }
-    }
-    
-    tbody {
-      tr {
-        transition: all 0.3s ease;
-        
-        &:hover {
-          background-color: #f8f9fa;
-          transform: scale(1.005);
-        }
-        
-        td {
-          padding: 1rem 0.75rem;
-          vertical-align: middle;
-          border-color: #e9ecef;
-        }
-      }
-    }
-  }
-}
-
-/* Action buttons */
-.action-buttons {
-  .btn {
-    margin-right: 0.25rem;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      transform: scale(1.1);
-    }
-  }
-}
-
-/* User info styling */
-.user-info {
-  .user-name {
+  th.mat-header-cell {
     font-weight: 600;
     color: #495057;
   }
-}
-
-/* Date info styling */
-.date-info {
-  .small {
-    font-size: 0.75rem;
-    color: #6c757d;
+  
+  // Styling pour les données biométriques
+  .table-success {
+    background-color: rgba(40, 167, 69, 0.1);
+    border-left: 4px solid #28a745;
   }
-}
-
-/* Device info styling */
-.device-info {
-  .small {
-    font-size: 0.75rem;
-    color: #6c757d;
+  
+  .table-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left: 4px solid #ffc107;
   }
 }
 
-/* Buttons */
-.btn {
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  
-  &.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
+.avatar {
+  &.avatar-sm {
+    width: 40px;
+    height: 40px;
     
-    &:hover {
-      background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
-      transform: translateY(-1px);
-    }
-  }
-  
-  &.btn-success {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    border: none;
-    
-    &:hover {
-      background: linear-gradient(135deg, #459de9 0%, #00d9fe 100%);
-      transform: translateY(-1px);
-    }
-  }
-  
-  &.btn-outline-primary {
-    border-color: #667eea;
-    color: #667eea;
-    
-    &:hover {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-color: #667eea;
-    }
-  }
-  
-  &.btn-outline-success {
-    border-color: #4facfe;
-    color: #4facfe;
-    
-    &:hover {
-      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      border-color: #4facfe;
-    }
-  }
-  
-  &.btn-outline-danger {
-    border-color: #fa709a;
-    color: #fa709a;
-    
-    &:hover {
-      background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-      border-color: #fa709a;
-    }
-  }
-}
-
-/* Modal enhancements */
-.modal-content {
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  
-  .modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 12px 12px 0 0;
-    
-    .modal-title {
+    .avatar-title {
+      font-size: 14px;
       font-weight: 600;
     }
-    
-    .btn-close {
-      filter: invert(1);
-    }
-  }
-  
-  .modal-body {
-    padding: 2rem;
-  }
-  
-  .modal-footer {
-    padding: 1rem 2rem;
-    background-color: #f8f9fa;
-    border-radius: 0 0 12px 12px;
   }
 }
 
-/* Form controls */
-.form-control, .form-select {
+.badge {
+  font-size: 11px;
+  font-weight: 500;
+  
+  &.bg-info {
+    background-color: #17a2b8 !important;
+  }
+  
+  &.bg-success {
+    background-color: #28a745 !important;
+  }
+  
+  &.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+  }
+  
+  &.bg-danger {
+    background-color: #dc3545 !important;
+  }
+  
+  &.bg-secondary {
+    background-color: #6c757d !important;
+  }
+  
+  &.bg-primary {
+    background-color: #007bff !important;
+  }
+  
+  // Badges spécifiques pour la qualité biométrique
+  &.bg-excellente {
+    background-color: #28a745 !important;
+  }
+  
+  &.bg-bonne {
+    background-color: #007bff !important;
+  }
+  
+  &.bg-moyenne {
+    background-color: #ffc107 !important;
+    color: #212529;
+  }
+  
+  &.bg-faible {
+    background-color: #dc3545 !important;
+  }
+}
+
+// Styles pour les offcanvas
+.offcanvas {
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-control,
+  .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    
+    &:focus {
+      border-color: #80bdff;
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+  }
+  
+  .btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+  }
+}
+
+// Styles pour la modal de détail
+.modal {
+  .table-borderless {
+    td {
+      border: none;
+      padding: 0.5rem 0;
+    }
+    
+    .fw-bold {
+      color: #495057;
+    }
+  }
+}
+
+// === SECTION FILTRES ===
+.filter-section {
+  background: white;
   border-radius: 8px;
-  border: 1px solid #ced4da;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
   
-  &:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  .form-control,
+  .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    
+    &:focus {
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+  }
+  
+  .btn {
+    border-radius: 0.375rem;
   }
 }
 
-/* Pagination */
-.pagination {
-  .page-item {
-    .page-link {
-      border-radius: 6px;
-      border: 1px solid #dee2e6;
-      color: #667eea;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-color: #667eea;
-      }
-    }
+// === SECTION STATISTIQUES ===
+.stats-section {
+  margin-bottom: 1.5rem;
+  
+  .alert {
+    border: none;
+    border-radius: 8px;
     
-    &.active .page-link {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-color: #667eea;
+    .display-6 {
+      font-weight: 600;
     }
   }
 }
@@ -289,14 +170,14 @@
 // === SECTION TABLEAU AVEC SCROLL HORIZONTAL ===
 .table-container {
   margin-top: 20px;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .table-responsive-custom {
   background: white;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   position: relative;
   
@@ -308,32 +189,32 @@
     
     // Amélioration des styles pour la barre de défilement
     &::-webkit-scrollbar {
-      height: 10px;
+      height: 8px;
     }
     
     &::-webkit-scrollbar-track {
       background: #f8f9fa;
-      border-radius: 5px;
+      border-radius: 4px;
       margin: 0 10px;
     }
     
     &::-webkit-scrollbar-thumb {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 5px;
+      background: #6c757d;
+      border-radius: 4px;
       border: 1px solid #e9ecef;
       
       &:hover {
-        background: linear-gradient(135deg, #5a6fd8, #6b42a0);
+        background: #495057;
       }
       
       &:active {
-        background: linear-gradient(135deg, #4d5fc7, #5e3a8f);
+        background: #343a40;
       }
     }
     
     // Pour Firefox
     scrollbar-width: thin;
-    scrollbar-color: #667eea #f8f9fa;
+    scrollbar-color: #6c757d #f8f9fa;
   }
   
   // Style de la table
@@ -351,11 +232,10 @@
     }
     
     th {
-      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
       font-weight: 600;
       font-size: 14px;
       color: #495057;
-      border-bottom: 2px solid #dee2e6;
+      border-bottom: 1px solid #dee2e6;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -391,10 +271,14 @@
 
 // Responsive design pour biométrie
 @media (max-width: 768px) {
+  .filter-section {
+    padding: 1rem;
+  }
+  
   .table-responsive-custom {
     .table-scroll-wrapper {
       &::-webkit-scrollbar {
-        height: 8px;
+        height: 6px;
       }
     }
     
@@ -410,38 +294,52 @@
 }
 
 // Colonnes avec largeurs minimales spécifiques aux données biométriques
+.min-width-200 { min-width: 200px; }
 .min-width-150 { min-width: 150px; }
 .min-width-120 { min-width: 120px; }
 .min-width-100 { min-width: 100px; }
 
-// Styles spécifiques pour les badges de qualité biométrique
-.badge {
-  &.bg-excellente {
-    background: linear-gradient(135deg, #28a745, #20c997) !important;
-  }
-  
-  &.bg-bonne {
-    background: linear-gradient(135deg, #007bff, #6610f2) !important;
-  }
-  
-  &.bg-moyenne {
-    background: linear-gradient(135deg, #ffc107, #fd7e14) !important;
-  }
-  
-  &.bg-faible {
-    background: linear-gradient(135deg, #dc3545, #e83e8c) !important;
-  }
-}
-
 // Amélioration des boutons d'actions
 .action-buttons {
   .btn {
-    border-radius: 6px;
+    border-radius: 0.375rem;
     transition: all 0.2s ease;
     
     &:hover {
       transform: translateY(-1px);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+  }
+}
+
+// Loading state
+.loading-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+// Empty state
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  
+  .display-4 {
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+  
+  h5 {
+    color: #495057;
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    color: #6c757d;
+    margin-bottom: 2rem;
   }
 }

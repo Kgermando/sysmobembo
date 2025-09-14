@@ -25,7 +25,7 @@ export interface RegisterRequest {
   postnom: string;
   prenom: string;
   sexe: string;
-  date_naissance: string;
+  date_naissance: Date;
   lieu_naissance: string;
 
   // Nationalité
@@ -48,8 +48,8 @@ export interface RegisterRequest {
   service: string;
   direction: string;
   ministere: string;
-  date_recrutement: string;
-  date_prise_service: string;
+  date_recrutement: Date;
+  date_prise_service: Date;
   type_agent: string;
   statut: string;
 

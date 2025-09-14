@@ -161,7 +161,7 @@
                 {{ getUrgenceLabel(motif.urgence || '') }}
               </span>
             </td>
-            <td>{{ formatDate(motif.date_declenchement) }}</td>
+            <td>{{ motif.date_declenchement | date:'yyyy-MM-dd' }}</td>
             <td>
               <div class="facteurs-list">
                 <span 

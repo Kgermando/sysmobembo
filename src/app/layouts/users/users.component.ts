@@ -7,6 +7,7 @@ import { Subject, firstValueFrom, takeUntil } from 'rxjs';
 import { IUser } from '../../shared/models/user.model';
 import { UserService, UserFormData } from '../../core/user/user.service';
 import { AuthStateService } from '../../core/auth/auth-state.service';
+import { DateUtils } from '../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-users',
@@ -141,47 +142,26 @@ export class UsersComponent implements OnInit, OnDestroy {
   }
 
   // Calcul de l'âge
-  getAge(dateNaissance: string): number {
-    if (!dateNaissance) return 0;
-    const today = new Date();
-    const birthDate = new Date(dateNaissance);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
+  getAge(dateNaissance: Date | string | undefined): number {
+    return DateUtils.calculateAge(dateNaissance);
   }
 
   // Calcul de l'ancienneté de service
-  getAnciennete(dateRecrutement: string): string {
-    if (!dateRecrutement) return 'N/A';
-    const today = new Date();
-    const recruitDate = new Date(dateRecrutement);
-    const diffTime = Math.abs(today.getTime() - recruitDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const years = Math.floor(diffDays / 365);
-    const months = Math.floor((diffDays % 365) / 30);
-    
-    if (years > 0) {
-      return `${years} an${years > 1 ? 's' : ''} ${months > 0 ? `et ${months} mois` : ''}`;
-    } else if (months > 0) {
-      return `${months} mois`;
-    } else {
-      return `${diffDays} jour${diffDays > 1 ? 's' : ''}`;
-    }
+  getAnciennete(dateRecrutement: Date | string | undefined): string {
+    return DateUtils.calculateSeniority(dateRecrutement);
   }
 
   // Formater la date pour l'affichage
-  formatDate(dateString: string): string {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('fr-FR');
+  formatDate(date: Date | string | undefined): string {
+    return DateUtils.toDisplayFormat(date);
   }
 
   // Vérifier si le CNI expire bientôt (dans 30 jours)
-  isCNIExpiringSoon(dateExpiration: string): boolean {
+  isCNIExpiringSoon(dateExpiration: Date | string | undefined): boolean {
     if (!dateExpiration) return false;
-    const expirationDate = new Date(dateExpiration);
+    const expirationDate = DateUtils.toDate(dateExpiration);
+    if (!expirationDate) return false;
+    
     const today = new Date();
     const diffTime = expirationDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -289,30 +269,39 @@ export class UsersComponent implements OnInit, OnDestroy {
     const today = new Date();
 
     // Vérifier que la date de naissance n'est pas dans le futur
-    if (dateNaissance?.value && new Date(dateNaissance.value) > today) {
-      errors.dateNaissanceFuture = true;
+    if (dateNaissance?.value) {
+      const birthDate = DateUtils.toDate(dateNaissance.value);
+      if (birthDate && birthDate > today) {
+        errors.dateNaissanceFuture = true;
+      }
     }
 
     // Vérifier que la date de recrutement n'est pas avant la majorité (18 ans)
     if (dateNaissance?.value && dateRecrutement?.value) {
-      const birthDate = new Date(dateNaissance.value);
-      const recruitDate = new Date(dateRecrutement.value);
-      const age = recruitDate.getFullYear() - birthDate.getFullYear();
-      if (age < 18) {
-        errors.recrutementTropJeune = true;
+      const birthDate = DateUtils.toDate(dateNaissance.value);
+      const recruitDate = DateUtils.toDate(dateRecrutement.value);
+      if (birthDate && recruitDate) {
+        const age = recruitDate.getFullYear() - birthDate.getFullYear();
+        if (age < 18) {
+          errors.recrutementTropJeune = true;
+        }
       }
     }
 
     // Vérifier que la date de prise de service n'est pas avant le recrutement
     if (dateRecrutement?.value && datePriseService?.value) {
-      if (new Date(datePriseService.value) < new Date(dateRecrutement.value)) {
+      const recruitDate = DateUtils.toDate(dateRecrutement.value);
+      const serviceDate = DateUtils.toDate(datePriseService.value);
+      if (recruitDate && serviceDate && serviceDate < recruitDate) {
         errors.priseServiceAvantRecrutement = true;
       }
     }
 
     // Vérifier que la date d'expiration CNI est après l'émission
     if (dateEmissionCNI?.value && dateExpirationCNI?.value) {
-      if (new Date(dateExpirationCNI.value) <= new Date(dateEmissionCNI.value)) {
+      const emissionDate = DateUtils.toDate(dateEmissionCNI.value);
+      const expirationDate = DateUtils.toDate(dateExpirationCNI.value);
+      if (emissionDate && expirationDate && expirationDate <= emissionDate) {
         errors.cniExpirationInvalide = true;
       }
     }
@@ -549,14 +538,14 @@ export class UsersComponent implements OnInit, OnDestroy {
       this.isSaving = true;
       const formData: UserFormData = this.userForm.value;
 
-      // Convertir les champs de date en format ISO string
+      // Convertir les champs de date en format ISO string avec DateUtils
       const userData = {
         ...formData,
-        date_naissance: formData.date_naissance ? new Date(formData.date_naissance).toISOString() : '',
-        date_emission_cni: formData.date_emission_cni ? new Date(formData.date_emission_cni).toISOString() : '',
-        date_expiration_cni: formData.date_expiration_cni ? new Date(formData.date_expiration_cni).toISOString() : '',
-        date_recrutement: formData.date_recrutement ? new Date(formData.date_recrutement).toISOString() : '',
-        date_prise_service: formData.date_prise_service ? new Date(formData.date_prise_service).toISOString() : ''
+        date_naissance: formData.date_naissance ? DateUtils.toDate(formData.date_naissance)?.toISOString() || '' : '',
+        date_emission_cni: formData.date_emission_cni ? DateUtils.toDate(formData.date_emission_cni)?.toISOString() || '' : '',
+        date_expiration_cni: formData.date_expiration_cni ? DateUtils.toDate(formData.date_expiration_cni)?.toISOString() || '' : '',
+        date_recrutement: formData.date_recrutement ? DateUtils.toDate(formData.date_recrutement)?.toISOString() || '' : '',
+        date_prise_service: formData.date_prise_service ? DateUtils.toDate(formData.date_prise_service)?.toISOString() || '' : ''
       };
 
       if (this.editingUser) {

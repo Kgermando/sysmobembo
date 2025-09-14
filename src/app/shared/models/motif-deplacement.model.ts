@@ -1,8 +1,8 @@
 export interface IMotifDeplacement {
   uuid: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at?: Date;
 
   migrant_uuid: string;
 
@@ -15,7 +15,7 @@ export interface IMotifDeplacement {
   // Contexte du déplacement
   caractere_volontaire: boolean;
   urgence?: 'faible' | 'moyenne' | 'elevee' | 'critique';
-  date_declenchement: string;
+  date_declenchement: Date;
   duree_estimee?: number; // en jours
 
   // Facteurs externes
@@ -36,7 +36,7 @@ export interface IMotifDeplacementFormData {
   description?: string;
   caractere_volontaire: boolean;
   urgence?: string;
-  date_declenchement: string;
+  date_declenchement: Date;
   duree_estimee?: number;
   conflit_arme: boolean;
   catastrophe_naturelle: boolean;
