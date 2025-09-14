@@ -125,6 +125,7 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
       if (this.selectedMigrant) filters.migrant_uuid = this.selectedMigrant;
       if (this.selectedStatut) filters.statut = this.selectedStatut;
       if (this.selectedNiveauGravite) filters.gravite = this.selectedNiveauGravite;
+      // Note: type_alerte filtering will be handled on the client side if needed
 
       const response = await firstValueFrom(
         this.alertService.getPaginatedAlerts(this.current_page, this.page_size, filters)
@@ -132,8 +133,15 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
       );
 
       if (response.status === 'success') {
-        this.alerts = response.data;
-        this.dataSource.data = response.data;
+        let filteredData = response.data;
+        
+        // Apply client-side filtering for type_alerte if selected
+        if (this.selectedTypeAlerte) {
+          filteredData = filteredData.filter(alert => alert.type_alerte === this.selectedTypeAlerte);
+        }
+        
+        this.alerts = filteredData;
+        this.dataSource.data = filteredData;
         this.total_records = response.pagination.total_records;
       }
     } catch (error: any) {
@@ -208,9 +216,11 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  // Form preparation methods
   prepareNewAlert(): void {
     this.editingAlert = null;
-    this.resetForm();
+    this.alertForm.reset();
+    this.error = null;
   }
 
   prepareEditAlert(alert: IAlert): void {
@@ -225,6 +235,7 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
       action_requise: alert.action_requise,
       personne_responsable: alert.personne_responsable
     });
+    this.error = null;
   }
 
   async deleteAlert(alert: IAlert): Promise<void> {
@@ -426,15 +437,30 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Modal/Offcanvas controls
   openAddOffcanvas(): void {
-    // Implement offcanvas open logic
+    const offcanvasElement = document.getElementById('offcanvas_alert');
+    if (offcanvasElement) {
+      const bsOffcanvas = new (window as any).bootstrap.Offcanvas(offcanvasElement);
+      bsOffcanvas.show();
+    }
   }
 
   openEditOffcanvas(): void {
-    // Implement offcanvas open logic
+    const offcanvasElement = document.getElementById('offcanvas_alert');
+    if (offcanvasElement) {
+      const bsOffcanvas = new (window as any).bootstrap.Offcanvas(offcanvasElement);
+      bsOffcanvas.show();
+    }
   }
 
   closeOffcanvas(): void {
-    // Implement offcanvas close logic
+    const offcanvasElement = document.getElementById('offcanvas_alert');
+    if (offcanvasElement) {
+      const bsOffcanvas = (window as any).bootstrap.Offcanvas.getInstance(offcanvasElement);
+      if (bsOffcanvas) {
+        bsOffcanvas.hide();
+      }
+    }
+    this.resetForm();
   }
 
   openViewModal(alert: IAlert): void {

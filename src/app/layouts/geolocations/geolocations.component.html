@@ -131,84 +131,88 @@
             </div>
 
             <!-- Table -->
-            <div class="table-responsive custom-table" *ngIf="!isLoadingData">
-              <table class="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Migrant</th>
-                    <th>Type localisation</th>
-                    <th>Coordonnées</th>
-                    <th>Pays</th>
-                    <th>Ville</th>
-                    <th>Type mouvement</th>
-                    <th>Date création</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let geolocation of geolocations; trackBy: trackByGeolocationUuid">
-                    <!-- Migrant -->
-                    <td>
-                      <div class="d-flex align-items-center">
-                        <div class="avatar avatar-sm me-2">
-                          <span class="avatar-title bg-primary text-white rounded-circle">
-                            {{ geolocation.migrant ? getInitials(geolocation.migrant) : 'N/A' }}
+            <div class="table-container">
+              <div class="table-responsive-custom" *ngIf="!isLoadingData">
+                <div class="table-scroll-wrapper" #tableScrollWrapper>
+                  <table class="table table-striped custom-table">
+                    <thead>
+                      <tr>
+                        <th class="min-width-200">Migrant</th>
+                        <th class="min-width-150">Type localisation</th>
+                        <th class="min-width-150">Coordonnées</th>
+                        <th class="min-width-120">Pays</th>
+                        <th class="min-width-120">Ville</th>
+                        <th class="min-width-150">Type mouvement</th>
+                        <th class="min-width-150">Date création</th>
+                        <th class="min-width-120">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let geolocation of geolocations; trackBy: trackByGeolocationUuid">
+                        <!-- Migrant -->
+                        <td class="min-width-200">
+                          <div class="d-flex align-items-center">
+                            <div class="avatar avatar-sm me-2">
+                              <span class="avatar-title bg-primary text-white rounded-circle">
+                                {{ geolocation.migrant ? getInitials(geolocation.migrant) : 'N/A' }}
+                              </span>
+                            </div>
+                            <div>
+                              <strong>{{ getMigrantName(geolocation) }}</strong>
+                            </div>
+                          </div>
+                        </td>
+
+                        <!-- Type de localisation -->
+                        <td class="min-width-150">
+                          <span class="badge bg-info">{{ getTypeLocalisationLabel(geolocation.type_localisation) }}</span>
+                        </td>
+
+                        <!-- Coordonnées -->
+                        <td class="min-width-150">
+                          <small class="text-muted">{{ formatCoordinates(geolocation.latitude, geolocation.longitude)
+                            }}</small>
+                        </td>
+
+                        <!-- Pays -->
+                        <td class="min-width-120">{{ geolocation.pays }}</td>
+
+                        <!-- Ville -->
+                        <td class="min-width-120">{{ geolocation.ville || '-' }}</td>
+
+                        <!-- Type de mouvement -->
+                        <td class="min-width-150">
+                          <span *ngIf="geolocation.type_mouvement"
+                            [class]="getTypeMouvementBadgeClass(geolocation.type_mouvement)">
+                            {{ getTypeMouvementLabel(geolocation.type_mouvement) }}
                           </span>
-                        </div>
-                        <div>
-                          <strong>{{ getMigrantName(geolocation) }}</strong>
-                        </div>
-                      </div>
-                    </td>
+                          <span *ngIf="!geolocation.type_mouvement" class="text-muted">-</span>
+                        </td>
 
-                    <!-- Type de localisation -->
-                    <td>
-                      <span class="badge bg-info">{{ getTypeLocalisationLabel(geolocation.type_localisation) }}</span>
-                    </td>
+                        <!-- Date création -->
+                        <td class="min-width-150">{{ geolocation.created_at }}</td>
 
-                    <!-- Coordonnées -->
-                    <td>
-                      <small class="text-muted">{{ formatCoordinates(geolocation.latitude, geolocation.longitude)
-                        }}</small>
-                    </td>
-
-                    <!-- Pays -->
-                    <td>{{ geolocation.pays }}</td>
-
-                    <!-- Ville -->
-                    <td>{{ geolocation.ville || '-' }}</td>
-
-                    <!-- Type de mouvement -->
-                    <td>
-                      <span *ngIf="geolocation.type_mouvement"
-                        [class]="getTypeMouvementBadgeClass(geolocation.type_mouvement)">
-                        {{ getTypeMouvementLabel(geolocation.type_mouvement) }}
-                      </span>
-                      <span *ngIf="!geolocation.type_mouvement" class="text-muted">-</span>
-                    </td>
-
-                    <!-- Date création -->
-                    <td>{{ geolocation.created_at }}</td>
-
-                    <!-- Actions -->
-                    <td>
-                      <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-primary" (click)="openViewModal(geolocation)"
-                          data-bs-toggle="modal" data-bs-target="#viewGeolocationModal">
-                          <i class="ti ti-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-warning" (click)="prepareEditGeolocation(geolocation)"
-                          data-bs-toggle="offcanvas" data-bs-target="#addGeolocationOffcanvas">
-                          <i class="ti ti-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" (click)="deleteGeolocation(geolocation)">
-                          <i class="ti ti-trash"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                        <!-- Actions -->
+                        <td class="min-width-120">
+                          <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" (click)="openViewModal(geolocation)"
+                              data-bs-toggle="modal" data-bs-target="#viewGeolocationModal">
+                              <i class="ti ti-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-warning" (click)="prepareEditGeolocation(geolocation)"
+                              data-bs-toggle="offcanvas" data-bs-target="#addGeolocationOffcanvas">
+                              <i class="ti ti-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" (click)="deleteGeolocation(geolocation)">
+                              <i class="ti ti-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             <!-- Pagination -->

@@ -101,9 +101,11 @@
             <!-- /Search & Filters -->
 
             <!-- Table -->
-            <div class="table-responsive custom-table">
-              <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
-                class="mat-elevation-z2 table tasks-activity tasks">
+            <div class="table-container">
+              <div class="table-responsive-custom" *ngIf="!isLoadingData">
+                <div class="table-scroll-wrapper" #tableScrollWrapper>
+                  <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
+                    class="mat-elevation-z2 table tasks-activity tasks table-striped custom-table">
 
                 <!-- Photo de profil Column -->
                 <ng-container matColumnDef="photo_profil">
@@ -278,12 +280,14 @@
                 <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
                 <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
               </table>
+                </div>
 
-              <!-- Pagination -->
-              <mat-paginator [pageSizeOptions]="[10, 15, 25, 50]" [showFirstLastButtons]="true"
-                (page)="onPageChange($event)" [length]="total_records" [pageSize]="page_size"
-                [pageIndex]="current_page - 1">
-              </mat-paginator>
+                <!-- Pagination -->
+                <mat-paginator [pageSizeOptions]="[10, 15, 25, 50]" [showFirstLastButtons]="true"
+                  (page)="onPageChange($event)" [length]="total_records" [pageSize]="page_size"
+                  [pageIndex]="current_page - 1">
+                </mat-paginator>
+              </div>
 
               <!-- Loading State -->
               @if (isLoadingData) {

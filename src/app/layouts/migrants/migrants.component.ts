@@ -80,6 +80,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   dateNaissanceFin = '';
   selectedPaysOrigine = '';
 
+  // Filter expand state
+  filtersExpanded = false;
+
   // Options pour les filtres
   sexeOptions = [
     { value: 'M', label: 'Masculin' },
@@ -485,6 +488,27 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.loadData();
   }
 
+  toggleFilters(): void {
+    this.filtersExpanded = !this.filtersExpanded;
+    
+    // Update button text and icon
+    setTimeout(() => {
+      const button = document.querySelector('[data-bs-target="#filtersCollapse"]');
+      const icon = button?.querySelector('i');
+      const text = button?.querySelector('.filter-toggle-text');
+      
+      if (this.filtersExpanded) {
+        icon?.classList.remove('ti-chevron-down');
+        icon?.classList.add('ti-chevron-up');
+        if (text) text.textContent = 'Masquer les filtres';
+      } else {
+        icon?.classList.remove('ti-chevron-up');
+        icon?.classList.add('ti-chevron-down');
+        if (text) text.textContent = 'Afficher les filtres';
+      }
+    }, 10);
+  }
+
   // Pagination
   onPageChange(event: PageEvent): void {
     this.current_page = event.pageIndex + 1;
@@ -563,7 +587,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Modal/Offcanvas controls
   openAddOffcanvas(): void {
-    // Implement offcanvas open logic
+    // Open Bootstrap modal
+    const modal = new (window as any).bootstrap.Modal(document.getElementById('migrantModal'));
+    modal.show();
   }
 
   openEditOffcanvas(): void {

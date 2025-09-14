@@ -285,3 +285,163 @@
     }
   }
 }
+
+// === SECTION TABLEAU AVEC SCROLL HORIZONTAL ===
+.table-container {
+  margin-top: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table-responsive-custom {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-width: 100%;
+    position: relative;
+    
+    // Amélioration des styles pour la barre de défilement
+    &::-webkit-scrollbar {
+      height: 10px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f8f9fa;
+      border-radius: 5px;
+      margin: 0 10px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 5px;
+      border: 1px solid #e9ecef;
+      
+      &:hover {
+        background: linear-gradient(135deg, #5a6fd8, #6b42a0);
+      }
+      
+      &:active {
+        background: linear-gradient(135deg, #4d5fc7, #5e3a8f);
+      }
+    }
+    
+    // Pour Firefox
+    scrollbar-width: thin;
+    scrollbar-color: #667eea #f8f9fa;
+  }
+  
+  // Style de la table
+  .custom-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    min-width: 1300px; // Largeur minimale pour forcer le scroll horizontal (biométrie a beaucoup de colonnes)
+    
+    th, td {
+      border: none;
+      padding: 12px 16px;
+      vertical-align: middle;
+      white-space: nowrap; // Empêche le retour à la ligne
+    }
+    
+    th {
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+      font-weight: 600;
+      font-size: 14px;
+      color: #495057;
+      border-bottom: 2px solid #dee2e6;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    td {
+      background: white;
+      border-bottom: 1px solid #f1f3f4;
+      font-size: 13px;
+      
+      &:first-child {
+        border-left: none;
+      }
+      
+      &:last-child {
+        border-right: none;
+      }
+    }
+    
+    tbody tr {
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: #f8f9fa;
+      }
+      
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+// Responsive design pour biométrie
+@media (max-width: 768px) {
+  .table-responsive-custom {
+    .table-scroll-wrapper {
+      &::-webkit-scrollbar {
+        height: 8px;
+      }
+    }
+    
+    .custom-table {
+      min-width: 1000px; // Largeur réduite sur mobile mais toujours avec scroll
+      
+      th, td {
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+// Colonnes avec largeurs minimales spécifiques aux données biométriques
+.min-width-150 { min-width: 150px; }
+.min-width-120 { min-width: 120px; }
+.min-width-100 { min-width: 100px; }
+
+// Styles spécifiques pour les badges de qualité biométrique
+.badge {
+  &.bg-excellente {
+    background: linear-gradient(135deg, #28a745, #20c997) !important;
+  }
+  
+  &.bg-bonne {
+    background: linear-gradient(135deg, #007bff, #6610f2) !important;
+  }
+  
+  &.bg-moyenne {
+    background: linear-gradient(135deg, #ffc107, #fd7e14) !important;
+  }
+  
+  &.bg-faible {
+    background: linear-gradient(135deg, #dc3545, #e83e8c) !important;
+  }
+}
+
+// Amélioration des boutons d'actions
+.action-buttons {
+  .btn {
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+  }
+}

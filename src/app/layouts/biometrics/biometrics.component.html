@@ -157,137 +157,141 @@
 
       <div class="card-body">
         <!-- Data Table -->
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead class="thead-light">
-              <tr>
-                <th>Migrant</th>
-                <th>Type</th>
-                <th>Index doigt</th>
-                <th>Qualité</th>
-                <th>Date capture</th>
-                <th>Dispositif</th>
-                <th>Chiffré</th>
-                <th>Vérification</th>
-                <th>Score</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let biometric of dataSource.data">
-                <td>
-                  <div class="user-info">
-                    <span class="user-name">{{ getMigrantName(biometric.migrant_uuid) }}</span>
-                  </div>
-                </td>
-                <td>
-                  <span class="badge bg-info text-white">
-                    {{ getBiometricTypeLabel(biometric.type_biometrie) }}
-                  </span>
-                </td>
-                <td>
-                  <span *ngIf="biometric.index_doigt; else noFingerIndex">
-                    {{ getFingerIndexLabel(biometric.index_doigt) }}
-                  </span>
-                  <ng-template #noFingerIndex>
-                    <span class="text-muted">-</span>
-                  </ng-template>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="{
-                    'bg-success text-white': biometric.qualite_donnee === 'excellente',
-                    'bg-primary text-white': biometric.qualite_donnee === 'bonne',
-                    'bg-warning text-dark': biometric.qualite_donnee === 'moyenne',
-                    'bg-danger text-white': biometric.qualite_donnee === 'faible'
-                  }">
-                    {{ getQualityLabel(biometric.qualite_donnee) }}
-                  </span>
-                </td>
-                <td>
-                  <div class="date-info">
-                    <span>{{ biometric.date_capture }}</span>
-                    <small class="text-muted d-block" *ngIf="biometric.operateur_capture">
-                      Par: {{ biometric.operateur_capture }}
-                    </small>
-                  </div>
-                </td>
-                <td>
-                  <div class="device-info">
-                    <span>{{ biometric.dispositif_capture || 'Non spécifié' }}</span>
-                    <small class="text-muted d-block" *ngIf="biometric.resolution_capture">
-                      {{ biometric.resolution_capture }}
-                    </small>
-                  </div>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="{
-                    'bg-success text-white': biometric.chiffre,
-                    'bg-secondary text-white': !biometric.chiffre
-                  }">
-                    <i class="ti" [ngClass]="{
-                      'ti-lock': biometric.chiffre,
-                      'ti-lock-open': !biometric.chiffre
-                    }"></i>
-                    {{ biometric.chiffre ? 'Oui' : 'Non' }}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="{
-                    'bg-success text-white': biometric.verifie && biometric.score_confiance && biometric.score_confiance >= 0.8,
-                    'bg-warning text-dark': biometric.verifie && biometric.score_confiance && biometric.score_confiance < 0.8,
-                    'bg-secondary text-white': !biometric.verifie
-                  }">
-                    <i class="ti" [ngClass]="{
-                      'ti-check': biometric.verifie,
-                      'ti-clock': !biometric.verifie
-                    }"></i>
-                    {{ biometric.verifie ? 'Vérifiée' : 'En attente' }}
-                  </span>
-                  <div *ngIf="biometric.verifie && biometric.date_verification" class="small text-muted">
-                    {{ biometric.date_verification }}
-                  </div>
-                </td>
-                <td>   
-                  <span *ngIf="biometric.score_confiance; else noScore" 
-                        class="fw-bold"
-                        [ngClass]="{
-                          'text-success': biometric.score_confiance >= 0.8,
-                          'text-warning': biometric.score_confiance >= 0.6 && biometric.score_confiance < 0.8,
-                          'text-danger': biometric.score_confiance < 0.6
-                        }">
-                    {{ (biometric.score_confiance * 100) | number:'1.1-1' }}%
-                  </span>
-                  <ng-template #noScore>
-                    <span class="text-muted">-</span>
-                  </ng-template>
-                </td>
-                <td>
-                  <div class="action-buttons d-flex gap-1">
-                    <button type="button" class="btn btn-sm btn-outline-primary" 
-                            (click)="openEditModal(biometric)"
-                            data-bs-toggle="tooltip" title="Modifier"
-                            *ngIf="canEditBiometric()">
-                      <i class="ti ti-edit"></i>
-                    </button>
-                    
-                    <button type="button" class="btn btn-sm btn-outline-success" 
-                            (click)="openVerificationModal(biometric)"
-                            data-bs-toggle="tooltip" title="Vérifier"
-                            *ngIf="!biometric.verifie && canVerifyBiometric()">
-                      <i class="ti ti-check"></i>
-                    </button>
-                    
-                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                            (click)="deleteBiometric(biometric)"
-                            data-bs-toggle="tooltip" title="Supprimer"
-                            *ngIf="canDeleteBiometric()">
-                      <i class="ti ti-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="table-container">
+          <div class="table-responsive-custom" *ngIf="!isLoading">
+            <div class="table-scroll-wrapper" #tableScrollWrapper>
+              <table class="table table-hover custom-table">
+                <thead class="thead-light">
+                  <tr>
+                    <th class="min-width-150">Migrant</th>
+                    <th class="min-width-120">Type</th>
+                    <th class="min-width-120">Index doigt</th>
+                    <th class="min-width-100">Qualité</th>
+                    <th class="min-width-150">Date capture</th>
+                    <th class="min-width-150">Dispositif</th>
+                    <th class="min-width-100">Chiffré</th>
+                    <th class="min-width-120">Vérification</th>
+                    <th class="min-width-100">Score</th>
+                    <th class="min-width-150">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let biometric of dataSource.data">
+                    <td class="min-width-150">
+                      <div class="user-info">
+                        <span class="user-name">{{ getMigrantName(biometric.migrant_uuid) }}</span>
+                      </div>
+                    </td>
+                    <td class="min-width-120">
+                      <span class="badge bg-info text-white">
+                        {{ getBiometricTypeLabel(biometric.type_biometrie) }}
+                      </span>
+                    </td>
+                    <td class="min-width-120">
+                      <span *ngIf="biometric.index_doigt; else noFingerIndex">
+                        {{ getFingerIndexLabel(biometric.index_doigt) }}
+                      </span>
+                      <ng-template #noFingerIndex>
+                        <span class="text-muted">-</span>
+                      </ng-template>
+                    </td>
+                    <td class="min-width-100">
+                      <span class="badge" [ngClass]="{
+                        'bg-success text-white': biometric.qualite_donnee === 'excellente',
+                        'bg-primary text-white': biometric.qualite_donnee === 'bonne',
+                        'bg-warning text-dark': biometric.qualite_donnee === 'moyenne',
+                        'bg-danger text-white': biometric.qualite_donnee === 'faible'
+                      }">
+                        {{ getQualityLabel(biometric.qualite_donnee) }}
+                      </span>
+                    </td>
+                    <td class="min-width-150">
+                      <div class="date-info">
+                        <span>{{ biometric.date_capture }}</span>
+                        <small class="text-muted d-block" *ngIf="biometric.operateur_capture">
+                          Par: {{ biometric.operateur_capture }}
+                        </small>
+                      </div>
+                    </td>
+                    <td class="min-width-150">
+                      <div class="device-info">
+                        <span>{{ biometric.dispositif_capture || 'Non spécifié' }}</span>
+                        <small class="text-muted d-block" *ngIf="biometric.resolution_capture">
+                          {{ biometric.resolution_capture }}
+                        </small>
+                      </div>
+                    </td>
+                    <td class="min-width-100">
+                      <span class="badge" [ngClass]="{
+                        'bg-success text-white': biometric.chiffre,
+                        'bg-secondary text-white': !biometric.chiffre
+                      }">
+                        <i class="ti" [ngClass]="{
+                          'ti-lock': biometric.chiffre,
+                          'ti-lock-open': !biometric.chiffre
+                        }"></i>
+                        {{ biometric.chiffre ? 'Oui' : 'Non' }}
+                      </span>
+                    </td>
+                    <td class="min-width-120">
+                      <span class="badge" [ngClass]="{
+                        'bg-success text-white': biometric.verifie && biometric.score_confiance && biometric.score_confiance >= 0.8,
+                        'bg-warning text-dark': biometric.verifie && biometric.score_confiance && biometric.score_confiance < 0.8,
+                        'bg-secondary text-white': !biometric.verifie
+                      }">
+                        <i class="ti" [ngClass]="{
+                          'ti-check': biometric.verifie,
+                          'ti-clock': !biometric.verifie
+                        }"></i>
+                        {{ biometric.verifie ? 'Vérifiée' : 'En attente' }}
+                      </span>
+                      <div *ngIf="biometric.verifie && biometric.date_verification" class="small text-muted">
+                        {{ biometric.date_verification }}
+                      </div>
+                    </td>
+                    <td class="min-width-100">   
+                      <span *ngIf="biometric.score_confiance; else noScore" 
+                            class="fw-bold"
+                            [ngClass]="{
+                              'text-success': biometric.score_confiance >= 0.8,
+                              'text-warning': biometric.score_confiance >= 0.6 && biometric.score_confiance < 0.8,
+                              'text-danger': biometric.score_confiance < 0.6
+                            }">
+                        {{ (biometric.score_confiance * 100) | number:'1.1-1' }}%
+                      </span>
+                      <ng-template #noScore>
+                        <span class="text-muted">-</span>
+                      </ng-template>
+                    </td>
+                    <td class="min-width-150">
+                      <div class="action-buttons d-flex gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                (click)="openEditModal(biometric)"
+                                data-bs-toggle="tooltip" title="Modifier"
+                                *ngIf="canEditBiometric()">
+                          <i class="ti ti-edit"></i>
+                        </button>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-success" 
+                                (click)="openVerificationModal(biometric)"
+                                data-bs-toggle="tooltip" title="Vérifier"
+                                *ngIf="!biometric.verifie && canVerifyBiometric()">
+                          <i class="ti ti-check"></i>
+                        </button>
+                        
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                (click)="deleteBiometric(biometric)"
+                                data-bs-toggle="tooltip" title="Supprimer"
+                                *ngIf="canDeleteBiometric()">
+                          <i class="ti ti-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
           <!-- Loading State -->
           <div *ngIf="isLoading" class="text-center py-4">
