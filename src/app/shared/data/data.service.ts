@@ -23,7 +23,7 @@ export class DataService {
       showSubRoute: true,
       menu: [
         {
-          menuValue: 'Dashboard',
+          menuValue: 'Tableau de Bord',
           hasSubRoute: true,
           showSubRoute: true,
           icon: 'dashboard',
@@ -33,26 +33,18 @@ export class DataService {
               menuValue: 'Vue d\'ensemble',
               route: routes.dashboardSummary,
             },
-            {
-              menuValue: 'Dashboard GIS',
-              route: routes.dashboardGis,
-            },
-            {
-              menuValue: 'Temps Réel',
-              route: routes.dashboardRealtime,
-            },
-            {
-              menuValue: 'Analyse Prédictive',
-              route: routes.dashboardPredictive,
-            },
-            {
-              menuValue: 'Analyse Spatiale',
-              route: routes.dashboardSpatial,
-            },
-            {
-              menuValue: 'Analyse Trajectoire',
-              route: routes.dashboardTrajectory,
-            },
+            // {
+            //   menuValue: 'Dashboard GIS',
+            //   route: routes.dashboardGis,
+            // },
+            // {
+            //   menuValue: 'Temps Réel',
+            //   route: routes.dashboardRealtime,
+            // },
+            // {
+            //   menuValue: 'Analyse Prédictive',
+            //   route: routes.dashboardPredictive,
+            // }, 
           ]
         },
       ],

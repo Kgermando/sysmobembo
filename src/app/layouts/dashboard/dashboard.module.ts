@@ -6,26 +6,19 @@ import { DashboardComponent } from './dashboard.component';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { SharedCoreModule } from '../../shared/shared-core.module';
 import { SharedAdvancedModule } from '../../shared/shared-advanced.module';
-
-// Dashboard Components
-import { GisDashboardComponent } from './components/gis-dashboard/gis-dashboard.component';
-import { RealtimeDashboardComponent } from './components/realtime-dashboard/realtime-dashboard.component';
-import { PredictiveAnalyticsComponent } from './components/predictive-analytics/predictive-analytics.component'; 
  
 // Dashboard Services
 import { DashboardBaseService } from './services/dashboard-base.service';
 import { GisService } from './services/gis.service';
 import { PredictiveAnalysisService } from './services/predictive-analysis.service';
-import { AdvancedAnalyticsService } from './services/advanced-analytics.service';
-import { RealtimeMonitoringService } from './services/realtime-monitoring.service'; 
+import { AdvancedAnalyticsService } from './services/advanced-analytics.service'; 
+import { RealtimeAlertsDashboardService } from './services/realtime-alerts-dashboard.service'; 
+import { OverviewComponent } from './components/overview/overview.component';
  
 @NgModule({
   declarations: [
-    DashboardComponent,
-    // Dashboard Components - convertis en composants normaux
-    GisDashboardComponent,
-    RealtimeDashboardComponent,
-    PredictiveAnalyticsComponent,  
+    DashboardComponent, 
+    OverviewComponent,  
   ],
   imports: [
     CommonModule,
@@ -39,7 +32,7 @@ import { RealtimeMonitoringService } from './services/realtime-monitoring.servic
     GisService,
     PredictiveAnalysisService,
     AdvancedAnalyticsService,
-    RealtimeMonitoringService,  
+    RealtimeAlertsDashboardService,
   ]
 })
 export class DashboardModule { }

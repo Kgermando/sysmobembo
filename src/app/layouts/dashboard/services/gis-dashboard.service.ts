@@ -168,7 +168,7 @@ interface InteractiveMapResponse {
   providedIn: 'root'
 })
 export class GisDashboardService {
-  private readonly apiUrl = `${environment.apiUrl}/api/dashboard/gis`;
+  private readonly apiUrl = `${environment.apiUrl}/dashboard/gis`;
 
   constructor(private http: HttpClient) {}
 

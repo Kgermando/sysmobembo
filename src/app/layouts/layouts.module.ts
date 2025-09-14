@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { LayoutsRoutingModule } from './layouts-routing.module';
 import { SharedCoreModule } from '../shared/shared-core.module';
 import { SharedAdvancedModule } from '../shared/shared-advanced.module';
-import { MigrationComponentsModule } from '../shared/components/migration/migration-components.module';
 import { NgScrollbarModule } from 'ngx-scrollbar';
 import { LayoutsComponent } from './layouts.component';
 import { HeaderComponent } from './common/header/header.component';

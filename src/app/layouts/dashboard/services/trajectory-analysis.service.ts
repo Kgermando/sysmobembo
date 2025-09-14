@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs'; 
 import { DashboardBaseService } from './dashboard-base.service';
 
 // ===============================

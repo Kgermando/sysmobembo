@@ -1,129 +1,136 @@
-<!-- Modal de détails d'alerte corrigé -->
-<div class="modal fade" id="alertDetailsModal" tabindex="-1" *ngIf="viewingAlert">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="ti ti-alert-circle me-2"></i>Détails de l'alerte
-                </h5>
-                <button type="button" class="btn-close" (click)="closeViewModal()"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Migrant</label>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar avatar-sm bg-primary text-white rounded-circle me-2">
-                                    {{ getMigrantInitials(viewingAlert!.migrant_uuid) }}
+<!-- Page Wrapper -->
+<div class="page-wrapper">
+    <div class="content">
+
+        <!-- Modal de détails d'alerte corrigé -->
+        <div class="modal fade" id="alertDetailsModal" tabindex="-1" *ngIf="viewingAlert">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="ti ti-alert-circle me-2"></i>Détails de l'alerte
+                        </h5>
+                        <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Migrant</label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-sm bg-primary text-white rounded-circle me-2">
+                                            {{ getMigrantInitials(viewingAlert!.migrant_uuid) }}
+                                        </div>
+                                        <div>{{ getMigrantName(viewingAlert!.migrant_uuid) }}</div>
+                                    </div>
                                 </div>
-                                <div>{{ getMigrantName(viewingAlert!.migrant_uuid) }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Type d'alerte</label>
+                                    <div>
+                                        <span [class]="getTypeAlerteBadgeClass(viewingAlert!.type_alerte)">
+                                            <i class="{{ getTypeAlerteInfo(viewingAlert!.type_alerte).icon }} me-1"></i>
+                                            {{ getTypeAlerteInfo(viewingAlert!.type_alerte).label }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Niveau de gravité</label>
+                                    <div>
+                                        <span [class]="getAlertBadgeClass(viewingAlert!.niveau_gravite)">
+                                            {{ getNiveauGraviteInfo(viewingAlert!.niveau_gravite).label }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Statut</label>
+                                    <div>
+                                        <span [class]="getStatutBadgeClass(viewingAlert!.statut)">
+                                            {{ getStatutInfo(viewingAlert!.statut).label }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Titre</label>
+                            <div>{{ viewingAlert!.titre }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description</label>
+                            <div class="p-3 bg-light rounded">{{ viewingAlert!.description }}</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Date d'expiration</label>
+                                    <div>{{ viewingAlert!.date_expiration! }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Personne responsable</label>
+                                    <div>{{ viewingAlert!.personne_responsable || 'Non assigné' }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div *ngIf="viewingAlert!.action_requise" class="mb-3">
+                            <label class="form-label fw-semibold">Action requise</label>
+                            <div class="p-3 bg-light rounded">{{ viewingAlert!.action_requise }}</div>
+                        </div>
+
+                        <div *ngIf="viewingAlert!.date_resolution || viewingAlert!.commentaire_resolution" class="mb-3">
+                            <label class="form-label fw-semibold">Résolution</label>
+                            <div class="p-3 bg-light rounded">
+                                <div *ngIf="viewingAlert!.date_resolution" class="mb-2">
+                                    <strong>Date de résolution:</strong> {{ viewingAlert!.date_resolution | date:
+                                    'dd/MM/yyyy' }}
+                                </div>
+                                <div *ngIf="viewingAlert!.commentaire_resolution">
+                                    <strong>Commentaire:</strong> {{ viewingAlert!.commentaire_resolution }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Créée le</label>
+                                    <div>{{ viewingAlert!.created_at | date: 'dd/MM/yyyy' }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Modifiée le</label>
+                                    <div>{{ viewingAlert!.updated_at | date: 'dd/MM/yyyy' }}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Type d'alerte</label>
-                            <div>
-                                <span [class]="getTypeAlerteBadgeClass(viewingAlert!.type_alerte)">
-                                    <i class="{{ getTypeAlerteInfo(viewingAlert!.type_alerte).icon }} me-1"></i>
-                                    {{ getTypeAlerteInfo(viewingAlert!.type_alerte).label }}
-                                </span>
-                            </div>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" (click)="closeViewModal()">Fermer</button>
+                        <button type="button" class="btn btn-primary"
+                            (click)="prepareEditAlert(viewingAlert!); closeViewModal(); openEditOffcanvas()">
+                            <i class="ti ti-edit me-2"></i>Modifier
+                        </button>
+                        <button *ngIf="viewingAlert!.statut === 'active'" type="button" class="btn btn-success"
+                            (click)="resolveAlert(viewingAlert!); closeViewModal()">
+                            <i class="ti ti-check me-2"></i>Résoudre
+                        </button>
                     </div>
                 </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Niveau de gravité</label>
-                            <div>
-                                <span [class]="getAlertBadgeClass(viewingAlert!.niveau_gravite)">
-                                    {{ getNiveauGraviteInfo(viewingAlert!.niveau_gravite).label }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Statut</label>
-                            <div>
-                                <span [class]="getStatutBadgeClass(viewingAlert!.statut)">
-                                    {{ getStatutInfo(viewingAlert!.statut).label }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Titre</label>
-                    <div>{{ viewingAlert!.titre }}</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Description</label>
-                    <div class="p-3 bg-light rounded">{{ viewingAlert!.description }}</div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Date d'expiration</label>
-                            <div>{{ viewingAlert!.date_expiration! }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Personne responsable</label>
-                            <div>{{ viewingAlert!.personne_responsable || 'Non assigné' }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div *ngIf="viewingAlert!.action_requise" class="mb-3">
-                    <label class="form-label fw-semibold">Action requise</label>
-                    <div class="p-3 bg-light rounded">{{ viewingAlert!.action_requise }}</div>
-                </div>
-
-                <div *ngIf="viewingAlert!.date_resolution || viewingAlert!.commentaire_resolution" class="mb-3">
-                    <label class="form-label fw-semibold">Résolution</label>
-                    <div class="p-3 bg-light rounded">
-                        <div *ngIf="viewingAlert!.date_resolution" class="mb-2">
-                            <strong>Date de résolution:</strong> {{ viewingAlert!.date_resolution | date: 'dd/MM/yyyy' }}
-                        </div>
-                        <div *ngIf="viewingAlert!.commentaire_resolution">
-                            <strong>Commentaire:</strong> {{ viewingAlert!.commentaire_resolution }}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Créée le</label>
-                            <div>{{ viewingAlert!.created_at | date: 'dd/MM/yyyy' }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Modifiée le</label>
-                            <div>{{ viewingAlert!.updated_at | date: 'dd/MM/yyyy' }}</div>
-                        </div>
-                    </div> 
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="closeViewModal()">Fermer</button>
-                <button type="button" class="btn btn-primary"
-                    (click)="prepareEditAlert(viewingAlert!); closeViewModal(); openEditOffcanvas()">
-                    <i class="ti ti-edit me-2"></i>Modifier
-                </button>
-                <button *ngIf="viewingAlert!.statut === 'active'" type="button" class="btn btn-success"
-                    (click)="resolveAlert(viewingAlert!); closeViewModal()">
-                    <i class="ti ti-check me-2"></i>Résoudre
-                </button>
             </div>
         </div>
     </div>

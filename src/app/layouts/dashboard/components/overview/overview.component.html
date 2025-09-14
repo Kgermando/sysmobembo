@@ -1,0 +1,415 @@
+<!-- Dashboard de Déplacement - Vue d'ensemble -->
+
+<div class="page-wrapper">
+    <div class="content deplacement-dashboard">
+
+
+        <!-- Header avec contrôles -->
+        <div class="dashboard-header">
+            <div class="header-content">
+                <h1 class="dashboard-title">
+                    <i class="las la-chart-area"></i>
+                    Tableau de Bord - Analyse des Déplacements
+                </h1>
+
+                <!-- Contrôles de filtre -->
+                <div class="filter-controls">
+                    <div class="control-group">
+                        <label>Période d'analyse</label>
+                        <select (change)="changerPeriode(+$any($event.target).value)" [value]="periodeSelectionnee">
+                            <option value="3">3 derniers mois</option>
+                            <option value="6">6 derniers mois</option>
+                            <option value="12">12 derniers mois</option>
+                            <option value="24">24 derniers mois</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Province</label>
+                        <select (change)="changerProvince($any($event.target).value)" [value]="provinceSelectionnee">
+                            <option value="">Toutes les provinces</option>
+                            <option value="Kinshasa">Kinshasa</option>
+                            <option value="Kasaï">Kasaï</option>
+                            <option value="Katanga">Katanga</option>
+                            <option value="Équateur">Équateur</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-refresh" (click)="actualiser()" [disabled]="loading">
+                        <i class="las la-sync-alt" [class.spinning]="loading"></i>
+                        Actualiser
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Indicateurs de chargement et erreur -->
+        <div *ngIf="loading" class="loading-state">
+            <div class="loading-spinner">
+                <i class="las la-spinner spinning"></i>
+                <p>Chargement des données...</p>
+            </div>
+        </div>
+
+        <div *ngIf="error" class="error-state">
+            <div class="error-message">
+                <i class="las la-exclamation-triangle"></i>
+                <p>{{ error }}</p>
+                <button (click)="actualiser()" class="retry-btn">Réessayer</button>
+            </div>
+        </div>
+
+        <!-- Contenu principal du dashboard -->
+        <div *ngIf="!loading && !error && indicateurs" class="dashboard-content">
+
+            <!-- Section KPIs principaux -->
+            <div class="kpis-section"> 
+                <div class="kpis-grid">
+                    <!-- Total PDI -->
+                    <div class="kpi-card primary">
+                        <div class="kpi-icon">
+                            <i class="las la-users"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>Total PDI</h3>
+                            <p class="kpi-value">{{ formaterNombre(totalPDI) }}</p>
+                            <span class="kpi-label">Personnes déplacées internes</span>
+                        </div>
+                    </div>
+
+                    <!-- Personnes retournées -->
+                    <div class="kpi-card success">
+                        <div class="kpi-icon">
+                            <i class="las la-home"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>Retours</h3>
+                            <p class="kpi-value">{{ formaterNombre(personnesRetournees) }}</p>
+                            <span class="kpi-label">Personnes retournées</span>
+                        </div>
+                    </div>
+
+                    <!-- Taux de retour -->
+                    <div class="kpi-card info">
+                        <div class="kpi-icon">
+                            <i class="las la-percentage"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>Taux de Retour</h3>
+                            <p class="kpi-value">{{ formaterPourcentage(tauxRetour) }}</p>
+                            <span class="kpi-label">Pourcentage de retours</span>
+                        </div>
+                    </div>
+
+                    <!-- Mouvements massifs -->
+                    <div class="kpi-card warning">
+                        <div class="kpi-icon">
+                            <i class="las la-exclamation-triangle"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>Mouvements Massifs</h3>
+                            <p class="kpi-value">{{ formaterNombre(mouvementsMassifs) }}</p>
+                            <span class="kpi-label">30 derniers jours</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section graphiques principaux -->
+            <div class="charts-main-section">
+ 
+                <!-- Évolution temporelle -->
+                <div class="card flex-fill large">
+                    <div class="card-header">
+                        <h3><i class="las la-chart-line"></i> Évolution Temporelle des Déplacements</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Graphique d'évolution temporelle simplifié -->
+                        <div class="simple-line-chart">
+                            <div class="chart-legend">
+                                <div class="legend-item">
+                                    <span class="legend-color nouveaux"></span>
+                                    <span>Nouveaux déplacés</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color retours"></span>
+                                    <span>Retours</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-color cumule"></span>
+                                    <span>Total cumulé</span>
+                                </div>
+                            </div>
+                            <div class="chart-bars">
+                                <div *ngFor="let item of evolutionLineData[0]?.series?.slice(0, 6)"
+                                    class="chart-bar-group">
+                                    <div class="bar-label">{{ item.name }}</div>
+                                    <div class="bars">
+                                        <div class="bar nouveaux" [style.height.%]="getBarHeight(item.value, 0)"
+                                            [title]="'Nouveaux: ' + formaterNombre(item.value)"></div>
+                                        <div class="bar retours"
+                                            [style.height.%]="getBarHeight(getRetourValue(item.name), 1)"
+                                            [title]="'Retours: ' + formaterNombre(getRetourValue(item.name))"></div>
+                                        <div class="bar cumule"
+                                            [style.height.%]="getBarHeight(getCumuleValue(item.name), 2)"
+                                            [title]="'Cumulé: ' + formaterNombre(getCumuleValue(item.name))"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Causes de déplacement -->
+                <div class="card flex-fill">
+                    <div class="card-body">
+                        <!-- Graphique ApexCharts en barres horizontales -->
+                        <div *ngIf="causesPieData.length > 0; else emptyCauses">
+                            <apx-chart 
+                                #causesChart
+                                [series]="causesChartOptions.series!"
+                                [chart]="causesChartOptions.chart!"
+                                [plotOptions]="causesChartOptions.plotOptions!"
+                                [dataLabels]="causesChartOptions.dataLabels!"
+                                [xaxis]="causesChartOptions.xaxis!"
+                                [yaxis]="causesChartOptions.yaxis!"
+                                [colors]="causesChartOptions.colors!"
+                                [title]="causesChartOptions.title!"
+                                [legend]="causesChartOptions.legend!">
+                            </apx-chart>
+                        </div>
+                        <ng-template #emptyCauses>
+                            <div class="empty-state">
+                                <i class="las la-chart-bar"></i>
+                                <p>Aucune donnée sur les causes disponible</p>
+                            </div>
+                        </ng-template>
+                    </div>
+                </div>
+
+                <!-- Répartition géographique -->
+                <div class="card flex-fill">
+                    <div class="card-header">
+                        <h3><i class="las la-map-marked-alt"></i> Top 10 Provinces</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Graphique ApexCharts en barres verticales -->
+                        <div *ngIf="repartitionBarData.length > 0; else emptyProvinces">
+                            <apx-chart 
+                                #provincesChart
+                                [series]="provincesChartOptions.series!"
+                                [chart]="provincesChartOptions.chart!"
+                                [plotOptions]="provincesChartOptions.plotOptions!"
+                                [dataLabels]="provincesChartOptions.dataLabels!"
+                                [xaxis]="provincesChartOptions.xaxis!"
+                                [yaxis]="provincesChartOptions.yaxis!"
+                                [colors]="provincesChartOptions.colors!"
+                                [title]="provincesChartOptions.title!"
+                                [legend]="provincesChartOptions.legend!">
+                            </apx-chart>
+                        </div>
+                        <ng-template #emptyProvinces>
+                            <div class="empty-state">
+                                <i class="las la-map-marked-alt"></i>
+                                <p>Aucune donnée sur les provinces disponible</p>
+                            </div>
+                        </ng-template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section analyses détaillées -->
+            <div class="detailed-analysis-section">
+
+                <!-- Profil démographique -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <h3><i class="las la-user-friends"></i> Profil Démographique</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="demographic-chart">
+                            <!-- Graphique démographique simplifié -->
+                            <div class="demo-chart">
+                                <div *ngFor="let item of demographiqueData; let i = index" class="demo-item">
+                                    <div class="demo-circle" [style.background-color]="getColorByIndex(i)"
+                                        [style.width.px]="item.value * 2 + 40" [style.height.px]="item.value * 2 + 40">
+                                        <span class="demo-percentage">{{ item.value.toFixed(1) }}%</span>
+                                    </div>
+                                    <div class="demo-label">{{ item.name }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="demographic-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Âge moyen:</span>
+                                <span class="stat-value">
+                                    {{ indicateurs.vulnerabilite_besoins.profil_demographique.age_moyen.toFixed(1)
+                                    || '0' }} ans</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accès aux services -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <h3><i class="las la-hands-helping"></i> Accès aux Services de Base</h3>
+                    </div>
+                    <div class="card-content">
+                        <!-- Graphique en barres horizontales simplifié -->
+                        <div class="horizontal-bar-chart">
+                            <div *ngFor="let item of servicesData" class="h-bar-item">
+                                <div class="h-bar-label">{{ item.name }}</div>
+                                <div class="h-bar-container">
+                                    <div class="h-bar-fill" [style.width.%]="item.value"
+                                        [style.background-color]="getServiceColor(item.name)">
+                                        <span class="h-bar-text">{{ item.value.toFixed(1) }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zones à risque -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <h3><i class="las la-shield-alt"></i> Zones à Haut Risque</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="risk-zones">
+                            <ng-container *ngIf="zonesRisqueData.length > 0; else noRiskZones">
+                              <div *ngFor="let zone of zonesRisqueData.slice(0, 5)" class="risk-zone-item"
+                                  [class.risque-critique]="zone.extra?.niveau === 'CRITIQUE'"
+                                  [class.risque-eleve]="zone.extra?.niveau === 'ÉLEVÉ'"
+                                  [class.risque-moyen]="zone.extra?.niveau === 'MOYEN'">
+                                  <div class="zone-info">
+                                      <h4>{{ zone.name }}</h4>
+                                      <p>{{ formaterNombre(zone.value) }} personnes à risque</p>
+                                      <span class="risk-badge" [class.risque-critique]="zone.extra?.niveau === 'CRITIQUE'"
+                                          [class.risque-eleve]="zone.extra?.niveau === 'ÉLEVÉ'"
+                                          [class.risque-moyen]="zone.extra?.niveau === 'MOYEN'">
+                                          {{ zone.extra?.niveau }}
+                                      </span>
+                                  </div>
+                              </div>
+                            </ng-container>
+                            <ng-template #noRiskZones>
+                              <div class="no-data">Aucune zone à haut risque</div>
+                            </ng-template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section alertes et tendances -->
+            <div class="alerts-trends-section">
+
+                <!-- Alertes récentes -->
+                <div class="alerts-card">
+                    <div class="card-header">
+                        <h3><i class="las la-bell"></i> Alertes Récentes</h3>
+                        <span class="alert-count">{{ alertesRecentes.length }}</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="alerts-list">
+                            <ng-container *ngIf="alertesRecentes.length > 0; else noAlerts">
+                              <div *ngFor="let alerte of alertesRecentes.slice(0, 5)" class="alert-item"
+                                  [class.alerte-critique]="alerte.niveau_gravite === 'critical'"
+                                  [class.alerte-danger]="alerte.niveau_gravite === 'danger'"
+                                  [class.alerte-warning]="alerte.niveau_gravite === 'warning'">
+                                  <div class="alert-icon">
+                                      <i class="las la-exclamation-circle"></i>
+                                  </div>
+                                  <div class="alert-content">
+                                      <h4>{{ alerte.zone }}</h4>
+                                      <p>{{ alerte.description }}</p>
+                                      <span class="alert-type">{{ alerte.type_alerte }}</span>
+                                      <span class="alert-date">{{ formatDate(alerte.date_detection) }}</span>
+                                  </div>
+                              </div>
+                            </ng-container>
+                            <ng-template #noAlerts>
+                              <div class="no-data">Aucune alerte récente</div>
+                            </ng-template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top provinces -->
+                <div class="provinces-card">
+                    <div class="card-header">
+                        <h3><i class="las la-trophy"></i> Top 5 Provinces</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="provinces-ranking">
+                            <ng-container *ngIf="topProvinces.length > 0; else noProvinces">
+                              <div *ngFor="let province of topProvinces; let i = index" class="province-item">
+                                  <div class="province-rank">{{ i + 1 }}</div>
+                                  <div class="province-info">
+                                      <h4>{{ province.province }}</h4>
+                                      <div class="province-stats">
+                                          <span class="pdi-count">{{ formaterNombre(province.nombre_pdi) }} PDI</span>
+                                          <span class="percentage">{{ formaterPourcentage(province.pourcentage) }}</span>
+                                      </div>
+                                  </div>
+                                  <div class="province-bar">
+                                      <div class="bar-fill" [style.width.%]="province.pourcentage"></div>
+                                  </div>
+                              </div>
+                            </ng-container>
+                            <ng-template #noProvinces>
+                              <div class="no-data">Aucune province à afficher</div>
+                            </ng-template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section statistiques d'hébergement -->
+            <div class="housing-section">
+                <div class="housing-card">
+                    <div class="card-header">
+                        <h3><i class="las la-building"></i> Situation d'Hébergement</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="housing-stats">
+                            <div class="housing-stat">
+                                <div class="stat-icon sites">
+                                    <i class="las la-home"></i>
+                                </div>
+                                <div class="stat-details">
+                                    <h4>Taux d'Occupation des Sites</h4>
+                                    <p class="stat-value">{{
+                                        formaterPourcentage(indicateurs.vulnerabilite_besoins.taux_occupation_sites
+                                        || 0) }}</p>
+                                </div>
+                            </div>
+                            <div class="housing-stat">
+                                <div class="stat-icon hors-sites">
+                                    <i class="las la-exclamation-triangle"></i>
+                                </div>
+                                <div class="stat-details">
+                                    <h4>Déplacés Hors Sites</h4>
+                                    <p class="stat-value">{{
+                                        formaterNombre(indicateurs.vulnerabilite_besoins.deplaces_hors_sites || 0)
+                                        }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer du dashboard -->
+            <div class="dashboard-footer">
+                <div class="footer-info">
+                    <p><i class="las la-clock"></i> Dernière mise à jour: {{
+                        formatDate(indicateurs.date_generation) }}</p>
+                    <p><i class="las la-calendar"></i> Période d'analyse: {{ indicateurs.periode_analyse }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
