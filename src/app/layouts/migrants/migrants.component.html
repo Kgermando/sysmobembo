@@ -624,6 +624,27 @@
                   </div>
                 </div>
 
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Date d'émission du document</label>
+                    <input type="date" class="form-control" formControlName="date_emission_document">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Date d'expiration du document</label>
+                    <input type="date" class="form-control" formControlName="date_expiration_document">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Autorité d'émission</label>
+                    <input type="text" class="form-control" formControlName="autorite_emission">
+                  </div>
+                </div>
+
                 <!-- Informations migratoires -->
                 <div class="col-12">
                   <h6 class="mb-3 mt-3">Informations migratoires</h6>
@@ -654,6 +675,30 @@
                     <div *ngIf="isFieldInvalid('pays_origine')" class="invalid-feedback">
                       {{ getFieldError('pays_origine') }}
                     </div>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Date d'entrée</label>
+                    <input type="date" class="form-control" formControlName="date_entree">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Point d'entrée</label>
+                    <input type="text" class="form-control" formControlName="point_entree">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Pays de destination</label>
+                    <select class="form-control" formControlName="pays_destination">
+                      <option value="">Sélectionner</option>
+                      <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
+                    </select>
                   </div>
                 </div>
 
@@ -698,6 +743,42 @@
                   <div class="input-block mb-3">
                     <label class="form-label">Pays actuel</label>
                     <input type="text" class="form-control" formControlName="pays_actuel">
+                  </div>
+                </div>
+
+                <!-- Informations familiales -->
+                <div class="col-12">
+                  <h6 class="mb-3 mt-3">Informations familiales</h6>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Situation matrimoniale</label>
+                    <select class="form-control" formControlName="situation_matrimoniale">
+                      <option value="">Sélectionner</option>
+                      <option *ngFor="let situation of situationMatrimonialeOptions" [value]="situation.value">{{ situation.label }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Nombre d'enfants</label>
+                    <input type="number" class="form-control" formControlName="nombre_enfants" min="0">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Personne de contact</label>
+                    <input type="text" class="form-control" formControlName="personne_contact">
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Téléphone de contact</label>
+                    <input type="tel" class="form-control" formControlName="telephone_contact">
                   </div>
                 </div>
 

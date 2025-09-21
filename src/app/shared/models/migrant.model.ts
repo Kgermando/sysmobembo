@@ -173,8 +173,8 @@ export interface IMigrantFormData {
   nationalite: string;
   type_document: string;
   numero_document: string;
-  date_emission_document?: Date; // Gardé en string pour les formulaires HTML
-  date_expiration_document?: Date; // Gardé en string pour les formulaires HTML
+  date_emission_document?: string; // Gardé en string pour les formulaires HTML
+  date_expiration_document?: string; // Gardé en string pour les formulaires HTML
   autorite_emission?: string;
   telephone?: string;
   email?: string;
@@ -186,7 +186,7 @@ export interface IMigrantFormData {
   personne_contact?: string;
   telephone_contact?: string;
   statut_migratoire: string;
-  date_entree?: Date; // Gardé en string pour les formulaires HTML
+  date_entree?: string; // Gardé en string pour les formulaires HTML
   point_entree?: string;
   pays_origine: string;
   pays_destination?: string;

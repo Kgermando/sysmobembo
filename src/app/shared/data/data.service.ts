@@ -136,7 +136,7 @@ export class DataService {
       menu: [
         {
           menuValue: 'Motifs de Déplacement',
-          icon: 'move',
+          icon: 'map-pin',
           base: 'motifs',
           page: 'motifs-deplacement',
           route: routes.motifsDeplacementComponent,

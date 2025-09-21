@@ -354,10 +354,13 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       const formData: IMigrantFormData = this.migrantForm.value;
 
-      // Convertir les champs de date
+      // Convertir tous les champs de date de string (input HTML) vers string (format API)
       const migrantData = {
         ...formData,
-        date_naissance: formData.date_naissance ? new Date(formData.date_naissance).toISOString() : ''
+        date_naissance: formData.date_naissance ? new Date(formData.date_naissance).toISOString() : '',
+        date_emission_document: formData.date_emission_document ? new Date(formData.date_emission_document).toISOString() : undefined,
+        date_expiration_document: formData.date_expiration_document ? new Date(formData.date_expiration_document).toISOString() : undefined,
+        date_entree: formData.date_entree ? new Date(formData.date_entree).toISOString() : undefined
       };
 
       let response;
@@ -396,14 +399,14 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.migrantForm.patchValue({
       nom: migrant.nom,
       prenom: migrant.prenom,
-      date_naissance: migrant.date_naissance ? migrant.date_naissance : new Date(),
+      date_naissance: migrant.date_naissance ? this.formatDateForInput(migrant.date_naissance) : '',
       lieu_naissance: migrant.lieu_naissance,
       sexe: migrant.sexe,
       nationalite: migrant.nationalite,
       type_document: migrant.type_document,
       numero_document: migrant.numero_document,
-      date_emission_document: migrant.date_emission_document ? migrant.date_emission_document : new Date(),
-      date_expiration_document: migrant.date_expiration_document ? migrant.date_expiration_document : new Date(),
+      date_emission_document: migrant.date_emission_document ? this.formatDateForInput(migrant.date_emission_document) : '',
+      date_expiration_document: migrant.date_expiration_document ? this.formatDateForInput(migrant.date_expiration_document) : '',
       autorite_emission: migrant.autorite_emission,
       telephone: migrant.telephone,
       email: migrant.email,
@@ -415,12 +418,19 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       personne_contact: migrant.personne_contact,
       telephone_contact: migrant.telephone_contact,
       statut_migratoire: migrant.statut_migratoire,
-      date_entree: migrant.date_entree ? migrant.date_entree : new Date(),
+      date_entree: migrant.date_entree ? this.formatDateForInput(migrant.date_entree) : '',
       point_entree: migrant.point_entree,
       pays_origine: migrant.pays_origine,
       pays_destination: migrant.pays_destination,
       actif: migrant.actif
     });
+  }
+
+  // Méthode utilitaire pour formater les dates pour les inputs HTML (format YYYY-MM-DD)
+  private formatDateForInput(date: Date | string): string {
+    if (!date) return '';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toISOString().split('T')[0];
   }
 
   async deleteMigrant(migrant: IMigrant): Promise<void> {

@@ -1,432 +1,586 @@
-<!-- Page Header -->
-<div class="page-header">
-  <div class="page-title">
-    <h4>Motifs de Déplacement</h4>
-    <h6>Gestion des motifs de déplacement des migrants</h6>
-  </div>
-  <div class="page-btn">
-    <button class="btn btn-added" (click)="openAddOffcanvas()">
-      <i class="fas fa-plus"></i> Ajouter un motif
-    </button>
-  </div>
-</div>
+<!-- Page Wrapper -->
+<div class="page-wrapper">
+  <div class="content">
 
-<!-- Statistics Cards -->
-<div class="row" *ngIf="motifStats">
-  <div class="col-lg-3 col-sm-6 col-12">
-    <div class="dash-widget">
-      <div class="dash-widgetimg">
-        <span><i class="fas fa-clipboard-list"></i></span>
-      </div>
-      <div class="dash-widgetcontent">
-        <h5>{{ getStatValue('total_motifs') | number }}</h5>
-        <h6>Total Motifs</h6>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-3 col-sm-6 col-12">
-    <div class="dash-widget dash1">
-      <div class="dash-widgetimg">
-        <span><i class="fas fa-heart"></i></span>
-      </div>
-      <div class="dash-widgetcontent">
-        <h5>{{ getStatValue('motifs_volontaires') | number }}</h5>
-        <h6>Volontaires</h6>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-3 col-sm-6 col-12">
-    <div class="dash-widget dash2">
-      <div class="dash-widgetimg">
-        <span><i class="fas fa-exclamation-triangle"></i></span>
-      </div>
-      <div class="dash-widgetcontent">
-        <h5>{{ getStatValue('motifs_involontaires') | number }}</h5>
-        <h6>Involontaires</h6>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-3 col-sm-6 col-12">
-    <div class="dash-widget dash3">
-      <div class="dash-widgetimg">
-        <span><i class="fas fa-shield-alt"></i></span>
-      </div>
-      <div class="dash-widgetcontent">
-        <h5>{{ getFacteurExterneCount('conflit_arme') | number }}</h5>
-        <h6>Conflits Armés</h6>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Filters -->
-<div class="card">
-  <div class="card-body">
-    <div class="table-top">
-      <div class="search-set">
-        <div class="search-path">
-          <a class="btn btn-filter" (click)="resetFilters()">
-            <i class="fas fa-redo"></i>
-          </a>
-        </div>
-        <div class="search-input">
-          <input 
-            #searchInput
-            type="text" 
-            placeholder="Rechercher..."
-            class="form-control"
-            [(ngModel)]="searchTerm"
-            (keyup.enter)="onSearchChange(searchTerm)"
-            (input)="onSearchChange($any($event.target).value)">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="row">
+        <div class="col-sm-12">
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a [routerLink]="'/web/dashboard'">Tableau de bord</a></li>
+            <li class="breadcrumb-item active">Gestion des Motifs de Déplacement</li>
+          </ul>
         </div>
       </div>
-      <div class="wordset">
-        <ul>
-          <li>
-            <select class="form-control" 
-                    [(ngModel)]="selectedMigrant"
-                    (change)="applyFilters()">
-              <option value="">Tous les migrants</option>
-              <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                {{ migrant.nom }} {{ migrant.prenom }}
-              </option>
-            </select>
-          </li>
-        </ul>
+    </div>
+    <!-- /Page Header -->
+
+    <!-- Enterprise Info Section -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="alert alert-info border-0 mb-0">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <i class="ti ti-route fs-3"></i>
+            </div>
+            <div class="col">
+              <h6 class="mb-1">Gestion des Motifs de Déplacement</h6>
+              <small class="text-muted">Administration et suivi des causes de déplacement des migrants</small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
+    <!-- /Enterprise Info Section -->
 
-<!-- Main Table -->
-<div class="card">
-  <div class="card-body">
-    <!-- Error Alert -->
-    <div class="alert alert-danger" *ngIf="error">
-      {{ error }}
-      <button type="button" class="btn-close" (click)="error = null"></button>
-    </div>
-
-    <!-- Loading -->
-    <div class="text-center" *ngIf="isLoadingData">
-      <div class="spinner-border" role="status">
-        <span class="visually-hidden">Chargement...</span>
+    <!-- Statistics Cards -->
+    <div class="row mb-4" *ngIf="motifStats">
+      <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card bg-primary text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('total_motifs') | number }}</h4>
+                <p class="mb-0 small">Total Motifs</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-clipboard-list fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card bg-success text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('motifs_volontaires') | number }}</h4>
+                <p class="mb-0 small">Volontaires</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-heart fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card bg-warning text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getStatValue('motifs_involontaires') | number }}</h4>
+                <p class="mb-0 small">Involontaires</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-alert-triangle fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-sm-6">
+        <div class="card bg-danger text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getFacteurExterneCount('conflit_arme') | number }}</h4>
+                <p class="mb-0 small">Conflits Armés</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-shield-x fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+    <!-- /Statistics Cards -->
 
-    <!-- Table -->
-    <div class="table-responsive" *ngIf="!isLoadingData">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Migrant</th>
-            <th>Type de Motif</th>
-            <th>Motif Principal</th>
-            <th>Caractère</th>
-            <th>Urgence</th>
-            <th>Date Déclenchement</th>
-            <th>Facteurs Externes</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let motif of motifs">
-            <td>
-              <div class="userimgname">
-                <div class="product-img">
-                  <div class="avatar avatar-md">
-                    <span class="avatar-text">{{ getMigrantInitials(motif.migrant_uuid) }}</span>
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            <div class="row align-items-center">
+              <div class="col">
+                <h4 class="card-title">Liste des Motifs de Déplacement</h4>
+              </div>
+              <div class="col-auto">
+                <a href="javascript:void(0);" class="btn btn-primary" (click)="openAddOffcanvas()">
+                  <i class="ti ti-plus me-2"></i>Ajouter un motif
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Search & Filters -->
+            <div class="filters-container mb-4">
+              <div class="card border-0 bg-light">
+                <div class="card-header bg-light border-0 py-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                      <i class="ti ti-filter me-2"></i>Filtres de recherche
+                    </h6>
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse"
+                      data-bs-target="#filtersCollapse" aria-expanded="false" aria-controls="filtersCollapse">
+                      <i class="ti ti-chevron-down me-1"></i>
+                      <span class="filter-toggle-text">Afficher les filtres</span>
+                    </button>
                   </div>
                 </div>
-                <div class="product-content">
-                  <h6>{{ getMigrantName(motif.migrant_uuid) }}</h6>
-                  <p>{{ motif.migrant_uuid }}</p>
+                <div class="collapse" id="filtersCollapse">
+                  <div class="card-body">
+                    <!-- Section 1: Recherche principale -->
+                    <div class="filter-section mb-4">
+                      <div class="row align-items-end">
+                        <div class="col-lg-4 col-md-6">
+                          <div class="input-block mb-3">
+                            <label class="form-label fw-semibold">
+                              <i class="ti ti-search me-1"></i>Recherche globale
+                            </label>
+                            <input type="text" class="form-control form-control-lg"
+                              placeholder="Rechercher par motif, migrant..." [(ngModel)]="searchTerm"
+                              (ngModelChange)="onSearchChange($event)">
+                          </div>
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                          <div class="input-block mb-3">
+                            <button class="btn btn-primary btn-lg w-100" (click)="applyFilters()">
+                              <i class="ti ti-search me-2"></i>Rechercher
+                            </button>
+                          </div>
+                        </div>
+                        <div class="col-lg-2 col-md-3">
+                          <div class="input-block mb-3">
+                            <button class="btn btn-outline-secondary btn-lg w-100" (click)="resetFilters()">
+                              <i class="ti ti-refresh me-2"></i>Réinitialiser
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Section 2: Filtres principaux -->
+                    <div class="filter-section mb-4">
+                      <h6 class="filter-section-title">
+                        <i class="ti ti-route me-2"></i>Informations sur les motifs
+                      </h6>
+                      <div class="row">
+                        <div class="col-lg-4 col-md-6">
+                          <div class="input-block mb-3">
+                            <label class="form-label">Migrant</label>
+                            <select class="form-select" [(ngModel)]="selectedMigrant" (change)="applyFilters()">
+                              <option value="">Tous les migrants</option>
+                              <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
+                                {{ migrant.nom }} {{ migrant.prenom }}
+                              </option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                          <div class="input-block mb-3">
+                            <label class="form-label">Type de motif</label>
+                            <select class="form-select">
+                              <option value="">Tous les types</option>
+                              <option *ngFor="let type of typeMotifOptions" [value]="type.value">{{ type.label }}
+                              </option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                          <div class="input-block mb-3">
+                            <label class="form-label">Caractère</label>
+                            <select class="form-select">
+                              <option value="">Tous</option>
+                              <option value="true">Volontaire</option>
+                              <option value="false">Involontaire</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Section 3: Filtres par urgence et facteurs -->
+                    <div class="filter-section mb-4">
+                      <h6 class="filter-section-title">
+                        <i class="ti ti-alert-triangle me-2"></i>Urgence et facteurs externes
+                      </h6>
+                      <div class="row">
+                        <div class="col-lg-6 col-md-6">
+                          <div class="input-block mb-3">
+                            <label class="form-label">Niveau d'urgence</label>
+                            <select class="form-select">
+                              <option value="">Tous les niveaux</option>
+                              <option *ngFor="let urgence of urgenceOptions" [value]="urgence.value">{{ urgence.label }}
+                              </option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="col-lg-6 col-md-6">
+                          <div class="input-block mb-3">
+                            <label class="form-label">Facteurs externes</label>
+                            <div class="form-check-group">
+                              <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox">
+                                <label class="form-check-label">Conflit armé</label>
+                              </div>
+                              <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox">
+                                <label class="form-check-label">Catastrophe naturelle</label>
+                              </div>
+                              <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox">
+                                <label class="form-check-label">Persécution</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Section 4: Filtres par dates -->
+                    <div class="filter-section">
+                      <h6 class="filter-section-title">
+                        <i class="ti ti-calendar me-2"></i>Filtres par dates
+                      </h6>
+                      <div class="row">
+                        <div class="col-lg-6 col-md-12">
+                          <div class="input-block mb-3">
+                            <label class="form-label">Période de déclenchement</label>
+                            <div class="date-range-container">
+                              <div class="d-flex align-items-center gap-2">
+                                <input type="date" class="form-control" placeholder="Date début">
+                                <span class="text-muted">à</span>
+                                <input type="date" class="form-control" placeholder="Date fin">
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </td>
-            <td>
-              <span class="badge badge-info">{{ getTypeMotifLabel(motif.type_motif) }}</span>
-            </td>
-            <td>
-              <h6>{{ motif.motif_principal }}</h6>
-              <p *ngIf="motif.motif_secondaire">{{ motif.motif_secondaire }}</p>
-            </td>
-            <td>
-              <span class="badge" [ngClass]="getCaractereBadgeClass(motif.caractere_volontaire)">
-                {{ getCaractereVolontaireLabel(motif.caractere_volontaire) }}
-              </span>
-            </td>
-            <td>
-              <span class="badge" [ngClass]="getUrgenceBadgeClass(motif.urgence || '')">
-                {{ getUrgenceLabel(motif.urgence || '') }}
-              </span>
-            </td>
-            <td>{{ motif.date_declenchement | date:'yyyy-MM-dd' }}</td>
-            <td>
-              <div class="facteurs-list">
-                <span 
-                  *ngFor="let facteur of getFacteursExternes(motif)" 
-                  class="badge badge-warning badge-sm me-1">
-                  {{ facteur }}
-                </span>
-              </div>
-            </td>
-            <td>
-              <a class="action-set" href="javascript:void(0);" data-bs-toggle="dropdown">
-                <i class="fa fa-ellipsis-v"></i>
-              </a>
-              <ul class="dropdown-menu">
-                <li>
-                  <a href="javascript:void(0);" class="dropdown-item" (click)="openViewModal(motif)">
-                    <i class="fas fa-eye"></i> Voir
-                  </a>
-                </li>
-                <li>
-                  <a href="javascript:void(0);" class="dropdown-item" (click)="openEditOffcanvas(motif)">
-                    <i class="fas fa-edit"></i> Modifier
-                  </a>
-                </li>
-                <li>
-                  <a href="javascript:void(0);" class="dropdown-item" (click)="deleteMotif(motif)">
-                    <i class="fas fa-trash"></i> Supprimer
-                  </a>
-                </li>
-              </ul>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagination -->
-    <mat-paginator 
-      [length]="total_records"
-      [pageSize]="page_size"
-      [pageIndex]="current_page - 1"
-      [pageSizeOptions]="[5, 10, 15, 25, 50]"
-      (page)="onPageChange($event)"
-      showFirstLastButtons>
-    </mat-paginator>
-  </div>
-</div>
-
-<!-- Add/Edit Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="motifOffcanvas">
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title">
-      {{ editingMotif ? 'Modifier le motif' : 'Ajouter un motif' }}
-    </h5>
-    <button type="button" class="btn-close" (click)="closeOffcanvas()"></button>
-  </div>
-  <div class="offcanvas-body">
-    <form [formGroup]="motifForm" (ngSubmit)="onSubmit()">
-      <!-- Error Alert -->
-      <div class="alert alert-danger" *ngIf="error">
-        {{ error }}
-      </div>
-
-      <!-- Migrant Selection -->
-      <div class="mb-3">
-        <label class="form-label">Migrant *</label>
-        <select 
-          class="form-control" 
-          formControlName="migrant_uuid"
-          [class.is-invalid]="isFieldInvalid('migrant_uuid')">
-          <option value="">Sélectionner un migrant</option>
-          <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-            {{ migrant.nom }} {{ migrant.prenom }}
-          </option>
-        </select>
-        <div class="invalid-feedback" *ngIf="isFieldInvalid('migrant_uuid')">
-          {{ getFieldError('migrant_uuid') }}
-        </div>
-      </div>
-
-      <!-- Type de Motif -->
-      <div class="mb-3">
-        <label class="form-label">Type de Motif *</label>
-        <select 
-          class="form-control" 
-          formControlName="type_motif"
-          [class.is-invalid]="isFieldInvalid('type_motif')">
-          <option value="">Sélectionner un type</option>
-          <option *ngFor="let option of typeMotifOptions" [value]="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-        <div class="invalid-feedback" *ngIf="isFieldInvalid('type_motif')">
-          {{ getFieldError('type_motif') }}
-        </div>
-      </div>
-
-      <!-- Motif Principal -->
-      <div class="mb-3">
-        <label class="form-label">Motif Principal *</label>
-        <input 
-          type="text" 
-          class="form-control" 
-          formControlName="motif_principal"
-          [class.is-invalid]="isFieldInvalid('motif_principal')"
-          placeholder="Décrivez le motif principal">
-        <div class="invalid-feedback" *ngIf="isFieldInvalid('motif_principal')">
-          {{ getFieldError('motif_principal') }}
-        </div>
-      </div>
-
-      <!-- Motif Secondaire -->
-      <div class="mb-3">
-        <label class="form-label">Motif Secondaire</label>
-        <input 
-          type="text" 
-          class="form-control" 
-          formControlName="motif_secondaire"
-          placeholder="Motif secondaire (optionnel)">
-      </div>
-
-      <!-- Date Déclenchement -->
-      <div class="mb-3">
-        <label class="form-label">Date de Déclenchement *</label>
-        <input 
-          type="date" 
-          class="form-control" 
-          formControlName="date_declenchement"
-          [class.is-invalid]="isFieldInvalid('date_declenchement')">
-        <div class="invalid-feedback" *ngIf="isFieldInvalid('date_declenchement')">
-          {{ getFieldError('date_declenchement') }}
-        </div>
-      </div>
-
-      <!-- Caractère Volontaire -->
-      <div class="mb-3">
-        <div class="form-check">
-          <input 
-            class="form-check-input" 
-            type="checkbox" 
-            formControlName="caractere_volontaire">
-          <label class="form-check-label">
-            Déplacement volontaire
-          </label>
-        </div>
-      </div>
-
-      <!-- Urgence -->
-      <div class="mb-3">
-        <label class="form-label">Niveau d'Urgence</label>
-        <select class="form-control" formControlName="urgence">
-          <option value="">Sélectionner l'urgence</option>
-          <option *ngFor="let option of urgenceOptions" [value]="option.value">
-            {{ option.label }}
-          </option>
-        </select>
-      </div>
-
-      <!-- Durée Estimée -->
-      <div class="mb-3">
-        <label class="form-label">Durée Estimée (jours)</label>
-        <input 
-          type="number" 
-          class="form-control" 
-          formControlName="duree_estimee"
-          min="1"
-          placeholder="Durée estimée en jours">
-      </div>
-
-      <!-- Facteurs Externes -->
-      <div class="mb-3">
-        <label class="form-label">Facteurs Externes</label>
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" formControlName="conflit_arme">
-          <label class="form-check-label">Conflit armé</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" formControlName="catastrophe_naturelle">
-          <label class="form-check-label">Catastrophe naturelle</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" formControlName="persecution">
-          <label class="form-check-label">Persécution</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" formControlName="violence_generalisee">
-          <label class="form-check-label">Violence généralisée</label>
-        </div>
-      </div>
-
-      <!-- Description -->
-      <div class="mb-3">
-        <label class="form-label">Description</label>
-        <textarea 
-          class="form-control" 
-          formControlName="description"
-          rows="3"
-          placeholder="Description détaillée du motif"></textarea>
-      </div>
-
-      <!-- Submit Button -->
-      <div class="mb-0">
-        <button 
-          type="submit" 
-          class="btn btn-submit me-2"
-          [disabled]="motifForm.invalid || isSaving">
-          <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-          {{ editingMotif ? 'Modifier' : 'Ajouter' }}
-        </button>
-        <button type="button" class="btn btn-cancel" (click)="closeOffcanvas()">
-          Annuler
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- View Modal -->
-<div class="modal fade" id="viewMotifModal" tabindex="-1" *ngIf="viewingMotif">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Détails du Motif de Déplacement</h5>
-        <button type="button" class="btn-close" (click)="closeViewModal()"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row">
-          <div class="col-md-6">
-            <h6>Informations Générales</h6>
-            <p><strong>Migrant:</strong> {{ getMigrantName(viewingMotif.migrant_uuid) }}</p>
-            <p><strong>Type de motif:</strong> {{ getTypeMotifLabel(viewingMotif.type_motif) }}</p>
-            <p><strong>Motif principal:</strong> {{ viewingMotif.motif_principal }}</p>
-            <p *ngIf="viewingMotif.motif_secondaire"><strong>Motif secondaire:</strong> {{ viewingMotif.motif_secondaire }}</p>
-            <p><strong>Caractère:</strong> {{ getCaractereVolontaireLabel(viewingMotif.caractere_volontaire) }}</p>
-            <p *ngIf="viewingMotif.urgence"><strong>Urgence:</strong> {{ getUrgenceLabel(viewingMotif.urgence) }}</p>
-          </div>
-          <div class="col-md-6">
-            <h6>Contexte</h6>
-            <p><strong>Date de déclenchement:</strong> {{ formatDate(viewingMotif.date_declenchement) }}</p>
-            <p *ngIf="viewingMotif.duree_estimee"><strong>Durée estimée:</strong> {{ viewingMotif.duree_estimee }} jours</p>
-            
-            <h6>Facteurs Externes</h6>
-            <div *ngIf="getFacteursExternes(viewingMotif).length > 0">
-              <span 
-                *ngFor="let facteur of getFacteursExternes(viewingMotif)" 
-                class="badge badge-warning me-1">
-                {{ facteur }}
-              </span>
             </div>
-            <p *ngIf="getFacteursExternes(viewingMotif).length === 0">Aucun facteur externe</p>
+            <!-- /Search & Filters -->
+            <!-- Error Alert -->
+            <div class="alert alert-danger" *ngIf="error">
+              {{ error }}
+              <button type="button" class="btn-close" (click)="error = null"></button>
+            </div>
+
+            <!-- Loading -->
+            <div class="text-center" *ngIf="isLoadingData">
+              <div class="spinner-border" role="status">
+                <span class="visually-hidden">Chargement...</span>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+              <div class="table-responsive-custom" *ngIf="!isLoadingData">
+                <div class="table-scroll-wrapper" #tableScrollWrapper>
+                  <table class="table table-striped custom-table">
+                    <thead class="table-dark">
+                      <tr>
+                        <th class="min-width-200">
+                          <strong>Migrant</strong>
+                        </th>
+                        <th class="min-width-150">
+                          <strong>Type de Motif</strong>
+                        </th>
+                        <th class="min-width-200">
+                          <strong>Motif Principal</strong>
+                        </th>
+                        <th class="min-width-120">
+                          <strong>Caractère</strong>
+                        </th>
+                        <th class="min-width-100">
+                          <strong>Urgence</strong>
+                        </th>
+                        <th class="min-width-150">
+                          <strong>Date Déclenchement</strong>
+                        </th>
+                        <th class="min-width-180">
+                          <strong>Facteurs Externes</strong>
+                        </th>
+                        <th class="min-width-120">
+                          <strong>Actions</strong>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let motif of motifs">
+                        <td class="min-width-200">
+                          <div class="userimgname"> 
+                            <div class="product-content">
+                              <h6>{{ getMigrantName(motif.migrant_uuid) }}</h6> 
+                            </div>
+                          </div>
+                        </td>
+                        <td class="min-width-150">
+                          <span class="badge badge-info">{{ getTypeMotifLabel(motif.type_motif) }}</span>
+                        </td>
+                        <td class="min-width-200">
+                          <h6>{{ motif.motif_principal }}</h6>
+                          <p *ngIf="motif.motif_secondaire">{{ motif.motif_secondaire }}</p>
+                        </td>
+                        <td class="min-width-120">
+                          <span class="badge" [ngClass]="getCaractereBadgeClass(motif.caractere_volontaire)">
+                            {{ getCaractereVolontaireLabel(motif.caractere_volontaire) }}
+                          </span>
+                        </td>
+                        <td class="min-width-100">
+                          <span class="badge" [ngClass]="getUrgenceBadgeClass(motif.urgence || '')">
+                            {{ getUrgenceLabel(motif.urgence || '') }}
+                          </span>
+                        </td>
+                        <td class="min-width-150">{{ motif.date_declenchement | date:'yyyy-MM-dd' }}</td>
+                        <td class="min-width-180">
+                          <div class="facteurs-list">
+                            <span *ngFor="let facteur of getFacteursExternes(motif)"
+                              class="badge badge-warning badge-sm me-1">
+                              {{ facteur }}
+                            </span>
+                          </div>
+                        </td>
+                        <td class="min-width-120">
+                          <a class="action-set" href="javascript:void(0);" data-bs-toggle="dropdown">
+                            <i class="fa fa-ellipsis-v"></i>
+                          </a>
+                          <ul class="dropdown-menu">
+                            <li>
+                              <a href="javascript:void(0);" class="dropdown-item" (click)="openViewModal(motif)">
+                                <i class="fas fa-eye"></i> Voir
+                              </a>
+                            </li>
+                            <li>
+                              <a href="javascript:void(0);" class="dropdown-item" (click)="openEditOffcanvas(motif)">
+                                <i class="fas fa-edit"></i> Modifier
+                              </a>
+                            </li>
+                            <li>
+                              <a href="javascript:void(0);" class="dropdown-item" (click)="deleteMotif(motif)">
+                                <i class="fas fa-trash"></i> Supprimer
+                              </a>
+                            </li>
+                          </ul>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <!-- /Table -->
+
+            <!-- Pagination -->
+            <mat-paginator [length]="total_records" [pageSize]="page_size" [pageIndex]="current_page - 1"
+              [pageSizeOptions]="[5, 10, 15, 25, 50]" (page)="onPageChange($event)" showFirstLastButtons>
+            </mat-paginator>
           </div>
         </div>
-        
-        <div class="row" *ngIf="viewingMotif.description">
-          <div class="col-12">
-            <h6>Description</h6>
-            <p>{{ viewingMotif.description }}</p>
+
+        <!-- Add/Edit Offcanvas -->
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="motifOffcanvas">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title">
+              {{ editingMotif ? 'Modifier le motif' : 'Ajouter un motif' }}
+            </h5>
+            <button type="button" class="btn-close" (click)="closeOffcanvas()"></button>
+          </div>
+          <div class="offcanvas-body">
+            <form [formGroup]="motifForm" (ngSubmit)="onSubmit()">
+              <!-- Error Alert -->
+              <div class="alert alert-danger" *ngIf="error">
+                {{ error }}
+              </div>
+
+              <!-- Migrant Selection -->
+              <div class="mb-3">
+                <label class="form-label">Migrant *</label>
+                <select class="form-control" formControlName="migrant_uuid"
+                  [class.is-invalid]="isFieldInvalid('migrant_uuid')">
+                  <option value="">Sélectionner un migrant</option>
+                  <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
+                    {{ migrant.nom }} {{ migrant.prenom }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('migrant_uuid')">
+                  {{ getFieldError('migrant_uuid') }}
+                </div>
+              </div>
+
+              <!-- Type de Motif -->
+              <div class="mb-3">
+                <label class="form-label">Type de Motif *</label>
+                <select class="form-control" formControlName="type_motif"
+                  [class.is-invalid]="isFieldInvalid('type_motif')">
+                  <option value="">Sélectionner un type</option>
+                  <option *ngFor="let option of typeMotifOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('type_motif')">
+                  {{ getFieldError('type_motif') }}
+                </div>
+              </div>
+
+              <!-- Motif Principal -->
+              <div class="mb-3">
+                <label class="form-label">Motif Principal *</label>
+                <input type="text" class="form-control" formControlName="motif_principal"
+                  [class.is-invalid]="isFieldInvalid('motif_principal')" placeholder="Décrivez le motif principal">
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('motif_principal')">
+                  {{ getFieldError('motif_principal') }}
+                </div>
+              </div>
+
+              <!-- Motif Secondaire -->
+              <div class="mb-3">
+                <label class="form-label">Motif Secondaire</label>
+                <input type="text" class="form-control" formControlName="motif_secondaire"
+                  placeholder="Motif secondaire (optionnel)">
+              </div>
+
+              <!-- Date Déclenchement -->
+              <div class="mb-3">
+                <label class="form-label">Date de Déclenchement *</label>
+                <input type="date" class="form-control" formControlName="date_declenchement"
+                  [class.is-invalid]="isFieldInvalid('date_declenchement')">
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('date_declenchement')">
+                  {{ getFieldError('date_declenchement') }}
+                </div>
+              </div>
+
+              <!-- Caractère Volontaire -->
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="caractere_volontaire">
+                  <label class="form-check-label">
+                    Déplacement volontaire
+                  </label>
+                </div>
+              </div>
+
+              <!-- Urgence -->
+              <div class="mb-3">
+                <label class="form-label">Niveau d'Urgence</label>
+                <select class="form-control" formControlName="urgence">
+                  <option value="">Sélectionner l'urgence</option>
+                  <option *ngFor="let option of urgenceOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- Durée Estimée -->
+              <div class="mb-3">
+                <label class="form-label">Durée Estimée (jours)</label>
+                <input type="number" class="form-control" formControlName="duree_estimee" min="1"
+                  placeholder="Durée estimée en jours">
+              </div>
+
+              <!-- Facteurs Externes -->
+              <div class="mb-3">
+                <label class="form-label">Facteurs Externes</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="conflit_arme">
+                  <label class="form-check-label">Conflit armé</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="catastrophe_naturelle">
+                  <label class="form-check-label">Catastrophe naturelle</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="persecution">
+                  <label class="form-check-label">Persécution</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="violence_generalisee">
+                  <label class="form-check-label">Violence généralisée</label>
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" formControlName="description" rows="3"
+                  placeholder="Description détaillée du motif"></textarea>
+              </div>
+
+              <!-- Submit Button -->
+              <div class="mb-0">
+                <button type="submit" class="btn btn-submit me-2" [disabled]="motifForm.invalid || isSaving">
+                  <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+                  {{ editingMotif ? 'Modifier' : 'Ajouter' }}
+                </button>
+                <button type="button" class="btn btn-cancel" (click)="closeOffcanvas()">
+                  Annuler
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="closeViewModal()">
-          Fermer
-        </button>
+
+        <!-- View Modal -->
+        <div class="modal fade" id="viewMotifModal" tabindex="-1" *ngIf="viewingMotif">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Détails du Motif de Déplacement</h5>
+                <button type="button" class="btn-close" (click)="closeViewModal()"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <h6>Informations Générales</h6>
+                    <p><strong>Migrant:</strong> {{ getMigrantName(viewingMotif.migrant_uuid) }}</p>
+                    <p><strong>Type de motif:</strong> {{ getTypeMotifLabel(viewingMotif.type_motif) }}</p>
+                    <p><strong>Motif principal:</strong> {{ viewingMotif.motif_principal }}</p>
+                    <p *ngIf="viewingMotif.motif_secondaire"><strong>Motif secondaire:</strong> {{
+                      viewingMotif.motif_secondaire }}</p>
+                    <p><strong>Caractère:</strong> {{ getCaractereVolontaireLabel(viewingMotif.caractere_volontaire) }}
+                    </p>
+                    <p *ngIf="viewingMotif.urgence"><strong>Urgence:</strong> {{ getUrgenceLabel(viewingMotif.urgence)
+                      }}</p>
+                  </div>
+                  <div class="col-md-6">
+                    <h6>Contexte</h6>
+                    <p><strong>Date de déclenchement:</strong> {{ formatDate(viewingMotif.date_declenchement) }}</p>
+                    <p *ngIf="viewingMotif.duree_estimee"><strong>Durée estimée:</strong> {{ viewingMotif.duree_estimee
+                      }} jours</p>
+
+                    <h6>Facteurs Externes</h6>
+                    <div *ngIf="getFacteursExternes(viewingMotif).length > 0">
+                      <span *ngFor="let facteur of getFacteursExternes(viewingMotif)" class="badge badge-warning me-1">
+                        {{ facteur }}
+                      </span>
+                    </div>
+                    <p *ngIf="getFacteursExternes(viewingMotif).length === 0">Aucun facteur externe</p>
+                  </div>
+                </div>
+
+                <div class="row" *ngIf="viewingMotif.description">
+                  <div class="col-12">
+                    <h6>Description</h6>
+                    <p>{{ viewingMotif.description }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="closeViewModal()">
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 </div>
+<!-- /Page Wrapper -->

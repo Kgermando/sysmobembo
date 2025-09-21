@@ -1,3 +1,5 @@
+import { IMigrant } from "./migrant.model";
+
 export interface IMotifDeplacement {
   uuid: string;
   created_at: Date;
@@ -25,17 +27,17 @@ export interface IMotifDeplacement {
   violence_generalisee: boolean;
 
   // Relation avec Migrant
-  migrant?: any; // Will be populated from backend
+  migrant?: IMigrant; // Will be populated from backend
 }
 
 export interface IMotifDeplacementFormData {
   migrant_uuid: string;
-  type_motif: string;
+  type_motif: 'economique' | 'politique' | 'persecution' | 'naturelle' | 'familial' | 'education' | 'sanitaire';
   motif_principal: string;
   motif_secondaire?: string;
   description?: string;
   caractere_volontaire: boolean;
-  urgence?: string;
+  urgence?: 'faible' | 'moyenne' | 'elevee' | 'critique';
   date_declenchement: Date;
   duree_estimee?: number;
   conflit_arme: boolean;

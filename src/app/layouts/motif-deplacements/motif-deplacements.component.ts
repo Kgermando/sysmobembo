@@ -194,10 +194,21 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
     try {
       const formData = this.motifForm.value;
 
-      // Convertir les champs de date string en Date pour correspondre au modèle
+      // Transformer les données pour correspondre exactement au format attendu par le backend
       const motifData: IMotifDeplacementFormData = {
-        ...formData,
-        date_declenchement: DateUtils.toDate(formData.date_declenchement) || new Date()
+        migrant_uuid: formData.migrant_uuid,
+        type_motif: formData.type_motif,
+        motif_principal: formData.motif_principal,
+        motif_secondaire: formData.motif_secondaire || undefined,
+        description: formData.description || undefined,
+        caractere_volontaire: Boolean(formData.caractere_volontaire),
+        urgence: formData.urgence || undefined,
+        date_declenchement: DateUtils.toDate(formData.date_declenchement) || new Date(),
+        duree_estimee: formData.duree_estimee ? Number(formData.duree_estimee) : undefined,
+        conflit_arme: Boolean(formData.conflit_arme),
+        catastrophe_naturelle: Boolean(formData.catastrophe_naturelle),
+        persecution: Boolean(formData.persecution),
+        violence_generalisee: Boolean(formData.violence_generalisee)
       };
 
       let response;
@@ -238,12 +249,12 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
       migrant_uuid: motif.migrant_uuid,
       type_motif: motif.type_motif,
       motif_principal: motif.motif_principal,
-      motif_secondaire: motif.motif_secondaire,
-      description: motif.description,
+      motif_secondaire: motif.motif_secondaire || '',
+      description: motif.description || '',
       caractere_volontaire: motif.caractere_volontaire,
-      urgence: motif.urgence,
+      urgence: motif.urgence || '',
       date_declenchement: motif.date_declenchement ? DateUtils.toInputFormat(motif.date_declenchement) : '',
-      duree_estimee: motif.duree_estimee,
+      duree_estimee: motif.duree_estimee || null,
       conflit_arme: motif.conflit_arme,
       catastrophe_naturelle: motif.catastrophe_naturelle,
       persecution: motif.persecution,
@@ -399,16 +410,31 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
   // Modal/Offcanvas controls
   openAddOffcanvas(): void {
     this.prepareNewMotif();
-    // Implement offcanvas open logic
+    const offcanvasElement = document.getElementById('motifOffcanvas');
+    if (offcanvasElement) {
+      const bsOffcanvas = new (window as any).bootstrap.Offcanvas(offcanvasElement);
+      bsOffcanvas.show();
+    }
   }
 
   openEditOffcanvas(motif: IMotifDeplacement): void {
     this.prepareEditMotif(motif);
-    // Implement offcanvas open logic
+    const offcanvasElement = document.getElementById('motifOffcanvas');
+    if (offcanvasElement) {
+      const bsOffcanvas = new (window as any).bootstrap.Offcanvas(offcanvasElement);
+      bsOffcanvas.show();
+    }
   }
 
   closeOffcanvas(): void {
-    // Implement offcanvas close logic
+    const offcanvasElement = document.getElementById('motifOffcanvas');
+    if (offcanvasElement) {
+      const bsOffcanvas = (window as any).bootstrap.Offcanvas.getInstance(offcanvasElement);
+      if (bsOffcanvas) {
+        bsOffcanvas.hide();
+      }
+    }
+    this.resetForm();
   }
 
   openViewModal(motif: IMotifDeplacement): void {
