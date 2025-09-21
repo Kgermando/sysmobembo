@@ -72,11 +72,7 @@ export interface IUser {
   // Documents et photos
   photo_profil?: string; // URL ou chemin vers la photo
   cv_document?: string; // URL ou chemin vers le CV
-
-  // QR Code (générés automatiquement côté backend)
-  qr_code?: string; // URL ou chemin vers l'image du QR code
-  qr_code_data?: string; // Données encodées dans le QR code (JSON avec infos de base)
-
+  
   // Informations système
   password?: string;
   password_confirm?: string;

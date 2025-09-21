@@ -12,12 +12,27 @@ export interface IGeolocationFormData {
   migrant_uuid: string;
   latitude: number;
   longitude: number;
-  type_localisation: string;
+  type_localisation: 'residence_actuelle' | 'lieu_travail' | 'point_passage' | 'frontiere' | 'centre_accueil' | 'urgence';
   description?: string;
   adresse?: string;
   ville?: string;
   pays: string;
-  type_mouvement?: string;
+  code_postal?: string;
+  
+  // Required fields for backend
+  date_enregistrement: string;
+  methode_capture: 'gps' | 'manuel' | 'automatique';
+  fiabilite_source: 'elevee' | 'moyenne' | 'faible';
+  actif: boolean;
+  
+  // Optional fields
+  altitude?: number;
+  precision?: number;
+  dispositif_source?: string;
+  commentaire?: string;
+  
+  // Movement information
+  type_mouvement?: 'arrivee' | 'depart' | 'transit' | 'residence_temporaire' | 'residence_permanente';
   duree_sejour?: number;
   prochaine_destination?: string;
 }

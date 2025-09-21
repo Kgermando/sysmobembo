@@ -339,6 +339,12 @@
         {{ error }}
       </div>
 
+      <!-- Success Alert -->
+      <div *ngIf="successMessage" class="alert alert-success">
+        <i class="ti ti-check me-2"></i>
+        {{ successMessage }}
+      </div>
+
       <!-- Migrant Selection -->
       <div class="input-block mb-3">
         <label class="form-label">Migrant <span class="text-danger">*</span></label>

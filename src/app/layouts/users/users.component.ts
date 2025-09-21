@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
 import { PageEvent } from '@angular/material/paginator';
@@ -54,8 +54,8 @@ export class UsersComponent implements OnInit, OnDestroy {
   selectedStatus = '';
   selectedPermission = '';
 
-  // Roles disponibles (selon le backend Go)
-  roles = [
+  // Options typées selon l'interface IUser
+  roles: Array<{ value: 'Agent' | 'Manager' | 'Supervisor' | 'Administrator'; label: string }> = [
     { value: 'Administrator', label: 'Administrateur' },
     { value: 'Supervisor', label: 'Superviseur' },
     { value: 'Manager', label: 'Manager' },
@@ -63,14 +63,14 @@ export class UsersComponent implements OnInit, OnDestroy {
   ];
 
   // Types d'agents
-  typeAgents = [
+  typeAgents: Array<{ value: 'Fonctionnaire' | 'Contractuel' | 'Stagiaire'; label: string }> = [
     { value: 'Fonctionnaire', label: 'Fonctionnaire' },
     { value: 'Contractuel', label: 'Contractuel' },
     { value: 'Stagiaire', label: 'Stagiaire' }
   ];
 
   // Statuts professionnels
-  statuts = [
+  statuts: Array<{ value: 'Actif' | 'Retraité' | 'Suspendu' | 'Révoqué'; label: string }> = [
     { value: 'Actif', label: 'Actif' },
     { value: 'Retraité', label: 'Retraité' },
     { value: 'Suspendu', label: 'Suspendu' },
@@ -78,7 +78,7 @@ export class UsersComponent implements OnInit, OnDestroy {
   ];
 
   // États civils
-  etatsCivils = [
+  etatsCivils: Array<{ value: 'Célibataire' | 'Marié(e)' | 'Divorcé(e)' | 'Veuf(ve)'; label: string }> = [
     { value: 'Célibataire', label: 'Célibataire' },
     { value: 'Marié(e)', label: 'Marié(e)' },
     { value: 'Divorcé(e)', label: 'Divorcé(e)' },
@@ -86,20 +86,27 @@ export class UsersComponent implements OnInit, OnDestroy {
   ];
 
   // Niveaux d'étude
-  niveauxEtude = [
+  niveauxEtude: Array<{ value: 'Primaire' | 'Secondaire' | 'Universitaire' | 'Post-universitaire'; label: string }> = [
     { value: 'Primaire', label: 'Primaire' },
     { value: 'Secondaire', label: 'Secondaire' },
     { value: 'Universitaire', label: 'Universitaire' },
     { value: 'Post-universitaire', label: 'Post-universitaire' }
   ];
 
-  // Permissions disponibles
-  permissions = [
-    { value: 'ALL', label: 'Toutes les permissions' },
-    { value: 'CRUD', label: 'Créer, Lire, Modifier, Supprimer' },
-    { value: 'CRU', label: 'Créer, Lire, Modifier' },
-    { value: 'CR', label: 'Créer, Lire' },
-    { value: 'R', label: 'Lecture seule' }
+  // Sexes
+  sexes: Array<{ value: 'M' | 'F'; label: string }> = [
+    { value: 'M', label: 'Masculin' },
+    { value: 'F', label: 'Féminin' }
+  ];
+
+  // Permissions disponibles (selon le modèle backend)
+  permissions: Array<{ value: 'ALL' | 'VAE' | 'VED' | 'VE' | 'VA' | 'V'; label: string }> = [
+    { value: 'ALL', label: 'Toutes les permissions (Voir, Ajouter, Modifier, Supprimer)' },
+    { value: 'VAE', label: 'Voir, Ajouter, Modifier' },
+    { value: 'VED', label: 'Voir, Modifier, Supprimer' },
+    { value: 'VE', label: 'Voir, Modifier' },
+    { value: 'VA', label: 'Voir, Ajouter' },
+    { value: 'V', label: 'Lecture seule' }
   ]; 
 
   constructor(
@@ -168,77 +175,134 @@ export class UsersComponent implements OnInit, OnDestroy {
     return diffDays <= 30 && diffDays >= 0;
   }
 
+  // Validateurs personnalisés pour l'interface IUser
+  private sexeValidator(control: AbstractControl): ValidationErrors | null {
+    const validSexes = ['M', 'F'];
+    if (control.value && !validSexes.includes(control.value)) {
+      return { invalidSexe: true };
+    }
+    return null;
+  }
+
+  private etatCivilValidator(control: AbstractControl): ValidationErrors | null {
+    const validEtats = ['Célibataire', 'Marié(e)', 'Divorcé(e)', 'Veuf(ve)'];
+    if (control.value && !validEtats.includes(control.value)) {
+      return { invalidEtatCivil: true };
+    }
+    return null;
+  }
+
+  private typeAgentValidator(control: AbstractControl): ValidationErrors | null {
+    const validTypes = ['Fonctionnaire', 'Contractuel', 'Stagiaire'];
+    if (control.value && !validTypes.includes(control.value)) {
+      return { invalidTypeAgent: true };
+    }
+    return null;
+  }
+
+  private statutValidator(control: AbstractControl): ValidationErrors | null {
+    const validStatuts = ['Actif', 'Retraité', 'Suspendu', 'Révoqué'];
+    if (control.value && !validStatuts.includes(control.value)) {
+      return { invalidStatut: true };
+    }
+    return null;
+  }
+
+  private roleValidator(control: AbstractControl): ValidationErrors | null {
+    const validRoles = ['Agent', 'Manager', 'Supervisor', 'Administrator'];
+    if (control.value && !validRoles.includes(control.value)) {
+      return { invalidRole: true };
+    }
+    return null;
+  }
+
+  private permissionValidator(control: AbstractControl): ValidationErrors | null {
+    const validPermissions = ['ALL', 'VAE', 'VED', 'VE', 'VA', 'V'];
+    if (control.value && !validPermissions.includes(control.value)) {
+      return { invalidPermission: true };
+    }
+    return null;
+  }
+
+  private niveauEtudeValidator(control: AbstractControl): ValidationErrors | null {
+    const validNiveaux = ['Primaire', 'Secondaire', 'Universitaire', 'Post-universitaire'];
+    if (control.value && !validNiveaux.includes(control.value)) {
+      return { invalidNiveauEtude: true };
+    }
+    return null;
+  }
+
   private createForm(): FormGroup {
     return this.fb.group({
-      // Informations personnelles de base
+      // Informations personnelles de base (requis selon IUser)
       nom: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       postnom: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       prenom: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
-      sexe: ['M', [Validators.required]],
+      sexe: ['', [Validators.required, this.sexeValidator]],
       date_naissance: ['', [Validators.required]],
       lieu_naissance: ['', [Validators.required, Validators.maxLength(100)]],
 
-      // État civil
-      etat_civil: ['Célibataire'],
-      nombre_enfants: [0, [Validators.min(0), Validators.max(20)]],
+      // État civil (optionnels selon IUser)
+      etat_civil: ['', [this.etatCivilValidator]],
+      nombre_enfants: [null, [Validators.min(0), Validators.max(20)]],
 
-      // Nationalité et documents d'identité
-      nationalite: ['Congolaise', [Validators.required]],
+      // Nationalité et documents d'identité (nationalite requis, autres optionnels)
+      nationalite: ['', [Validators.required, Validators.maxLength(50)]],
       numero_cni: ['', [Validators.pattern('^[0-9A-Z]{10,20}$')]],
       date_emission_cni: [''],
       date_expiration_cni: [''],
-      lieu_emission_cni: [''],
+      lieu_emission_cni: ['', [Validators.maxLength(100)]],
 
-      // Contacts
-      email: ['', [Validators.required, Validators.email]],
+      // Contacts (requis selon IUser)
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
       telephone: ['', [Validators.required, Validators.pattern('^[+]?[0-9]{8,15}$')]],
       telephone_urgence: ['', [Validators.pattern('^[+]?[0-9]{8,15}$')]],
 
-      // Adresse
-      province: ['', [Validators.required]],
-      ville: ['', [Validators.required]],
-      commune: ['', [Validators.required]],
-      quartier: ['', [Validators.required]],
-      avenue: [''],
-      numero: [''],
+      // Adresse (requis selon IUser)
+      province: ['', [Validators.required, Validators.maxLength(50)]],
+      ville: ['', [Validators.required, Validators.maxLength(50)]],
+      commune: ['', [Validators.required, Validators.maxLength(50)]],
+      quartier: ['', [Validators.required, Validators.maxLength(50)]],
+      avenue: ['', [Validators.maxLength(100)]],
+      numero: ['', [Validators.maxLength(20)]],
 
-      // Informations professionnelles
+      // Informations professionnelles (tous requis selon IUser)
       matricule: ['', [Validators.required, Validators.pattern('^[A-Z0-9]{5,15}$')]],
-      grade: ['', [Validators.required]],
-      fonction: ['', [Validators.required]],
-      service: ['', [Validators.required]],
-      direction: ['', [Validators.required]],
-      ministere: ['', [Validators.required]],
+      grade: ['', [Validators.required, Validators.maxLength(50)]],
+      fonction: ['', [Validators.required, Validators.maxLength(100)]],
+      service: ['', [Validators.required, Validators.maxLength(100)]],
+      direction: ['', [Validators.required, Validators.maxLength(100)]],
+      ministere: ['', [Validators.required, Validators.maxLength(100)]],
       date_recrutement: ['', [Validators.required]],
       date_prise_service: ['', [Validators.required]],
-      type_agent: ['Fonctionnaire', [Validators.required]],
-      statut: ['Actif', [Validators.required]],
+      type_agent: ['', [Validators.required, this.typeAgentValidator]],
+      statut: ['', [Validators.required, this.statutValidator]],
 
-      // Formation et éducation
-      niveau_etude: [''],
-      diplome_base: [''],
-      universite_ecole: [''],
+      // Formation et éducation (tous optionnels selon IUser)
+      niveau_etude: ['', [this.niveauEtudeValidator]],
+      diplome_base: ['', [Validators.maxLength(100)]],
+      universite_ecole: ['', [Validators.maxLength(100)]],
       annee_obtention: [null, [Validators.min(1950), Validators.max(new Date().getFullYear())]],
-      specialisation: [''],
+      specialisation: ['', [Validators.maxLength(100)]],
 
-      // Informations bancaires
+      // Informations bancaires (optionnels selon IUser)
       numero_bancaire: ['', [Validators.pattern('^[0-9]{10,20}$')]],
-      banque: [''],
+      banque: ['', [Validators.maxLength(50)]],
 
-      // Informations de sécurité sociale
+      // Informations de sécurité sociale (optionnels selon IUser)
       numero_cnss: ['', [Validators.pattern('^[0-9]{10,15}$')]],
       numero_onem: ['', [Validators.pattern('^[0-9]{10,15}$')]],
 
-      // Documents et photos
+      // Documents et photos (optionnels selon IUser)
       photo_profil: [''],
       cv_document: [''],
 
-      // Informations système
-      role: ['Agent', [Validators.required]],
-      permission: ['R', [Validators.required]],
+      // Informations système (role et permission requis, status par défaut true)
+      role: ['Agent', [Validators.required, this.roleValidator]],
+      permission: ['V', [Validators.required, this.permissionValidator]],
       status: [true],
       signature: [''],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(100)]],
       password_confirm: ['', [Validators.required]]
     }, {
       validators: [this.passwordMatchValidator, this.dateValidator]
@@ -438,25 +502,31 @@ export class UsersComponent implements OnInit, OnDestroy {
   editUser(user: IUser): void {
     this.editingUser = user;
     this.userForm.patchValue({
-      // Informations personnelles
+      // Informations personnelles de base (requis selon IUser)
       nom: user.nom,
       postnom: user.postnom,
       prenom: user.prenom,
       sexe: user.sexe,
       date_naissance: user.date_naissance,
       lieu_naissance: user.lieu_naissance,
+      
+      // État civil (optionnels selon IUser)
       etat_civil: user.etat_civil,
       nombre_enfants: user.nombre_enfants,
+      
+      // Nationalité et documents d'identité (nationalite requis, autres optionnels)
       nationalite: user.nationalite,
       numero_cni: user.numero_cni,
       date_emission_cni: user.date_emission_cni,
       date_expiration_cni: user.date_expiration_cni,
       lieu_emission_cni: user.lieu_emission_cni,
 
-      // Contact
+      // Contacts (requis selon IUser)
       email: user.email,
       telephone: user.telephone,
       telephone_urgence: user.telephone_urgence,
+      
+      // Adresse (requis selon IUser)
       province: user.province,
       ville: user.ville,
       commune: user.commune,
@@ -464,7 +534,7 @@ export class UsersComponent implements OnInit, OnDestroy {
       avenue: user.avenue,
       numero: user.numero,
 
-      // Professionnel
+      // Informations professionnelles (tous requis selon IUser)
       matricule: user.matricule,
       grade: user.grade,
       fonction: user.fonction,
@@ -476,26 +546,26 @@ export class UsersComponent implements OnInit, OnDestroy {
       type_agent: user.type_agent,
       statut: user.statut,
 
-      // Formation
+      // Formation et éducation (optionnels selon IUser)
       niveau_etude: user.niveau_etude,
       diplome_base: user.diplome_base,
       universite_ecole: user.universite_ecole,
       annee_obtention: user.annee_obtention,
       specialisation: user.specialisation,
 
-      // Bancaire
+      // Informations bancaires (optionnels selon IUser)
       numero_bancaire: user.numero_bancaire,
       banque: user.banque,
 
-      // Sécurité sociale
+      // Informations de sécurité sociale (optionnels selon IUser)
       numero_cnss: user.numero_cnss,
       numero_onem: user.numero_onem,
 
-      // Documents
+      // Documents et photos (optionnels selon IUser)
       photo_profil: user.photo_profil,
       cv_document: user.cv_document,
 
-      // Système
+      // Informations système (role et permission requis, status par défaut selon IUser)
       role: user.role,
       permission: user.permission,
       status: user.status,
@@ -536,16 +606,80 @@ export class UsersComponent implements OnInit, OnDestroy {
 
     try {
       this.isSaving = true;
-      const formData: UserFormData = this.userForm.value;
+      
+      // Assurer que les données correspondent exactement à UserFormData et IUser
+      const formValue = this.userForm.value;
+      const userData: UserFormData = {
+        // Informations personnelles de base (requis selon IUser)
+        nom: formValue.nom,
+        postnom: formValue.postnom,
+        prenom: formValue.prenom,
+        sexe: formValue.sexe,
+        date_naissance: formValue.date_naissance ? DateUtils.toDate(formValue.date_naissance)?.toISOString() || '' : '',
+        lieu_naissance: formValue.lieu_naissance,
 
-      // Convertir les champs de date en format ISO string avec DateUtils
-      const userData = {
-        ...formData,
-        date_naissance: formData.date_naissance ? DateUtils.toDate(formData.date_naissance)?.toISOString() || '' : '',
-        date_emission_cni: formData.date_emission_cni ? DateUtils.toDate(formData.date_emission_cni)?.toISOString() || '' : '',
-        date_expiration_cni: formData.date_expiration_cni ? DateUtils.toDate(formData.date_expiration_cni)?.toISOString() || '' : '',
-        date_recrutement: formData.date_recrutement ? DateUtils.toDate(formData.date_recrutement)?.toISOString() || '' : '',
-        date_prise_service: formData.date_prise_service ? DateUtils.toDate(formData.date_prise_service)?.toISOString() || '' : ''
+        // État civil (optionnels selon IUser)
+        etat_civil: formValue.etat_civil || undefined,
+        nombre_enfants: formValue.nombre_enfants || undefined,
+
+        // Nationalité et documents d'identité (nationalite requis, autres optionnels)
+        nationalite: formValue.nationalite,
+        numero_cni: formValue.numero_cni || undefined,
+        date_emission_cni: formValue.date_emission_cni ? DateUtils.toDate(formValue.date_emission_cni)?.toISOString() || undefined : undefined,
+        date_expiration_cni: formValue.date_expiration_cni ? DateUtils.toDate(formValue.date_expiration_cni)?.toISOString() || undefined : undefined,
+        lieu_emission_cni: formValue.lieu_emission_cni || undefined,
+
+        // Contacts (requis selon IUser)
+        email: formValue.email,
+        telephone: formValue.telephone,
+        telephone_urgence: formValue.telephone_urgence || undefined,
+
+        // Adresse (requis selon IUser)
+        province: formValue.province,
+        ville: formValue.ville,
+        commune: formValue.commune,
+        quartier: formValue.quartier,
+        avenue: formValue.avenue || undefined,
+        numero: formValue.numero || undefined,
+
+        // Informations professionnelles (tous requis selon IUser)
+        matricule: formValue.matricule,
+        grade: formValue.grade,
+        fonction: formValue.fonction,
+        service: formValue.service,
+        direction: formValue.direction,
+        ministere: formValue.ministere,
+        date_recrutement: formValue.date_recrutement ? DateUtils.toDate(formValue.date_recrutement)?.toISOString() || '' : '',
+        date_prise_service: formValue.date_prise_service ? DateUtils.toDate(formValue.date_prise_service)?.toISOString() || '' : '',
+        type_agent: formValue.type_agent,
+        statut: formValue.statut,
+
+        // Formation et éducation (optionnels selon IUser)
+        niveau_etude: formValue.niveau_etude || undefined,
+        diplome_base: formValue.diplome_base || undefined,
+        universite_ecole: formValue.universite_ecole || undefined,
+        annee_obtention: formValue.annee_obtention || undefined,
+        specialisation: formValue.specialisation || undefined,
+
+        // Informations bancaires (optionnels selon IUser)
+        numero_bancaire: formValue.numero_bancaire || undefined,
+        banque: formValue.banque || undefined,
+
+        // Informations de sécurité sociale (optionnels selon IUser)
+        numero_cnss: formValue.numero_cnss || undefined,
+        numero_onem: formValue.numero_onem || undefined,
+
+        // Documents et photos (optionnels selon IUser)
+        photo_profil: formValue.photo_profil || undefined,
+        cv_document: formValue.cv_document || undefined,
+
+        // Informations système (role et permission requis, status par défaut selon IUser)
+        role: formValue.role,
+        permission: formValue.permission,
+        status: formValue.status !== undefined ? formValue.status : true,
+        signature: formValue.signature || this.getFullName(this.currentUser!) || undefined,
+        password: formValue.password || undefined,
+        password_confirm: formValue.password_confirm || undefined
       };
 
       if (this.editingUser) {
@@ -585,25 +719,31 @@ export class UsersComponent implements OnInit, OnDestroy {
 
   private resetForm(): void {
     this.userForm.reset({
-      // Informations personnelles
+      // Informations personnelles de base (requis selon IUser)
       nom: '',
       postnom: '',
       prenom: '',
-      sexe: 'M',
+      sexe: '', // Laisser vide pour forcer l'utilisateur à choisir
       date_naissance: '',
       lieu_naissance: '',
-      etat_civil: 'Célibataire',
-      nombre_enfants: 0,
-      nationalite: 'Congolaise',
+      
+      // État civil (optionnels selon IUser)
+      etat_civil: '',
+      nombre_enfants: null,
+      
+      // Nationalité et documents d'identité (nationalite requis, autres optionnels)
+      nationalite: '',
       numero_cni: '',
       date_emission_cni: '',
       date_expiration_cni: '',
       lieu_emission_cni: '',
 
-      // Contact
+      // Contacts (requis selon IUser)
       email: '',
       telephone: '',
       telephone_urgence: '',
+      
+      // Adresse (requis selon IUser)
       province: '',
       ville: '',
       commune: '',
@@ -611,7 +751,7 @@ export class UsersComponent implements OnInit, OnDestroy {
       avenue: '',
       numero: '',
 
-      // Professionnel
+      // Informations professionnelles (tous requis selon IUser)
       matricule: '',
       grade: '',
       fonction: '',
@@ -620,31 +760,31 @@ export class UsersComponent implements OnInit, OnDestroy {
       ministere: '',
       date_recrutement: '',
       date_prise_service: '',
-      type_agent: 'Fonctionnaire',
-      statut: 'Actif',
+      type_agent: '', // Laisser vide pour forcer l'utilisateur à choisir
+      statut: '', // Laisser vide pour forcer l'utilisateur à choisir
 
-      // Formation
+      // Formation et éducation (optionnels selon IUser)
       niveau_etude: '',
       diplome_base: '',
       universite_ecole: '',
       annee_obtention: null,
       specialisation: '',
 
-      // Bancaire
+      // Informations bancaires (optionnels selon IUser)
       numero_bancaire: '',
       banque: '',
 
-      // Sécurité sociale
+      // Informations de sécurité sociale (optionnels selon IUser)
       numero_cnss: '',
       numero_onem: '',
 
-      // Documents
+      // Documents et photos (optionnels selon IUser)
       photo_profil: '',
       cv_document: '',
 
-      // Système
+      // Informations système (role et permission requis, status par défaut selon IUser)
       role: 'Agent',
-      permission: 'R',
+      permission: 'V', // Permission lecture seule par défaut
       status: true,
       signature: this.getFullName(this.currentUser!) || '',
       password: '',
@@ -799,6 +939,35 @@ export class UsersComponent implements OnInit, OnDestroy {
       this.deleteUser(this.viewingUser);
       this.closeViewOffcanvas();
     }
+  }
+
+  // Gestion des erreurs de validation
+  isFieldInvalid(fieldName: string): boolean {
+    const field = this.userForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  getFieldError(fieldName: string): string {
+    const field = this.userForm.get(fieldName);
+    if (field?.errors) {
+      if (field.errors['required']) return `${fieldName} est requis`;
+      if (field.errors['minlength']) return `${fieldName} doit contenir au moins ${field.errors['minlength'].requiredLength} caractères`;
+      if (field.errors['maxlength']) return `${fieldName} doit contenir au maximum ${field.errors['maxlength'].requiredLength} caractères`;
+      if (field.errors['email']) return 'Format email invalide';
+      if (field.errors['pattern']) return `Format ${fieldName} invalide`;
+      if (field.errors['min']) return `Valeur minimum: ${field.errors['min'].min}`;
+      if (field.errors['max']) return `Valeur maximum: ${field.errors['max'].max}`;
+      if (field.errors['invalidSexe']) return 'Sexe invalide (M ou F)';
+      if (field.errors['invalidEtatCivil']) return 'État civil invalide';
+      if (field.errors['invalidTypeAgent']) return 'Type d\'agent invalide';
+      if (field.errors['invalidStatut']) return 'Statut invalide';
+      if (field.errors['invalidRole']) return 'Rôle invalide';
+      if (field.errors['invalidPermission']) return 'Permission invalide';
+      if (field.errors['invalidNiveauEtude']) return 'Niveau d\'étude invalide';
+      if (field.errors['passwordMismatch']) return 'Les mots de passe ne correspondent pas';
+      if (field.errors['dateInvalid']) return 'Date invalide';
+    }
+    return '';
   }
 
   // Méthode pour générer des statistiques sur les utilisateurs

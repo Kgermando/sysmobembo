@@ -118,6 +118,8 @@ export interface IGeolocalisation {
   // Coordonnées géographiques
   latitude: number;
   longitude: number;
+  altitude?: number;
+  precision?: number;
 
   // Informations contextuelles
   type_localisation: 'residence_actuelle' | 'lieu_travail' | 'point_passage' | 'frontiere' | 'centre_accueil' | 'urgence';
@@ -125,6 +127,19 @@ export interface IGeolocalisation {
   adresse?: string;
   ville?: string;
   pays: string;
+  code_postal?: string;
+
+  // Métadonnées de capture
+  date_enregistrement: string;
+  methode_capture: 'gps' | 'manuel' | 'automatique';
+  dispositif_source?: string;
+  fiabilite_source: 'elevee' | 'moyenne' | 'faible';
+
+  // Statut et validité
+  actif: boolean;
+  date_validation?: string;
+  valide_par?: string;
+  commentaire?: string;
 
   // Informations de mouvement
   type_mouvement?: 'arrivee' | 'depart' | 'transit' | 'residence_temporaire' | 'residence_permanente';

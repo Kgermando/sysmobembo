@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
 import { PageEvent } from '@angular/material/paginator';
@@ -55,8 +55,13 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedNiveauGravite = '';
   selectedStatut = '';
 
-  // Options
-  typeAlerteOptions = [
+  // Options with proper typing to match IAlert interface
+  typeAlerteOptions: Array<{
+    value: 'securite' | 'sante' | 'juridique' | 'administrative' | 'humanitaire';
+    label: string;
+    icon: string;
+    color: string;
+  }> = [
     { value: 'securite', label: 'Sécurité', icon: 'ti-shield', color: 'danger' },
     { value: 'sante', label: 'Santé', icon: 'ti-heart', color: 'warning' },
     { value: 'juridique', label: 'Juridique', icon: 'ti-scale', color: 'info' },
@@ -64,14 +69,22 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     { value: 'humanitaire', label: 'Humanitaire', icon: 'ti-users', color: 'success' }
   ];
 
-  niveauGraviteOptions = [
+  niveauGraviteOptions: Array<{
+    value: 'info' | 'warning' | 'danger' | 'critical';
+    label: string;
+    color: string;
+  }> = [
     { value: 'info', label: 'Information', color: 'info' },
     { value: 'warning', label: 'Attention', color: 'warning' },
     { value: 'danger', label: 'Danger', color: 'danger' },
     { value: 'critical', label: 'Critique', color: 'dark' }
   ];
 
-  statutOptions = [
+  statutOptions: Array<{
+    value: 'active' | 'resolved' | 'dismissed' | 'expired';
+    label: string;
+    color: string;
+  }> = [
     { value: 'active', label: 'Active', color: 'success' },
     { value: 'resolved', label: 'Résolue', color: 'primary' },
     { value: 'dismissed', label: 'Ignorée', color: 'secondary' },
@@ -101,16 +114,33 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Setup any additional UI interactions
   }
 
+  // Custom validators for enum types
+  private typeAlerteValidator(control: AbstractControl): ValidationErrors | null {
+    const validTypes = ['securite', 'sante', 'juridique', 'administrative', 'humanitaire'];
+    if (control.value && !validTypes.includes(control.value)) {
+      return { invalidTypeAlerte: true };
+    }
+    return null;
+  }
+
+  private niveauGraviteValidator(control: AbstractControl): ValidationErrors | null {
+    const validNiveaux = ['info', 'warning', 'danger', 'critical'];
+    if (control.value && !validNiveaux.includes(control.value)) {
+      return { invalidNiveauGravite: true };
+    }
+    return null;
+  }
+
   private createForm(): FormGroup {
     return this.fb.group({
-      migrant_uuid: ['', Validators.required],
-      type_alerte: ['', Validators.required],
-      niveau_gravite: ['', Validators.required],
-      titre: ['', [Validators.required, Validators.minLength(5)]],
-      description: ['', [Validators.required, Validators.minLength(10)]],
+      migrant_uuid: ['', [Validators.required]],
+      type_alerte: ['', [Validators.required, this.typeAlerteValidator]],
+      niveau_gravite: ['', [Validators.required, this.niveauGraviteValidator]],
+      titre: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(255)]],
+      description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(1000)]],
       date_expiration: [''],
-      action_requise: [''],
-      personne_responsable: ['']
+      action_requise: ['', [Validators.maxLength(500)]],
+      personne_responsable: ['', [Validators.maxLength(100)]]
     });
   }
 
@@ -187,7 +217,18 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.error = null;
 
     try {
-      const formData: IAlertFormData = this.alertForm.value;
+      // Ensure form data matches IAlertFormData interface exactly
+      const formValue = this.alertForm.value;
+      const formData: IAlertFormData = {
+        migrant_uuid: formValue.migrant_uuid,
+        type_alerte: formValue.type_alerte as 'securite' | 'sante' | 'juridique' | 'administrative' | 'humanitaire',
+        niveau_gravite: formValue.niveau_gravite as 'info' | 'warning' | 'danger' | 'critical',
+        titre: formValue.titre,
+        description: formValue.description,
+        date_expiration: formValue.date_expiration || undefined,
+        action_requise: formValue.action_requise || undefined,
+        personne_responsable: formValue.personne_responsable || undefined
+      };
 
       let response;
       if (this.editingAlert) {
@@ -430,7 +471,10 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     const field = this.alertForm.get(fieldName);
     if (field?.errors) {
       if (field.errors['required']) return `${fieldName} est requis`;
-      if (field.errors['minlength']) return `${fieldName} trop court`;
+      if (field.errors['minlength']) return `${fieldName} doit contenir au moins ${field.errors['minlength'].requiredLength} caractères`;
+      if (field.errors['maxlength']) return `${fieldName} doit contenir au maximum ${field.errors['maxlength'].requiredLength} caractères`;
+      if (field.errors['invalidTypeAlerte']) return 'Type d\'alerte invalide';
+      if (field.errors['invalidNiveauGravite']) return 'Niveau de gravité invalide';
     }
     return '';
   }

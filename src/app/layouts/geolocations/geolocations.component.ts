@@ -49,6 +49,7 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
   isReverseGeocoding = false;
   error: string | null = null;
   locationError: string | null = null;
+  successMessage: string | null = null;
 
   // Pagination
   total_records = 0;
@@ -78,6 +79,19 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
     { value: 'transit', label: 'Transit' },
     { value: 'residence_temporaire', label: 'Résidence temporaire' },
     { value: 'residence_permanente', label: 'Résidence permanente' }
+  ];
+
+  // New options for backend alignment
+  methodeCaptureOptions = [
+    { value: 'gps', label: 'GPS' },
+    { value: 'manuel', label: 'Manuel' },
+    { value: 'automatique', label: 'Automatique' }
+  ];
+
+  fiabiliteSourceOptions = [
+    { value: 'elevee', label: 'Élevée' },
+    { value: 'moyenne', label: 'Moyenne' },
+    { value: 'faible', label: 'Faible' }
   ];
 
   // Common countries for select options
@@ -110,15 +124,30 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
   private createForm(): FormGroup {
     return this.fb.group({
       migrant_uuid: ['', Validators.required],
-      latitude: [null], // Sera rempli automatiquement
-      longitude: [null], // Sera rempli automatiquement
+      latitude: [null, [Validators.required, Validators.min(-90), Validators.max(90)]],
+      longitude: [null, [Validators.required, Validators.min(-180), Validators.max(180)]],
       type_localisation: ['', Validators.required],
       description: [''],
       adresse: [''],
       ville: [''],
       pays: ['', Validators.required],
+      code_postal: [''],
+      
+      // Required fields with defaults
+      date_enregistrement: [new Date().toISOString(), Validators.required],
+      methode_capture: ['manuel', Validators.required],
+      fiabilite_source: ['moyenne', Validators.required], 
+      actif: [true, Validators.required],
+      
+      // Optional fields
+      altitude: [null],
+      precision: [null],
+      dispositif_source: [''],
+      commentaire: [''],
+      
+      // Movement information
       type_mouvement: [''],
-      duree_sejour: [''],
+      duree_sejour: [null],
       prochaine_destination: ['']
     });
   }
@@ -197,7 +226,38 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.error = null;
 
     try {
-      const formData: IGeolocationFormData = this.geolocationForm.value;
+      // Get raw form values and properly format them
+      const formValues = this.geolocationForm.value;
+      
+      // Prepare data with correct types
+      const formData: IGeolocationFormData = {
+        migrant_uuid: formValues.migrant_uuid,
+        latitude: Number(formValues.latitude),
+        longitude: Number(formValues.longitude),
+        type_localisation: formValues.type_localisation,
+        description: formValues.description || '',
+        adresse: formValues.adresse || '',
+        ville: formValues.ville || '',
+        pays: formValues.pays,
+        code_postal: formValues.code_postal || '',
+        
+        // Required fields with proper formatting
+        date_enregistrement: formValues.date_enregistrement || new Date().toISOString(),
+        methode_capture: formValues.methode_capture || 'manuel',
+        fiabilite_source: formValues.fiabilite_source || 'moyenne',
+        actif: Boolean(formValues.actif !== false), // Ensure boolean true by default
+        
+        // Optional fields with proper types
+        altitude: formValues.altitude ? Number(formValues.altitude) : undefined,
+        precision: formValues.precision ? Number(formValues.precision) : undefined,
+        dispositif_source: formValues.dispositif_source || '',
+        commentaire: formValues.commentaire || '',
+        
+        // Movement information
+        type_mouvement: formValues.type_mouvement || undefined,
+        duree_sejour: formValues.duree_sejour ? Number(formValues.duree_sejour) : undefined,
+        prochaine_destination: formValues.prochaine_destination || undefined
+      };
 
       let response;
       if (this.editingGeolocation) {
@@ -213,9 +273,22 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
       }
 
       if (response.status === 'success') {
+        // Show success message
+        this.successMessage = this.editingGeolocation 
+          ? 'Géolocalisation modifiée avec succès !'
+          : 'Géolocalisation ajoutée avec succès !';
+        
         await this.loadData();
         this.resetForm();
-        this.closeOffcanvas();
+        
+        // Add a small delay to show success message before closing
+        setTimeout(() => {
+          this.closeOffcanvas();
+          // Clear success message after closing
+          setTimeout(() => {
+            this.successMessage = null;
+          }, 500);
+        }, 800);
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors de l\'enregistrement';
@@ -239,13 +312,28 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
       latitude: geolocation.latitude,
       longitude: geolocation.longitude,
       type_localisation: geolocation.type_localisation,
-      description: geolocation.description,
-      adresse: geolocation.adresse,
-      ville: geolocation.ville,
+      description: geolocation.description || '',
+      adresse: geolocation.adresse || '',
+      ville: geolocation.ville || '',
       pays: geolocation.pays,
-      type_mouvement: geolocation.type_mouvement,
-      duree_sejour: geolocation.duree_sejour,
-      prochaine_destination: geolocation.prochaine_destination
+      code_postal: geolocation.code_postal || '',
+      
+      // Required fields from backend
+      date_enregistrement: geolocation.date_enregistrement || new Date().toISOString(),
+      methode_capture: geolocation.methode_capture || 'manuel',
+      fiabilite_source: geolocation.fiabilite_source || 'moyenne',
+      actif: geolocation.actif !== undefined ? geolocation.actif : true,
+      
+      // Optional fields
+      altitude: geolocation.altitude || null,
+      precision: geolocation.precision || null,
+      dispositif_source: geolocation.dispositif_source || '',
+      commentaire: geolocation.commentaire || '',
+      
+      // Movement information
+      type_mouvement: geolocation.type_mouvement || '',
+      duree_sejour: geolocation.duree_sejour || null,
+      prochaine_destination: geolocation.prochaine_destination || ''
     });
   }
 
@@ -269,9 +357,17 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   resetForm(): void {
     this.geolocationForm.reset();
+    // Reset with default values for required fields
+    this.geolocationForm.patchValue({
+      date_enregistrement: new Date().toISOString(),
+      methode_capture: 'manuel',
+      fiabilite_source: 'moyenne',
+      actif: true
+    });
     this.editingGeolocation = null;
     this.error = null;
     this.locationError = null;
+    this.successMessage = null;
   }
 
   // Auto-geolocation methods
@@ -295,7 +391,10 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
         longitude: result.position.longitude,
         adresse: result.address.formattedAddress,
         ville: result.address.city,
-        pays: result.address.countryCode || result.address.country
+        pays: result.address.countryCode || result.address.country,
+        methode_capture: 'gps', // Set to GPS when using auto-geolocation
+        fiabilite_source: 'elevee', // GPS is generally high reliability
+        precision: result.position.accuracy || null
       });
 
     } catch (error: any) {
@@ -521,7 +620,40 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   closeOffcanvas(): void {
-    // Implement offcanvas close logic
+    try {
+      // Method 1: Try to close using Bootstrap's offcanvas instance
+      const offcanvasElement = document.getElementById('addGeolocationOffcanvas');
+      if (offcanvasElement) {
+        // Check if Bootstrap is available
+        if (typeof (window as any).bootstrap !== 'undefined' && (window as any).bootstrap.Offcanvas) {
+          const offcanvasInstance = (window as any).bootstrap.Offcanvas.getInstance(offcanvasElement);
+          if (offcanvasInstance) {
+            offcanvasInstance.hide();
+            return;
+          } else {
+            // Create new instance and hide
+            const newOffcanvasInstance = new (window as any).bootstrap.Offcanvas(offcanvasElement);
+            newOffcanvasInstance.hide();
+            return;
+          }
+        }
+      }
+      
+      // Method 2: Fallback - trigger click on close button
+      const closeButton = document.querySelector('#addGeolocationOffcanvas .btn-close');
+      if (closeButton) {
+        (closeButton as HTMLElement).click();
+        return;
+      }
+      
+      // Method 3: Final fallback - use ViewChild reference if available
+      if (this.offcanvasToggle?.nativeElement) {
+        this.offcanvasToggle.nativeElement.click();
+      }
+    } catch (error) {
+      console.warn('Error closing offcanvas:', error);
+      // Silent fail - the user can still close manually
+    }
   }
 
   openViewModal(geolocation: IGeolocalisation): void {

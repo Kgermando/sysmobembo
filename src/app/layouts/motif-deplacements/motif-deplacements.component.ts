@@ -253,8 +253,8 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
       description: motif.description || '',
       caractere_volontaire: motif.caractere_volontaire,
       urgence: motif.urgence || '',
-      date_declenchement: motif.date_declenchement ? DateUtils.toInputFormat(motif.date_declenchement) : '',
-      duree_estimee: motif.duree_estimee || null,
+      date_declenchement: motif.date_declenchement ? DateUtils.toInputFormat(motif.date_declenchement) : new Date(),
+      duree_estimee: motif.duree_estimee || 0,
       conflit_arme: motif.conflit_arme,
       catastrophe_naturelle: motif.catastrophe_naturelle,
       persecution: motif.persecution,
@@ -323,12 +323,7 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
     this.page_size = event.pageSize;
     this.loadData();
   }
-
-  // Sorting
-  sortData(sort: Sort): void {
-    // Implement sorting logic if needed
-  }
-
+ 
   // UI helpers
   getMigrantName(migrantUuid: string): string {
     const migrant = this.migrants.find(m => m.uuid === migrantUuid);

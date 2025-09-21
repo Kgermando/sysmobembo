@@ -104,182 +104,182 @@
             <div class="table-container">
               <div class="table-responsive-custom" *ngIf="!isLoadingData">
                 <div class="table-scroll-wrapper" #tableScrollWrapper>
-                  <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)"
-                    class="mat-elevation-z2 table tasks-activity tasks table-striped custom-table">
+                  <table mat-table [dataSource]="dataSource" matSort (matSortChange)="sortData($event)">
 
-                <!-- Photo de profil Column -->
-                <ng-container matColumnDef="photo_profil">
-                  <th mat-header-cell *matHeaderCellDef> Photo </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="avatar avatar-sm">
-                      <img *ngIf="hasProfilePhoto(element)" [src]="getUserAvatar(element)" [alt]="getFullName(element)"
-                        class="avatar-img rounded-circle">
-                      <span *ngIf="!hasProfilePhoto(element)" class="avatar-title bg-primary text-white rounded-circle">
-                        {{ getInitials(element) }}
-                      </span>
-                    </div>
-                  </td>
-                </ng-container>
+                    <!-- Photo de profil Column -->
+                    <ng-container matColumnDef="photo_profil">
+                      <th mat-header-cell *matHeaderCellDef> Photo </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div class="avatar avatar-sm">
+                          <img *ngIf="hasProfilePhoto(element)" [src]="getUserAvatar(element)"
+                            [alt]="getFullName(element)" class="avatar-img rounded-circle">
+                          <span *ngIf="!hasProfilePhoto(element)"
+                            class="avatar-title bg-primary text-white rounded-circle">
+                            {{ getInitials(element) }}
+                          </span>
+                        </div>
+                      </td>
+                    </ng-container>
 
-                <!-- Nom Column -->
-                <ng-container matColumnDef="nom">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Nom complet </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div>
-                      <strong>{{ getFullName(element) }}</strong>
-                      <div class="text-muted small">
-                        <i class="ti ti-id-badge me-1"></i>{{ element.matricule }}
-                      </div>
-                      <div class="text-muted small" *ngIf="element.date_naissance">
-                        <i class="ti ti-calendar me-1"></i>{{ getAge(element.date_naissance) }} ans
-                      </div>
-                    </div>
-                  </td>
-                </ng-container>
+                    <!-- Nom Column -->
+                    <ng-container matColumnDef="nom">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Nom complet </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div>
+                          <strong>{{ getFullName(element) }}</strong>
+                          <div class="text-muted small">
+                            <i class="ti ti-id-badge me-1"></i>{{ element.matricule }}
+                          </div>
+                          <div class="text-muted small" *ngIf="element.date_naissance">
+                            <i class="ti ti-calendar me-1"></i>{{ getAge(element.date_naissance) }} ans
+                          </div>
+                        </div>
+                      </td>
+                    </ng-container>
 
-                <!-- Post-nom Column -->
-                <ng-container matColumnDef="postnom">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Post-nom </th>
-                  <td mat-cell *matCellDef="let element">
-                    <strong>{{ element.postnom }}</strong>
-                  </td>
-                </ng-container>
+                    <!-- Post-nom Column -->
+                    <ng-container matColumnDef="postnom">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Post-nom </th>
+                      <td mat-cell *matCellDef="let element">
+                        <strong>{{ element.postnom }}</strong>
+                      </td>
+                    </ng-container>
 
-                <!-- Prénom Column -->
-                <ng-container matColumnDef="prenom">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Prénom </th>
-                  <td mat-cell *matCellDef="let element">
-                    <strong>{{ element.prenom }}</strong>
-                  </td>
-                </ng-container>
+                    <!-- Prénom Column -->
+                    <ng-container matColumnDef="prenom">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Prénom </th>
+                      <td mat-cell *matCellDef="let element">
+                        <strong>{{ element.prenom }}</strong>
+                      </td>
+                    </ng-container>
 
-                <!-- Email Column -->
-                <ng-container matColumnDef="email">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Contact </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div>
-                      <a [href]="'mailto:' + element.email" class="text-decoration-none d-block">
-                        <i class="ti ti-mail me-1"></i>{{ element.email }}
-                      </a>
-                      <a [href]="'tel:' + element.telephone" class="text-decoration-none text-muted small d-block">
-                        <i class="ti ti-phone me-1"></i>{{ element.telephone }}
-                      </a>
-                    </div>
-                  </td>
-                </ng-container>
+                    <!-- Email Column -->
+                    <ng-container matColumnDef="email">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Contact </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div>
+                          <a [href]="'mailto:' + element.email" class="text-decoration-none d-block">
+                            <i class="ti ti-mail me-1"></i>{{ element.email }}
+                          </a>
+                          <a [href]="'tel:' + element.telephone" class="text-decoration-none text-muted small d-block">
+                            <i class="ti ti-phone me-1"></i>{{ element.telephone }}
+                          </a>
+                        </div>
+                      </td>
+                    </ng-container>
 
-                <!-- Téléphone Column -->
-                <ng-container matColumnDef="telephone">
-                  <th mat-header-cell *matHeaderCellDef> Téléphone </th>
-                  <td mat-cell *matCellDef="let element">
-                    <a [href]="'tel:' + element.telephone" class="text-decoration-none">
-                      <i class="ti ti-phone me-1"></i>{{ element.telephone }}
-                    </a>
-                  </td>
-                </ng-container>
+                    <!-- Téléphone Column -->
+                    <ng-container matColumnDef="telephone">
+                      <th mat-header-cell *matHeaderCellDef> Téléphone </th>
+                      <td mat-cell *matCellDef="let element">
+                        <a [href]="'tel:' + element.telephone" class="text-decoration-none">
+                          <i class="ti ti-phone me-1"></i>{{ element.telephone }}
+                        </a>
+                      </td>
+                    </ng-container>
 
-                <!-- Matricule Column -->
-                <ng-container matColumnDef="matricule">
-                  <th mat-header-cell *matHeaderCellDef mat-sort-header> Matricule </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span class="badge bg-secondary">{{ element.matricule }}</span>
-                  </td>
-                </ng-container>
+                    <!-- Matricule Column -->
+                    <ng-container matColumnDef="matricule">
+                      <th mat-header-cell *matHeaderCellDef mat-sort-header> Matricule </th>
+                      <td mat-cell *matCellDef="let element">
+                        <span class="badge bg-secondary">{{ element.matricule }}</span>
+                      </td>
+                    </ng-container>
 
-                <!-- Grade Column -->
-                <ng-container matColumnDef="grade">
-                  <th mat-header-cell *matHeaderCellDef> Grade </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div>
-                      <strong>{{ element.grade }}</strong>
-                      <div class="text-muted small">{{ element.fonction }}</div>
-                    </div>
-                  </td>
-                </ng-container>
+                    <!-- Grade Column -->
+                    <ng-container matColumnDef="grade">
+                      <th mat-header-cell *matHeaderCellDef> Grade </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div>
+                          <strong>{{ element.grade }}</strong>
+                          <div class="text-muted small">{{ element.fonction }}</div>
+                        </div>
+                      </td>
+                    </ng-container>
 
-                <!-- Fonction Column -->
-                <ng-container matColumnDef="fonction">
-                  <th mat-header-cell *matHeaderCellDef> Poste </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div>
-                      <strong>{{ element.fonction }}</strong>
-                      <div class="text-muted small">{{ element.service }}</div>
-                      <div class="text-muted small">{{ element.direction }}</div>
-                    </div>
-                  </td>
-                </ng-container>
+                    <!-- Fonction Column -->
+                    <ng-container matColumnDef="fonction">
+                      <th mat-header-cell *matHeaderCellDef> Poste </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div>
+                          <strong>{{ element.fonction }}</strong>
+                          <div class="text-muted small">{{ element.service }}</div>
+                          <div class="text-muted small">{{ element.direction }}</div>
+                        </div>
+                      </td>
+                    </ng-container>
 
-                <!-- Rôle Column -->
-                <ng-container matColumnDef="role">
-                  <th mat-header-cell *matHeaderCellDef> Rôle & Type </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div>
-                      <span [class]="getRoleBadgeClass(element.role)">
-                        {{ element.role }}
-                      </span>
-                      <div class="mt-1">
-                        <span [class]="getTypeAgentBadgeClass(element.type_agent)" class="badge">
-                          {{ element.type_agent }}
+                    <!-- Rôle Column -->
+                    <ng-container matColumnDef="role">
+                      <th mat-header-cell *matHeaderCellDef> Rôle & Type </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div>
+                          <span [class]="getRoleBadgeClass(element.role)">
+                            {{ element.role }}
+                          </span>
+                          <div class="mt-1">
+                            <span [class]="getTypeAgentBadgeClass(element.type_agent)" class="badge">
+                              {{ element.type_agent }}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                    </ng-container>
+
+                    <!-- Permission Column -->
+                    <ng-container matColumnDef="permission">
+                      <th mat-header-cell *matHeaderCellDef> Permissions </th>
+                      <td mat-cell *matCellDef="let element">
+                        <span [class]="getPermissionBadgeClass(element.permission)">
+                          {{ element.permission }}
                         </span>
-                      </div>
-                    </div>
-                  </td>
-                </ng-container>
+                      </td>
+                    </ng-container>
 
-                <!-- Permission Column -->
-                <ng-container matColumnDef="permission">
-                  <th mat-header-cell *matHeaderCellDef> Permissions </th>
-                  <td mat-cell *matCellDef="let element">
-                    <span [class]="getPermissionBadgeClass(element.permission)">
-                      {{ element.permission }}
-                    </span>
-                  </td>
-                </ng-container>
+                    <!-- Statut Column -->
+                    <ng-container matColumnDef="status">
+                      <th mat-header-cell *matHeaderCellDef> Statut </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div>
+                          <span [class]="getStatusBadgeClass(element.status)">
+                            {{ element.status ? 'Actif' : 'Inactif' }}
+                          </span>
+                          <div class="mt-1">
+                            <span [class]="getStatutBadgeClass(element.statut)" class="badge">
+                              {{ element.statut }}
+                            </span>
+                          </div>
+                          <div class="text-muted small" *ngIf="element.date_recrutement">
+                            <i class="ti ti-briefcase me-1"></i>{{ getAnciennete(element.date_recrutement) }}
+                          </div>
+                        </div>
+                      </td>
+                    </ng-container>
 
-                <!-- Statut Column -->
-                <ng-container matColumnDef="status">
-                  <th mat-header-cell *matHeaderCellDef> Statut </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div>
-                      <span [class]="getStatusBadgeClass(element.status)">
-                        {{ element.status ? 'Actif' : 'Inactif' }}
-                      </span>
-                      <div class="mt-1">
-                        <span [class]="getStatutBadgeClass(element.statut)" class="badge">
-                          {{ element.statut }}
-                        </span>
-                      </div>
-                      <div class="text-muted small" *ngIf="element.date_recrutement">
-                        <i class="ti ti-briefcase me-1"></i>{{ getAnciennete(element.date_recrutement) }}
-                      </div>
-                    </div>
-                  </td>
-                </ng-container>
+                    <!-- Actions Column -->
+                    <ng-container matColumnDef="actions">
+                      <th mat-header-cell *matHeaderCellDef> Actions </th>
+                      <td mat-cell *matCellDef="let element">
+                        <div class="btn-group" role="group">
+                          <button type="button" class="btn btn-sm btn-outline-info" (click)="viewUser(element)"
+                            title="Voir détails">
+                            <i class="ti ti-eye"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-primary" (click)="editUser(element)"
+                            *ngIf="canEditUser()" title="Modifier">
+                            <i class="ti ti-edit"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteUser(element)"
+                            *ngIf="canDeleteUser()" title="Supprimer">
+                            <i class="ti ti-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </ng-container>
 
-                <!-- Actions Column -->
-                <ng-container matColumnDef="actions">
-                  <th mat-header-cell *matHeaderCellDef> Actions </th>
-                  <td mat-cell *matCellDef="let element">
-                    <div class="btn-group" role="group">
-                      <button type="button" class="btn btn-sm btn-outline-info" (click)="viewUser(element)"
-                        title="Voir détails">
-                        <i class="ti ti-eye"></i>
-                      </button>
-                      <button type="button" class="btn btn-sm btn-outline-primary" (click)="editUser(element)"
-                        *ngIf="canEditUser()" title="Modifier">
-                        <i class="ti ti-edit"></i>
-                      </button>
-                      <button type="button" class="btn btn-sm btn-outline-danger" (click)="deleteUser(element)"
-                        *ngIf="canDeleteUser()" title="Supprimer">
-                        <i class="ti ti-trash"></i>
-                      </button>
-                    </div>
-                  </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-              </table>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                  </table>
                 </div>
 
                 <!-- Pagination -->
@@ -1546,7 +1546,7 @@
     </div>
 
     <!-- Section 9: Documents -->
-    <div class="card border mb-3" *ngIf="viewingUser.cv_document || viewingUser.qr_code">
+    <div class="card border mb-3" *ngIf="viewingUser.cv_document">
       <div class="card-header">
         <h6 class="mb-0">
           <i class="ti ti-file me-2"></i>Documents
@@ -1560,13 +1560,6 @@
               <a [href]="viewingUser.cv_document" target="_blank" class="btn btn-outline-primary btn-sm">
                 <i class="ti ti-download me-1"></i>Télécharger CV
               </a>
-            </div>
-          </div>
-          <div class="col-12 mb-3" *ngIf="viewingUser.qr_code">
-            <label class="form-label text-muted">QR Code</label>
-            <div class="fw-medium">
-              <img [src]="viewingUser.qr_code" [alt]="'QR Code de ' + getFullName(viewingUser)" class="img-fluid"
-                style="max-width: 200px;">
             </div>
           </div>
         </div>
