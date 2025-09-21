@@ -107,6 +107,24 @@ export class GeolocationService {
     return this.http.get<IBackendApiResponse<any>>(`${this.apiUrl}/stats`);
   }
 
+  // Export geolocations to Excel
+  exportGeolocationsToExcel(
+    migrantUuid?: string,
+    typeLocalisation?: string,
+    pays?: string
+  ): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (migrantUuid) params = params.set('migrant_uuid', migrantUuid);
+    if (typeLocalisation) params = params.set('type_localisation', typeLocalisation);
+    if (pays) params = params.set('pays', pays);
+
+    return this.http.get(`${this.apiUrl}/export/excel`, {
+      params,
+      responseType: 'blob'
+    });
+  }
+
   // Calculate distance between two points (utility method)
   calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const earthRadius = 6371; // Earth radius in kilometers

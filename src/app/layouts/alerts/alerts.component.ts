@@ -54,6 +54,8 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedTypeAlerte = '';
   selectedNiveauGravite = '';
   selectedStatut = '';
+  dateDebut = '';
+  dateFin = '';
 
   // Options with proper typing to match IAlert interface
   typeAlerteOptions: Array<{
@@ -342,6 +344,8 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedNiveauGravite = '';
     this.selectedStatut = '';
     this.searchTerm = '';
+    this.dateDebut = '';
+    this.dateFin = '';
     this.current_page = 1;
     this.loadData();
   }
@@ -541,5 +545,112 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
   // TrackBy function for performance optimization
   trackByAlertUuid(index: number, alert: IAlert): string {
     return alert.uuid;
+  }
+
+  // Export to Excel
+  exportToExcel(): void {
+    this.isLoading = true;
+    this.error = null;
+
+    // Préparer les filtres pour l'export
+    const exportFilters: IAlertFilters = {};
+    
+    if (this.searchTerm) exportFilters.search = this.searchTerm;
+    if (this.selectedMigrant) exportFilters.migrant_uuid = this.selectedMigrant;
+    if (this.selectedTypeAlerte) exportFilters.type_alerte = this.selectedTypeAlerte;
+    if (this.selectedNiveauGravite) exportFilters.niveau_gravite = this.selectedNiveauGravite;
+    if (this.selectedStatut) exportFilters.statut = this.selectedStatut;
+    if (this.dateDebut) exportFilters.date_debut = this.dateDebut;
+    if (this.dateFin) exportFilters.date_fin = this.dateFin;
+
+    // Afficher un message d'information pendant l'export
+    console.log('Début de l\'export Excel des alertes...');
+
+    this.alertService.exportAlertsToExcel(exportFilters).subscribe({
+      next: (blob: Blob) => {
+        try {
+          // Créer un lien de téléchargement pour le fichier Excel
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          
+          // Générer un nom de fichier avec timestamp
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+          link.download = `alertes_export_${timestamp}.xlsx`;
+          
+          // Déclencher le téléchargement
+          document.body.appendChild(link);
+          link.click();
+          
+          // Nettoyer
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          this.isLoading = false;
+          
+          // Afficher un message de succès
+          console.log('✅ Export Excel terminé avec succès');
+          this.showSuccessMessage('Export Excel terminé avec succès');
+          
+        } catch (downloadError) {
+          console.error('Erreur lors du téléchargement:', downloadError);
+          this.error = 'Erreur lors du téléchargement du fichier Excel';
+          this.isLoading = false;
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'export Excel:', error);
+        let errorMessage = 'Erreur lors de l\'export Excel. Veuillez réessayer.';
+        
+        if (error.status === 404) {
+          errorMessage = 'Service d\'export non disponible. Contactez l\'administrateur.';
+        } else if (error.status === 500) {
+          errorMessage = 'Erreur serveur lors de l\'export. Veuillez réessayer plus tard.';
+        } else if (error.status === 0) {
+          errorMessage = 'Problème de connexion réseau. Vérifiez votre connexion internet.';
+        }
+        
+        this.error = errorMessage;
+        this.isLoading = false;
+      }
+    });
+  }
+
+  // Méthode utilitaire pour afficher un message de succès
+  private showSuccessMessage(message: string): void {
+    // Créer un élément de notification temporaire
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success position-fixed';
+    notification.style.cssText = `
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      max-width: 300px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `;
+    notification.innerHTML = `
+      <div class="d-flex align-items-center">
+        <i class="ti ti-check-circle me-2"></i>
+        <span>${message}</span>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animation d'apparition
+    setTimeout(() => {
+      notification.style.opacity = '1';
+    }, 100);
+    
+    // Suppression automatique après 3 secondes
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => {
+        if (notification.parentElement) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
   }
 }

@@ -2,18 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { 
-  IBiometrie, 
-  IPaginationResponse, 
-  IApiResponse 
-} from '../../shared/models/migrant.model';
 
 export interface IBiometricFormData {
   migrant_uuid: string;
   type_biometrie: 'empreinte_digitale' | 'reconnaissance_faciale' | 'iris' | 'scan_retine' | 'signature_numerique';
   index_doigt?: number;
-  qualite_donnee?: string; // Optional, will be auto-assessed if not provided
-  donnees_biometriques: string; // Base64 encoded data
+  qualite_donnee?: string;
+  donnees_biometriques: string;
   algorithme_encodage: string;
   date_capture: string;
   dispositif_capture?: string;
@@ -30,10 +25,19 @@ export interface IBiometricStats {
   total_biometrics: number;
   verified_biometrics: number;
   encrypted_biometrics: number;
-  biometric_types: Array<{type_biometrie: string; count: number}>;
-  quality_distribution: Array<{qualite_donnee: string; count: number}>;
+  biometric_types: Array<{ type_biometrie: string; count: number }>;
+  quality_distribution: Array<{ qualite_donnee: string; count: number }>;
   avg_confidence_score: number;
-  capture_devices: Array<{dispositif_capture: string; count: number}>;
+  capture_devices: Array<{ dispositif_capture: string; count: number }>;
+}
+
+export interface IBiometricFilters {
+  migrant_uuid?: string;
+  type_biometrie?: string;
+  qualite_donnee?: string;
+  verifie?: string;
+  chiffre?: string;
+  dispositif_capture?: string;
 }
 
 @Injectable({
@@ -44,24 +48,13 @@ export class BiometricService {
 
   constructor(private http: HttpClient) {}
 
-  // Get paginated biometrics (without sensitive data)
   getPaginatedBiometrics(
     page: number = 1,
     limit: number = 15,
     migrantUuid?: string,
     typeBiometrie?: string,
     verifie?: string
-  ): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie[];
-    pagination: {
-      total_records: number;
-      total_pages: number;
-      current_page: number;
-      page_size: number;
-    };
-  }> {
+  ): Observable<any> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
@@ -70,139 +63,59 @@ export class BiometricService {
     if (typeBiometrie) params = params.set('type_biometrie', typeBiometrie);
     if (verifie) params = params.set('verifie', verifie);
 
-    return this.http.get<{
-      status: string;
-      message: string;
-      data: IBiometrie[];
-      pagination: {
-        total_records: number;
-        total_pages: number;
-        current_page: number;
-        page_size: number;
-      };
-    }>(`${this.apiUrl}/paginate`, { params });
+    return this.http.get<any>(`${this.apiUrl}/paginate`, { params });
   }
 
-  // Get all biometrics (without sensitive data)
-  getAllBiometrics(): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie[];
-  }> {
-    return this.http.get<{
-      status: string;
-      message: string;
-      data: IBiometrie[];
-    }>(`${this.apiUrl}/all`);
+  getAllBiometrics(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/all`);
   }
 
-  // Get one biometric (with option to include sensitive data)
-  getBiometric(uuid: string, includeSensitive: boolean = false): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie;
-  }> {
+  getBiometric(uuid: string, includeSensitive: boolean = false): Observable<any> {
     const params = new HttpParams().set('include_sensitive', includeSensitive.toString());
-    return this.http.get<{
-      status: string;
-      message: string;
-      data: IBiometrie;
-    }>(`${this.apiUrl}/get/${uuid}`, { params });
+    return this.http.get<any>(`${this.apiUrl}/get/${uuid}`, { params });
   }
 
-  // Get biometrics by migrant
-  getBiometricsByMigrant(migrantUuid: string): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie[];
-  }> {
-    return this.http.get<{
-      status: string;
-      message: string;
-      data: IBiometrie[];
-    }>(`${this.apiUrl}/migrant/${migrantUuid}`);
+  getBiometricsByMigrant(migrantUuid: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/migrant/${migrantUuid}`);
   }
 
-  // Get verified biometrics
-  getVerifiedBiometrics(): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie[];
-  }> {
-    return this.http.get<{
-      status: string;
-      message: string;
-      data: IBiometrie[];
-    }>(`${this.apiUrl}/verified`);
+  getVerifiedBiometrics(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/verified`);
   }
 
-  // Create biometric
-  createBiometric(biometricData: IBiometricFormData): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie;
-  }> {
-    return this.http.post<{
-      status: string;
-      message: string;
-      data: IBiometrie;
-    }>(`${this.apiUrl}/create`, biometricData);
+  createBiometric(biometricData: IBiometricFormData): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/create`, biometricData);
   }
 
-  // Verify biometric
-  verifyBiometric(uuid: string, verificationData: IBiometricVerificationData): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie;
-  }> {
-    return this.http.post<{
-      status: string;
-      message: string;
-      data: IBiometrie;
-    }>(`${this.apiUrl}/verify/${uuid}`, verificationData);
+  verifyBiometric(uuid: string, verificationData: IBiometricVerificationData): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/verify/${uuid}`, verificationData);
   }
 
-  // Update biometric (metadata only)
-  updateBiometric(uuid: string, updateData: {
-    qualite_donnee?: string;
-    dispositif_capture?: string;
-    resolution_capture?: string;
-    operateur_capture?: string;
-  }): Observable<{
-    status: string;
-    message: string;
-    data: IBiometrie;
-  }> {
-    return this.http.put<{
-      status: string;
-      message: string;
-      data: IBiometrie;
-    }>(`${this.apiUrl}/update/${uuid}`, updateData);
+  updateBiometric(uuid: string, biometricData: Partial<IBiometricFormData>): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/update/${uuid}`, biometricData);
   }
 
-  // Delete biometric
-  deleteBiometric(uuid: string): Observable<{
-    status: string;
-    message: string;
-    data: null;
-  }> {
-    return this.http.delete<{
-      status: string;
-      message: string;
-      data: null;
-    }>(`${this.apiUrl}/delete/${uuid}`);
+  deleteBiometric(uuid: string): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/delete/${uuid}`);
   }
 
-  // Get biometrics statistics
-  getBiometricsStats(): Observable<{
-    status: string;
-    message: string;
-    data: IBiometricStats;
-  }> {
-    return this.http.get<{
-      status: string;
-      message: string;
-      data: IBiometricStats;
-    }>(`${this.apiUrl}/stats`);
+  getBiometricsStats(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/stats`);
+  }
+
+  exportBiometricsToExcel(filters: IBiometricFilters = {}): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (filters.migrant_uuid) params = params.set('migrant_uuid', filters.migrant_uuid);
+    if (filters.type_biometrie) params = params.set('type_biometrie', filters.type_biometrie);
+    if (filters.qualite_donnee) params = params.set('qualite_donnee', filters.qualite_donnee);
+    if (filters.verifie) params = params.set('verifie', filters.verifie);
+    if (filters.chiffre) params = params.set('chiffre', filters.chiffre);
+    if (filters.dispositif_capture) params = params.set('dispositif_capture', filters.dispositif_capture);
+
+    return this.http.get(`${this.apiUrl}/export/excel`, {
+      params,
+      responseType: 'blob'
+    });
   }
 }

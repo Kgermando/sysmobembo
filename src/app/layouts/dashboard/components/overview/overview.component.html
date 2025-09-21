@@ -71,9 +71,33 @@
                             <i class="las la-users"></i>
                         </div>
                         <div class="kpi-content">
-                            <h3>Total déplacées</h3>
+                            <h3>Total PDI</h3>
                             <p class="kpi-value">{{ formaterNombre(totalPDI) }}</p>
-                            <span class="kpi-label">Personnes déplacées</span>
+                            <span class="kpi-label">Personnes déplacées internes</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Migrants -->
+                    <div class="kpi-card secondary">
+                        <div class="kpi-icon">
+                            <i class="las la-globe"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>Total Migrants</h3>
+                            <p class="kpi-value">{{ formaterNombre(totalMigrants) }}</p>
+                            <span class="kpi-label">Tous les migrants</span>
+                        </div>
+                    </div>
+
+                    <!-- Déplacés Internes -->
+                    <div class="kpi-card accent">
+                        <div class="kpi-icon">
+                            <i class="las la-map-marked-alt"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>Déplacés Internes</h3>
+                            <p class="kpi-value">{{ formaterNombre(deplacesInternes) }}</p>
+                            <span class="kpi-label">Migrations internes</span>
                         </div>
                     </div>
 
@@ -98,6 +122,18 @@
                             <h3>Taux de Retour</h3>
                             <p class="kpi-value">{{ formaterPourcentage(tauxRetour) }}</p>
                             <span class="kpi-label">Pourcentage de retours</span>
+                        </div>
+                    </div>
+
+                    <!-- Taux de déplacement interne -->
+                    <div class="kpi-card info-alt">
+                        <div class="kpi-icon">
+                            <i class="las la-chart-pie"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>Taux Dépl. Interne</h3>
+                            <p class="kpi-value">{{ formaterPourcentage(tauxDeplacementInterne) }}</p>
+                            <span class="kpi-label">Migration interne vs totale</span>
                         </div>
                     </div>
 

@@ -107,9 +107,20 @@
                                 <h4 class="card-title">Liste des Alertes</h4>
                             </div>
                             <div class="col-auto">
-                                <a href="javascript:void(0);" class="btn btn-primary" (click)="prepareNewAlert(); openAddOffcanvas()">
-                                    <i class="ti ti-plus me-2"></i>Créer une alerte
-                                </a>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-success" 
+                                            (click)="exportToExcel()" 
+                                            [disabled]="isLoadingData || isLoading"
+                                            title="Exporter vers Excel">
+                                        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        <i *ngIf="!isLoading" class="ti ti-file-excel me-1"></i>
+                                        <span class="d-none d-md-inline">{{ isLoading ? 'Export en cours...' : 'Exporter Excel' }}</span>
+                                        <span class="d-md-none">{{ isLoading ? 'Export...' : 'Excel' }}</span>
+                                    </button>
+                                    <a href="javascript:void(0);" class="btn btn-primary" (click)="prepareNewAlert(); openAddOffcanvas()">
+                                        <i class="ti ti-plus me-2"></i>Créer une alerte
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -162,6 +173,47 @@
                                                     <button class="btn btn-primary" (click)="applyFilters()">
                                                         <i class="ti ti-search"></i>
                                                     </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Deuxième ligne de filtres -->
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="input-block mb-3">
+                                                <label class="form-label">Niveau de gravité :</label>
+                                                <select class="form-control" [(ngModel)]="selectedNiveauGravite" (change)="applyFilters()">
+                                                    <option value="">Tous les niveaux</option>
+                                                    <option value="info">Information</option>
+                                                    <option value="warning">Attention</option>
+                                                    <option value="danger">Danger</option>
+                                                    <option value="critical">Critique</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="input-block mb-3">
+                                                <label class="form-label">Date début :</label>
+                                                <input type="date" class="form-control" 
+                                                       [(ngModel)]="dateDebut" (ngModelChange)="applyFilters()">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="input-block mb-3">
+                                                <label class="form-label">Date fin :</label>
+                                                <input type="date" class="form-control" 
+                                                       [(ngModel)]="dateFin" (ngModelChange)="applyFilters()">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="input-block mb-3">
+                                                <label class="form-label">&nbsp;</label>
+                                                <div class="d-flex gap-2">
+                                                    <small class="text-muted d-flex align-items-center">
+                                                        <i class="ti ti-info-circle me-1"></i>
+                                                        L'export Excel applique tous les filtres actifs
+                                                    </small>
                                                 </div>
                                             </div>
                                         </div>

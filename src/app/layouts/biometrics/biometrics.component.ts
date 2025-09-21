@@ -11,7 +11,8 @@ import {
   BiometricService, 
   IBiometricFormData, 
   IBiometricVerificationData,
-  IBiometricStats
+  IBiometricStats,
+  IBiometricFilters
 } from '../../core/migration/biometric.service';
 import { MigrantService } from '../../core/migration/migrant.service';
 import { IBiometrie, IMigrant } from '../../shared/models/migrant.model';
@@ -119,6 +120,9 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   migrantUuidFilter = '';
   typeBiometrieFilter = '';
   verifieFilter = '';
+  qualiteDonneeFilter = '';
+  chiffreFilter = '';
+  dispositifCaptureFilter = '';
 
   constructor(
     private fb: FormBuilder,
@@ -243,6 +247,9 @@ export class BiometricsComponent implements OnInit, OnDestroy {
     this.migrantUuidFilter = '';
     this.typeBiometrieFilter = '';
     this.verifieFilter = '';
+    this.qualiteDonneeFilter = '';
+    this.chiffreFilter = '';
+    this.dispositifCaptureFilter = '';
     this.currentPage = 1;
     this.loadBiometrics();
   }
@@ -503,5 +510,124 @@ export class BiometricsComponent implements OnInit, OnDestroy {
       duration: 5000,
       panelClass: type === 'error' ? 'error-snackbar' : 'success-snackbar'
     });
+  }
+
+  // Reset all filters
+  resetFilters(): void {
+    this.migrantUuidFilter = '';
+    this.typeBiometrieFilter = '';
+    this.verifieFilter = '';
+    this.qualiteDonneeFilter = '';
+    this.chiffreFilter = '';
+    this.dispositifCaptureFilter = '';
+    this.currentPage = 1;
+    this.loadBiometrics();
+  }
+
+  // Export to Excel
+  exportToExcel(): void {
+    this.isLoading = true;
+    this.error = null;
+
+    // Préparer les filtres pour l'export
+    const exportFilters: IBiometricFilters = {};
+    
+    if (this.migrantUuidFilter) exportFilters.migrant_uuid = this.migrantUuidFilter;
+    if (this.typeBiometrieFilter) exportFilters.type_biometrie = this.typeBiometrieFilter;
+    if (this.qualiteDonneeFilter) exportFilters.qualite_donnee = this.qualiteDonneeFilter;
+    if (this.verifieFilter) exportFilters.verifie = this.verifieFilter;
+    if (this.chiffreFilter) exportFilters.chiffre = this.chiffreFilter;
+    if (this.dispositifCaptureFilter) exportFilters.dispositif_capture = this.dispositifCaptureFilter;
+
+    // Afficher un message d'information pendant l'export
+    console.log('Début de l\'export Excel des biométries...');
+
+    this.biometricService.exportBiometricsToExcel(exportFilters).subscribe({
+      next: (blob: Blob) => {
+        try {
+          // Créer un lien de téléchargement pour le fichier Excel
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          
+          // Générer un nom de fichier avec timestamp
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+          link.download = `biometries_export_${timestamp}.xlsx`;
+          
+          // Déclencher le téléchargement
+          document.body.appendChild(link);
+          link.click();
+          
+          // Nettoyer
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          this.isLoading = false;
+          
+          // Afficher un message de succès
+          console.log('✅ Export Excel des biométries terminé avec succès');
+          this.showSuccessMessage('Export Excel terminé avec succès');
+          
+        } catch (downloadError) {
+          console.error('Erreur lors du téléchargement:', downloadError);
+          this.error = 'Erreur lors du téléchargement du fichier Excel';
+          this.isLoading = false;
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'export Excel:', error);
+        let errorMessage = 'Erreur lors de l\'export Excel. Veuillez réessayer.';
+        
+        if (error.status === 404) {
+          errorMessage = 'Service d\'export non disponible. Contactez l\'administrateur.';
+        } else if (error.status === 500) {
+          errorMessage = 'Erreur serveur lors de l\'export. Veuillez réessayer plus tard.';
+        } else if (error.status === 0) {
+          errorMessage = 'Problème de connexion réseau. Vérifiez votre connexion internet.';
+        }
+        
+        this.error = errorMessage;
+        this.showMessage(errorMessage, 'error');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  // Méthode utilitaire pour afficher un message de succès
+  private showSuccessMessage(message: string): void {
+    // Créer un élément de notification temporaire
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-success position-fixed';
+    notification.style.cssText = `
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      max-width: 300px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `;
+    notification.innerHTML = `
+      <div class="d-flex align-items-center">
+        <i class="ti ti-check-circle me-2"></i>
+        <span>${message}</span>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animation d'apparition
+    setTimeout(() => {
+      notification.style.opacity = '1';
+    }, 100);
+    
+    // Suppression automatique après 3 secondes
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => {
+        if (notification.parentElement) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 3000);
   }
 }

@@ -60,8 +60,11 @@ export class OverviewComponent implements OnInit, OnDestroy {
   
   // 📊 KPIs principaux
   totalPDI = 0;
+  totalMigrants = 0;
+  deplacesInternes = 0;
   personnesRetournees = 0;
   tauxRetour = 0;
+  tauxDeplacementInterne = 0;
   mouvementsMassifs = 0;
   
   // 🍕 Graphique en secteurs - Causes de déplacement
@@ -284,12 +287,19 @@ export class OverviewComponent implements OnInit, OnDestroy {
     if (!this.indicateurs) return;
 
     this.totalPDI = this.indicateurs.volume_localisation.nombre_total_pdi;
+    this.totalMigrants = this.indicateurs.volume_localisation.nombre_total_migrants;
+    this.deplacesInternes = this.indicateurs.volume_localisation.nombre_deplaces_internes;
     this.personnesRetournees = this.indicateurs.volume_localisation.personnes_retournees;
     this.mouvementsMassifs = this.indicateurs.dynamiques_alerte.mouvements_massifs_recent;
     
     // Calcul du taux de retour
     this.tauxRetour = this.totalPDI > 0 
       ? (this.personnesRetournees / this.totalPDI) * 100 
+      : 0;
+      
+    // Calcul du taux de déplacement interne
+    this.tauxDeplacementInterne = this.totalMigrants > 0 
+      ? (this.deplacesInternes / this.totalMigrants) * 100 
       : 0;
   }
 

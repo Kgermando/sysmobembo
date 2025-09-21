@@ -48,10 +48,21 @@
                 <h4 class="card-title">Liste des Géolocalisations</h4>
               </div>
               <div class="col-auto">
-                <button class="btn btn-primary" (click)="prepareNewGeolocation()" data-bs-toggle="offcanvas"
-                  data-bs-target="#addGeolocationOffcanvas" #offcanvasToggle>
-                  <i class="ti ti-plus me-2"></i>Ajouter une géolocalisation
-                </button>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-outline-success" 
+                          (click)="exportToExcel()" 
+                          [disabled]="isLoadingData || isLoading"
+                          title="Exporter vers Excel">
+                    <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    <i *ngIf="!isLoading" class="ti ti-file-excel me-1"></i>
+                    <span class="d-none d-md-inline">{{ isLoading ? 'Export en cours...' : 'Exporter Excel' }}</span>
+                    <span class="d-md-none">{{ isLoading ? 'Export...' : 'Excel' }}</span>
+                  </button>
+                  <button class="btn btn-primary" (click)="prepareNewGeolocation()" data-bs-toggle="offcanvas"
+                    data-bs-target="#addGeolocationOffcanvas" #offcanvasToggle>
+                    <i class="ti ti-plus me-2"></i>Ajouter une géolocalisation
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -104,11 +115,19 @@
                     </div>
                   </div>
                   <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-9">
                       <div class="d-flex gap-2">
                         <button class="btn btn-outline-secondary" (click)="resetFilters()">
                           <i class="ti ti-refresh me-2"></i>Réinitialiser
                         </button>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="d-flex justify-content-end">
+                        <small class="text-muted d-flex align-items-center">
+                          <i class="ti ti-info-circle me-1"></i>
+                          L'export Excel applique tous les filtres actifs
+                        </small>
                       </div>
                     </div>
                   </div>

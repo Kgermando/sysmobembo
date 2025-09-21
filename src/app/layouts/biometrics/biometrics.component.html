@@ -137,6 +137,80 @@
             </select>
           </div>
 
+          <div class="col-md-4">
+            <label class="form-label">Statut Vérification</label>
+            <select 
+              class="form-select" 
+              [(ngModel)]="verifieFilter"
+              (change)="applyFilters()">
+              <option value="">Tous les statuts</option>
+              <option value="true">Vérifié</option>
+              <option value="false">Non vérifié</option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Qualité des Données</label>
+            <select 
+              class="form-select" 
+              [(ngModel)]="qualiteDonneeFilter"
+              (change)="applyFilters()">
+              <option value="">Toutes les qualités</option>
+              <option *ngFor="let quality of qualityLevels" [value]="quality.value">
+                {{ quality.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Chiffrement</label>
+            <select 
+              class="form-select" 
+              [(ngModel)]="chiffreFilter"
+              (change)="applyFilters()">
+              <option value="">Tous les états</option>
+              <option value="true">Chiffré</option>
+              <option value="false">Non chiffré</option>
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Dispositif de Capture</label>
+            <input type="text" 
+                   class="form-control" 
+                   placeholder="Rechercher dispositif..."
+                   [(ngModel)]="dispositifCaptureFilter"
+                   (ngModelChange)="applyFilters()">
+          </div>
+
+          <div class="col-md-4">
+            <div class="d-flex align-items-end h-100">
+              <div class="btn-group w-100">
+                <button class="btn btn-outline-secondary" (click)="resetFilters()">
+                  <i class="ti ti-refresh me-1"></i>Réinitialiser
+                </button>
+                <button class="btn btn-primary" (click)="applyFilters()">
+                  <i class="ti ti-search me-1"></i>Filtrer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info sur les filtres pour l'export -->
+        <div class="row mt-2">
+          <div class="col-12">
+            <small class="text-muted d-flex align-items-center">
+              <i class="ti ti-info-circle me-1"></i>
+              L'export Excel applique tous les filtres actifs 
+              pour sécuriser les données sensibles
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /Advanced Filters Section -->
+
     <!-- Main Content Table -->
     <div class="card">
       <div class="card-header">
@@ -148,9 +222,20 @@
             </h4>
           </div>
           <div class="col-auto">
-            <button class="btn btn-primary" (click)="openCreateModal()">
-              <i class="ti ti-plus me-2"></i>Capturer Biométrie
-            </button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-success" 
+                      (click)="exportToExcel()" 
+                      [disabled]="isLoading || isLoadingData"
+                      title="Exporter vers Excel">
+                <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <i *ngIf="!isLoading" class="ti ti-file-excel me-1"></i>
+                <span class="d-none d-md-inline">{{ isLoading ? 'Export en cours...' : 'Exporter Excel' }}</span>
+                <span class="d-md-none">{{ isLoading ? 'Export...' : 'Excel' }}</span>
+              </button>
+              <button class="btn btn-primary" (click)="openCreateModal()">
+                <i class="ti ti-plus me-2"></i>Capturer Biométrie
+              </button>
+            </div>
           </div>
         </div>
       </div>

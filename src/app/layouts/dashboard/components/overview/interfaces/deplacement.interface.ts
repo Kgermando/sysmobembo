@@ -9,6 +9,8 @@ export interface IndicateursDeplacementResponse {
 
 export interface VolumeLocalisationIndicateurs {
   nombre_total_pdi: number;
+  nombre_total_migrants: number;
+  nombre_deplaces_internes: number;
   personnes_retournees: number;
   repartition_geographique: RepartitionProvinceStats[];
   evolution_mensuelle: EvolutionTemporelleStats[];

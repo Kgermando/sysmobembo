@@ -4,7 +4,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject, firstValueFrom, takeUntil } from 'rxjs';
-import { IGeolocalisation, IMigrant, IBackendPaginationResponse } from '../../shared/models/migrant.model';
+import { IGeolocalisation, IMigrant } from '../../shared/models/migrant.model';
 import { GeolocationService, IGeolocationFormData } from '../../core/migration/geolocation.service';
 import { MigrantService } from '../../core/migration/migrant.service';
 import { AutoGeolocationService, CustomGeolocationPosition, ReverseGeocodingResult, GeolocationError } from '../../core/services/auto-geolocation.service';
@@ -567,6 +567,68 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedTypeMouvement = '';
     this.current_page = 1;
     this.loadData();
+  }
+
+  // Export to Excel
+  exportToExcel(): void {
+    this.isLoading = true;
+    this.error = null;
+
+    // Afficher un message d'information pendant l'export
+    console.log('Début de l\'export Excel des géolocalisations...');
+
+    this.geolocationService.exportGeolocationsToExcel(
+      this.selectedMigrant,
+      this.selectedTypeLocalisation,
+      this.selectedPays
+    ).subscribe({
+      next: (blob: Blob) => {
+        try {
+          // Créer un lien de téléchargement pour le fichier Excel
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          
+          // Générer un nom de fichier avec timestamp
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+          link.download = `geolocalisations_export_${timestamp}.xlsx`;
+          
+          // Déclencher le téléchargement
+          document.body.appendChild(link);
+          link.click();
+          
+          // Nettoyer
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          this.isLoading = false;
+          
+          // Afficher un message de succès
+          console.log('✅ Export Excel terminé avec succès');
+          
+        } catch (downloadError) {
+          console.error('❌ Erreur lors du téléchargement:', downloadError);
+          this.error = 'Erreur lors du téléchargement du fichier Excel.';
+          this.isLoading = false;
+        }
+      },
+      error: (error) => {
+        console.error('❌ Erreur lors de l\'export Excel:', error);
+        
+        let errorMessage = 'Une erreur est survenue lors de l\'export Excel.';
+        
+        if (error.status === 404) {
+          errorMessage = 'Service d\'export non disponible. Contactez l\'administrateur.';
+        } else if (error.status === 500) {
+          errorMessage = 'Erreur serveur lors de l\'export. Veuillez réessayer plus tard.';
+        } else if (error.status === 0) {
+          errorMessage = 'Problème de connexion réseau. Vérifiez votre connexion internet.';
+        }
+        
+        this.error = errorMessage;
+        this.isLoading = false;
+      }
+    });
   }
 
   search(): void {

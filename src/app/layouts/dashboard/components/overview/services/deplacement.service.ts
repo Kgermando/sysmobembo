@@ -48,7 +48,7 @@ export class DeplacementService {
     if (periode) params = params.set('periode', periode.toString());
     if (province) params = params.set('province', province);
     
-    return this.http.get<any>(`${this.baseUrl}/tendances`, { params });
+    return this.http.get<any>(`${this.baseUrl}/tendances-evolution`, { params });
   }
 
   /**
@@ -70,7 +70,7 @@ export class DeplacementService {
     let params = new HttpParams();
     if (periode) params = params.set('periode', periode.toString());
     
-    return this.http.get<any>(`${this.baseUrl}/repartition-geo`, { params });
+    return this.http.get<any>(`${this.baseUrl}/repartition-geographique-detaillee`, { params });
   }
 
   /**
@@ -81,6 +81,6 @@ export class DeplacementService {
     if (periode) params = params.set('periode', periode.toString());
     if (province) params = params.set('province', province);
     
-    return this.http.get<any>(`${this.baseUrl}/causes`, { params });
+    return this.http.get<any>(`${this.baseUrl}/analyse-causes-detaillees`, { params });
   }
 }

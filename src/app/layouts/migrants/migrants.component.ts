@@ -747,6 +747,87 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  // ============================
+  // EXPORT FUNCTIONALITY
+  // ============================
+
+  // Export to Excel
+  exportToExcel(): void {
+    this.isLoading = true;
+    this.error = null;
+
+    // Préparer les filtres pour l'export
+    const exportFilters: {
+      nom?: string;
+      prenom?: string;
+      nationalite?: string;
+      statut_migratoire?: string;
+      pays_origine?: string;
+      sexe?: string;
+      actif?: string;
+    } = {};
+    
+    if (this.searchTerm) {
+      // Le terme de recherche peut contenir nom ou prénom, on l'envoie dans les deux champs
+      exportFilters.nom = this.searchTerm;
+      exportFilters.prenom = this.searchTerm;
+    }
+    if (this.selectedNationalite) exportFilters.nationalite = this.selectedNationalite;
+    if (this.selectedStatutMigratoire) exportFilters.statut_migratoire = this.selectedStatutMigratoire;
+    if (this.selectedPaysOrigine) exportFilters.pays_origine = this.selectedPaysOrigine;
+    if (this.selectedGenre) exportFilters.sexe = this.selectedGenre;
+    if (this.selectedActif) exportFilters.actif = this.selectedActif;
+
+    // Afficher un message d'information pendant l'export
+    console.log('Début de l\'export Excel des migrants...');
+
+    this.migrantService.exportMigrantsToExcel(exportFilters).subscribe({
+      next: (blob: Blob) => {
+        try {
+          // Créer un lien de téléchargement pour le fichier Excel
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          
+          // Générer un nom de fichier avec timestamp
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+          link.download = `migrants-export-${timestamp}.xlsx`;
+          
+          // Déclencher le téléchargement
+          document.body.appendChild(link);
+          link.click();
+          
+          // Nettoyer
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          this.isLoading = false;
+          console.log('Export Excel terminé avec succès');
+          
+        } catch (downloadError) {
+          console.error('Erreur lors du téléchargement:', downloadError);
+          this.error = 'Erreur lors du téléchargement du fichier Excel';
+          this.isLoading = false;
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'export Excel:', error);
+        let errorMessage = 'Erreur lors de l\'export Excel. Veuillez réessayer.';
+        
+        if (error.status === 404) {
+          errorMessage = 'Service d\'export non disponible. Contactez l\'administrateur.';
+        } else if (error.status === 500) {
+          errorMessage = 'Erreur serveur lors de l\'export. Veuillez réessayer plus tard.';
+        } else if (error.status === 0) {
+          errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet.';
+        }
+        
+        this.error = errorMessage;
+        this.isLoading = false;
+      }
+    });
+  }
+
   // TrackBy function for performance optimization
   trackByMotifUuid(index: number, motif: IMotifDeplacement): string {
     return motif.uuid;

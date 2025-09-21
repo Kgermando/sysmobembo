@@ -25,6 +25,10 @@ export interface IAlertFilters {
   migrant_uuid?: string;
   statut?: string;
   gravite?: string;
+  type_alerte?: string;
+  niveau_gravite?: string;
+  date_debut?: string;
+  date_fin?: string;
 }
 
 export interface IAlertStats {
@@ -122,5 +126,23 @@ export class AlertService {
   // Get alerts statistics
   getAlertsStats(): Observable<IBackendApiResponse<IAlertStats>> {
     return this.http.get<IBackendApiResponse<IAlertStats>>(`${this.apiUrl}/stats`);
+  }
+
+  // Export alerts to Excel
+  exportAlertsToExcel(filters: IAlertFilters = {}): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (filters.migrant_uuid) params = params.set('migrant_uuid', filters.migrant_uuid);
+    if (filters.type_alerte) params = params.set('type_alerte', filters.type_alerte);
+    if (filters.niveau_gravite) params = params.set('niveau_gravite', filters.niveau_gravite);
+    if (filters.statut) params = params.set('statut', filters.statut);
+    if (filters.search) params = params.set('search', filters.search);
+    if (filters.date_debut) params = params.set('date_debut', filters.date_debut);
+    if (filters.date_fin) params = params.set('date_fin', filters.date_fin);
+
+    return this.http.get(`${this.apiUrl}/export/excel`, {
+      params,
+      responseType: 'blob'
+    });
   }
 }

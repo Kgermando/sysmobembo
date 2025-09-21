@@ -204,8 +204,8 @@ $border-color: #e2e8f0;
 
     .kpis-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
     }
 
     .kpi-card {
@@ -243,6 +243,20 @@ $border-color: #e2e8f0;
         }
       }
 
+      &.secondary {
+        color: $secondary-color;
+        .kpi-icon {
+          background: linear-gradient(135deg, $secondary-color, #0891b2);
+        }
+      }
+
+      &.accent {
+        color: #8b5cf6;
+        .kpi-icon {
+          background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+      }
+
       &.success {
         color: $success-color;
         .kpi-icon {
@@ -254,6 +268,13 @@ $border-color: #e2e8f0;
         color: $info-color;
         .kpi-icon {
           background: linear-gradient(135deg, $info-color, #2563eb);
+        }
+      }
+
+      &.info-alt {
+        color: #06b6d4;
+        .kpi-icon {
+          background: linear-gradient(135deg, #06b6d4, #0891b2);
         }
       }
 

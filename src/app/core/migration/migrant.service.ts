@@ -106,6 +106,32 @@ export class MigrantService {
     return this.http.get<IBackendApiResponse<IMigrantStats>>(`${this.apiUrl}/stats`);
   }
 
+  // Export migrants to Excel
+  exportMigrantsToExcel(filters: {
+    nom?: string;
+    prenom?: string;
+    nationalite?: string;
+    statut_migratoire?: string;
+    pays_origine?: string;
+    sexe?: string;
+    actif?: string;
+  } = {}): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (filters.nom) params = params.set('nom', filters.nom);
+    if (filters.prenom) params = params.set('prenom', filters.prenom);
+    if (filters.nationalite) params = params.set('nationalite', filters.nationalite);
+    if (filters.statut_migratoire) params = params.set('statut_migratoire', filters.statut_migratoire);
+    if (filters.pays_origine) params = params.set('pays_origine', filters.pays_origine);
+    if (filters.sexe) params = params.set('sexe', filters.sexe);
+    if (filters.actif) params = params.set('actif', filters.actif);
+
+    return this.http.get(`${this.apiUrl}/export/excel`, {
+      params,
+      responseType: 'blob'
+    });
+  }
+
   // Remove deprecated getMigrantsByNationality method
   // Use getMigrantsStats() for comprehensive statistics instead
 
