@@ -204,22 +204,31 @@ $border-color: #e2e8f0;
 
     .kpis-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      
+      @media (max-width: 1200px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+      }
     }
 
     .kpi-card {
       background: $bg-card;
       border-radius: 16px;
-      padding: 24px;
+      padding: 20px;
       display: flex;
       align-items: center;
-      gap: 20px;
+      gap: 16px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       border: 1px solid $border-color;
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
+      min-height: 120px;
 
       &::before {
         content: '';
@@ -286,41 +295,53 @@ $border-color: #e2e8f0;
       }
 
       .kpi-icon {
-        width: 64px;
-        height: 64px;
+        width: 56px;
+        height: 56px;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
+        flex-shrink: 0;
 
         i {
-          font-size: 28px;
+          font-size: 24px;
         }
       }
 
       .kpi-content {
         flex: 1;
+        min-width: 0;
 
         h3 {
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 600;
           color: $text-secondary;
-          margin: 0 0 8px 0;
+          margin: 0 0 6px 0;
           text-transform: uppercase;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .kpi-value {
-          font-size: 36px;
+          font-size: 28px;
           font-weight: 800;
           color: $text-primary;
           margin: 0 0 4px 0;
           line-height: 1;
+          white-space: nowrap;
         }
 
         .kpi-label {
-          font-size: 12px;
+          font-size: 11px;
           color: $text-secondary;
+          line-height: 1.2;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
       }
     }
