@@ -3,11 +3,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { 
   IndicateursDeplacementResponse,
-  VolumeLocalisationIndicateurs,
-  CausesDeplacementsIndicateurs,
-  RepartitionProvinceStats,
-  EvolutionTemporelleStats,
-  AlertePrecoceStats
 } from '../interfaces/deplacement.interface';
 import { environment } from '../../../../../../environments/environment';
 
