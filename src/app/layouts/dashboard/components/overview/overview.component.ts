@@ -244,14 +244,22 @@ export class OverviewComponent implements OnInit, OnDestroy {
     // Combiner plusieurs appels API
     combineLatest([
       this.deplacementService.getIndicateursGeneraux(this.periodeSelectionnee, this.provinceSelectionnee),
-      this.deplacementService.getAlertesTempsReel('danger,critical', this.provinceSelectionnee, 7)
+      this.deplacementService.getAlertesTempsReel('danger,critical', this.provinceSelectionnee, 7),
+      // Appel séparé pour la répartition géographique sans filtre de province
+      this.deplacementService.getRepartitionGeographique(this.periodeSelectionnee)
     ]).pipe(
       takeUntil(this.destroy$),
       finalize(() => this.loading = false)
     ).subscribe({
-      next: ([indicateurs, alertes]) => {
+      next: ([indicateurs, alertes, repartitionGeo]) => {
         this.indicateurs = indicateurs;
         this.alertesRecentes = alertes.alertes_actives || [];
+        
+        // Utiliser les données de répartition géographique séparées (sans filtre province)
+        if (repartitionGeo && repartitionGeo.repartition_provinces) {
+          this.indicateurs.volume_localisation.repartition_geographique = repartitionGeo.repartition_provinces;
+        }
+        
         this.preparerDonneesGraphiques();
       },
       error: (error) => {
@@ -387,6 +395,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
   private preparerRepartitionBarChart(): void {
     if (!this.indicateurs) return;
 
+    console.log('Données de répartition géographique:', this.indicateurs.volume_localisation.repartition_geographique);
+    
     this.repartitionBarData = this.indicateurs.volume_localisation.repartition_geographique
       .slice(0, 10) // Top 10 provinces
       .map(item => ({
@@ -394,6 +404,8 @@ export class OverviewComponent implements OnInit, OnDestroy {
         value: item.nombre_pdi
       }));
       
+    console.log('Données pour le graphique provinces:', this.repartitionBarData);
+    
     // Mettre à jour le graphique ApexCharts
     this.updateProvincesChart();
   }
