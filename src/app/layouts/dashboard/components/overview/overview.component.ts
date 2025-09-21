@@ -395,8 +395,6 @@ export class OverviewComponent implements OnInit, OnDestroy {
   private preparerRepartitionBarChart(): void {
     if (!this.indicateurs) return;
 
-    console.log('Données de répartition géographique:', this.indicateurs.volume_localisation.repartition_geographique);
-    
     this.repartitionBarData = this.indicateurs.volume_localisation.repartition_geographique
       .slice(0, 10) // Top 10 provinces
       .map(item => ({
@@ -404,8 +402,6 @@ export class OverviewComponent implements OnInit, OnDestroy {
         value: item.nombre_pdi
       }));
       
-    console.log('Données pour le graphique provinces:', this.repartitionBarData);
-    
     // Mettre à jour le graphique ApexCharts
     this.updateProvincesChart();
   }
