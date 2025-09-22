@@ -66,27 +66,39 @@
             <div class="kpis-section"> 
                 <div class="kpis-grid"> 
 
-                    <!-- PDI (Personnes Déplacées Internes) -->
+                    <!-- Total PDI -->
+                    <div class="kpi-card primary">
+                        <div class="kpi-icon">
+                            <i class="las la-users"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <h3>Total PDI</h3>
+                            <p class="kpi-value">{{ formaterNombre(totalPDI) }}</p>
+                            <span class="kpi-label">Personnes déplacées internes</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Migrants -->
                     <div class="kpi-card secondary">
                         <div class="kpi-icon">
                             <i class="las la-map-marked-alt"></i>
                         </div>
                         <div class="kpi-content">
-                            <h3>PDI</h3>
-                            <p class="kpi-value">{{ formaterNombre(deplacesInternes) }}</p>
-                            <span class="kpi-label">Déplacés internes (même pays)</span>
+                            <h3>Total Migrants</h3>
+                            <p class="kpi-value">{{ formaterNombre(totalMigrants) }}</p>
+                            <span class="kpi-label">Toutes catégories confondues</span>
                         </div>
                     </div>
 
-                    <!-- Migrants Internationaux -->
+                    <!-- Déplacés Internes -->
                     <div class="kpi-card accent">
                         <div class="kpi-icon">
                             <i class="las la-plane"></i>
                         </div>
                         <div class="kpi-content">
-                            <h3>Migrants Internationaux</h3>
-                            <p class="kpi-value">{{ formaterNombre(totalMigrants - deplacesInternes) }}</p>
-                            <span class="kpi-label">Entre pays différents</span>
+                            <h3>Déplacés Internes</h3>
+                            <p class="kpi-value">{{ formaterNombre(deplacesInternes) }}</p>
+                            <span class="kpi-label">Changements internes de ville</span>
                         </div>
                     </div>
 
@@ -211,11 +223,14 @@
                         </ng-template>
                     </div>
                 </div>
+            </div>
 
+            <!-- Section Top 10 Provinces - Pleine largeur -->
+            <div class="provinces-full-section">
                 <!-- Répartition géographique -->
-                <div class="card flex-fill large">
+                <div class="card full-width">
                     <div class="card-header">
-                        <h3><i class="las la-map-marked-alt"></i> Top 10 Provinces</h3>
+                        <h3><i class="las la-map-marked-alt"></i> Top 10 Provinces - Répartition des PDI</h3>
                     </div>
                     <div class="card-body">
                         <!-- Graphique ApexCharts en barres verticales -->
@@ -326,6 +341,74 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Détails des causes de déplacement -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <h3><i class="las la-exclamation-triangle"></i> Analyse Détaillée des Causes</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="causes-details">
+                            <ng-container *ngIf="indicateurs && indicateurs.causes_deplacements && indicateurs.causes_deplacements.details_causes && indicateurs.causes_deplacements.details_causes.length > 0; else noCausesDetails">
+                                <div *ngFor="let cause of indicateurs.causes_deplacements.details_causes.slice(0, 8)" class="cause-detail-item">
+                                    <div class="cause-header">
+                                        <h4>{{ cause.type_motif }}</h4>
+                                        <span class="cause-percentage">{{ formaterPourcentage(cause.pourcentage) }}</span>
+                                    </div>
+                                    <div class="cause-stats">
+                                        <span class="cause-count">{{ formaterNombre(cause.nombre_cas) }} cas</span>
+                                        <div class="cause-bar">
+                                            <div class="cause-fill" [style.width.%]="cause.pourcentage"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ng-container>
+                            <ng-template #noCausesDetails>
+                                <div class="no-data">Aucun détail sur les causes disponible</div>
+                            </ng-template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tendances de retour -->
+                <div class="analysis-card">
+                    <div class="card-header">
+                        <h3><i class="las la-undo"></i> Tendances de Retour</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="return-trends">
+                            <ng-container *ngIf="indicateurs && indicateurs.dynamiques_alerte && indicateurs.dynamiques_alerte.tendances_retour && indicateurs.dynamiques_alerte.tendances_retour.length > 0; else noReturnTrends">
+                                <div *ngFor="let tendance of indicateurs.dynamiques_alerte.tendances_retour.slice(0, 6)" class="return-trend-item">
+                                    <div class="trend-route">
+                                        <div class="trend-origin">
+                                            <i class="las la-map-marker-alt"></i>
+                                            <span>{{ tendance.zone_origine }}</span>
+                                        </div>
+                                        <div class="trend-arrow">
+                                            <i class="las la-arrow-right"></i>
+                                        </div>
+                                        <div class="trend-destination">
+                                            <i class="las la-home"></i>
+                                            <span>{{ tendance.zone_retour }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="trend-stats">
+                                        <span class="trend-count">{{ formaterNombre(tendance.nombre_retours) }} retours</span>
+                                        <span class="trend-evolution" 
+                                              [class.hausse]="tendance.tendance_evolution === 'HAUSSE'"
+                                              [class.baisse]="tendance.tendance_evolution === 'BAISSE'"
+                                              [class.stable]="tendance.tendance_evolution === 'STABLE'">
+                                            {{ tendance.tendance_evolution }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </ng-container>
+                            <ng-template #noReturnTrends>
+                                <div class="no-data">Aucune tendance de retour disponible</div>
+                            </ng-template>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Section alertes et tendances -->
@@ -334,7 +417,7 @@
                 <!-- Alertes récentes -->
                 <div class="alerts-card">
                     <div class="card-header">
-                        <h3><i class="las la-bell"></i> Alertes Récentes</h3>
+                        <h3><i class="las la-bell"></i> Alertes Temps Réel</h3>
                         <span class="alert-count">{{ alertesRecentes.length }}</span>
                     </div>
                     <div class="card-content">
@@ -350,13 +433,58 @@
                                   <div class="alert-content">
                                       <h4>{{ alerte.zone }}</h4>
                                       <p>{{ alerte.description }}</p>
-                                      <span class="alert-type">{{ alerte.type_alerte }}</span>
-                                      <span class="alert-date">{{ formatDate(alerte.date_detection) }}</span>
+                                      <div class="alert-meta">
+                                          <span class="alert-type">{{ alerte.type_alerte }}</span>
+                                          <span class="alert-level">{{ alerte.niveau_gravite }}</span>
+                                          <span class="alert-date">{{ formatDate(alerte.date_detection) }}</span>
+                                      </div>
                                   </div>
                               </div>
                             </ng-container>
                             <ng-template #noAlerts>
-                              <div class="no-data">Aucune alerte récente</div>
+                              <div class="no-data">
+                                  <i class="las la-check-circle"></i>
+                                  <p>Aucune alerte récente</p>
+                                  <small>Situation sous contrôle</small>
+                              </div>
+                            </ng-template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertes précoces du système -->
+                <div class="alerts-card">
+                    <div class="card-header">
+                        <h3><i class="las la-eye"></i> Alertes Précoces</h3>
+                        <span class="alert-count">{{ (indicateurs && indicateurs.dynamiques_alerte && indicateurs.dynamiques_alerte.alertes_precoces) ? indicateurs.dynamiques_alerte.alertes_precoces.length : 0 }}</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="early-alerts-list">
+                            <ng-container *ngIf="indicateurs && indicateurs.dynamiques_alerte && indicateurs.dynamiques_alerte.alertes_precoces && indicateurs.dynamiques_alerte.alertes_precoces.length > 0; else noEarlyAlerts">
+                                <div *ngFor="let alerte of indicateurs.dynamiques_alerte.alertes_precoces.slice(0, 4)" class="alert-item early-alert"
+                                     [class.alerte-critique]="alerte.niveau_gravite === 'critical'"
+                                     [class.alerte-danger]="alerte.niveau_gravite === 'danger'"
+                                     [class.alerte-warning]="alerte.niveau_gravite === 'warning'">
+                                    <div class="alert-icon">
+                                        <i class="las la-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="alert-content">
+                                        <h4>{{ alerte.zone }}</h4>
+                                        <p>{{ alerte.description }}</p>
+                                        <div class="alert-meta">
+                                            <span class="alert-type">{{ alerte.type_alerte }}</span>
+                                            <span class="alert-level">{{ alerte.niveau_gravite }}</span>
+                                            <span class="alert-date">{{ formatDate(alerte.date_detection) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ng-container>
+                            <ng-template #noEarlyAlerts>
+                                <div class="no-data">
+                                    <i class="las la-shield-alt"></i>
+                                    <p>Aucune alerte précoce</p>
+                                    <small>Surveillance active</small>
+                                </div>
                             </ng-template>
                         </div>
                     </div>

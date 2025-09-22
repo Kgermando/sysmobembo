@@ -3,6 +3,8 @@ import { Subject, combineLatest } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { 
   IndicateursDeplacementResponse,
+  AlertesTempsReelResponse,
+  RepartitionGeographiqueResponse,
   ChartDataPoint,
   ChartSeries,
   RepartitionProvinceStats,
@@ -169,7 +171,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
       series: [],
       chart: {
         type: 'bar',
-        height: 400,
+        height: 500, // Augmenté de 400 à 500 pour la pleine largeur
         toolbar: { show: false }
       },
       plotOptions: {
@@ -177,7 +179,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
           horizontal: false,
           distributed: true,
           borderRadius: 6,
-          columnWidth: '70%'
+          columnWidth: '60%' // Réduit de 70% à 60% pour un meilleur espacement
         }
       },
       dataLabels: {
@@ -189,7 +191,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
         },
         style: {
           colors: ['#fff'],
-          fontSize: '11px',
+          fontSize: '12px', // Augmenté de 11px à 12px
           fontWeight: 'bold'
         }
       },
@@ -241,23 +243,22 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    // Combiner plusieurs appels API
+    // Utiliser les 3 endpoints optimisés du backend
     combineLatest([
       this.deplacementService.getIndicateursGeneraux(this.periodeSelectionnee, this.provinceSelectionnee),
       this.deplacementService.getAlertesTempsReel('danger,critical', this.provinceSelectionnee, 7),
-      // Appel séparé pour la répartition géographique sans filtre de province
       this.deplacementService.getRepartitionGeographique(this.periodeSelectionnee)
     ]).pipe(
       takeUntil(this.destroy$),
       finalize(() => this.loading = false)
     ).subscribe({
-      next: ([indicateurs, alertes, repartitionGeo]) => {
+      next: ([indicateurs, alertesResponse, repartitionResponse]) => {
         this.indicateurs = indicateurs;
-        this.alertesRecentes = alertes.alertes_actives || [];
+        this.alertesRecentes = alertesResponse.alertes_actives || [];
         
-        // Utiliser les données de répartition géographique séparées (sans filtre province)
-        if (repartitionGeo && repartitionGeo.repartition_provinces) {
-          this.indicateurs.volume_localisation.repartition_geographique = repartitionGeo.repartition_provinces;
+        // Utiliser les données de répartition géographique globale pour une vue d'ensemble
+        if (repartitionResponse && repartitionResponse.repartition_provinces) {
+          this.indicateurs.volume_localisation.repartition_geographique = repartitionResponse.repartition_provinces;
         }
         
         this.preparerDonneesGraphiques();
