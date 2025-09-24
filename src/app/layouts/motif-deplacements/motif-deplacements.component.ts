@@ -105,14 +105,14 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
 
   initializeForms(): void {
     this.motifForm = this.fb.group({
-      migrant_uuid: ['', Validators.required],
-      type_motif: ['', Validators.required],
-      motif_principal: ['', Validators.required],
+      migrant_uuid: ['', [Validators.required]],
+      type_motif: ['', [Validators.required]],
+      motif_principal: ['', [Validators.required, Validators.minLength(3)]],
       motif_secondaire: [''],
       description: [''],
       caractere_volontaire: [true],
       urgence: [''],
-      date_declenchement: ['', Validators.required],
+      date_declenchement: ['', [Validators.required]],
       duree_estimee: [null, [Validators.min(1)]],
       conflit_arme: [false],
       catastrophe_naturelle: [false],
@@ -194,32 +194,53 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
     try {
       const formData = this.motifForm.value;
 
-      // Transformer les données pour correspondre exactement au format attendu par le backend
+      // Nettoyer et valider les données avant envoi
       const motifData: IMotifDeplacementFormData = {
-        migrant_uuid: formData.migrant_uuid,
-        type_motif: formData.type_motif,
-        motif_principal: formData.motif_principal,
-        motif_secondaire: formData.motif_secondaire || undefined,
-        description: formData.description || undefined,
+        migrant_uuid: formData.migrant_uuid?.trim() || '',
+        type_motif: formData.type_motif?.trim() || '',
+        motif_principal: formData.motif_principal?.trim() || '',
+        motif_secondaire: formData.motif_secondaire?.trim() || undefined,
+        description: formData.description?.trim() || undefined,
         caractere_volontaire: Boolean(formData.caractere_volontaire),
-        urgence: formData.urgence || undefined,
-        date_declenchement: DateUtils.toDate(formData.date_declenchement) || new Date(),
-        duree_estimee: formData.duree_estimee ? Number(formData.duree_estimee) : undefined,
+        urgence: formData.urgence?.trim() || undefined,
+        date_declenchement: this.parseFormDate(formData.date_declenchement),
+        duree_estimee: this.parseFormNumber(formData.duree_estimee),
         conflit_arme: Boolean(formData.conflit_arme),
         catastrophe_naturelle: Boolean(formData.catastrophe_naturelle),
         persecution: Boolean(formData.persecution),
         violence_generalisee: Boolean(formData.violence_generalisee)
       };
 
+      // Validation supplémentaire
+      if (!motifData.migrant_uuid) {
+        this.error = 'Le migrant est requis';
+        return;
+      }
+
+      if (!motifData.type_motif) {
+        this.error = 'Le type de motif est requis';
+        return;
+      }
+
+      if (!motifData.motif_principal) {
+        this.error = 'Le motif principal est requis';
+        return;
+      }
+
+      // Nettoyer les champs undefined pour éviter les erreurs de sérialisation
+      const cleanedData = Object.fromEntries(
+        Object.entries(motifData).filter(([_, value]) => value !== undefined)
+      ) as IMotifDeplacementFormData;
+
       let response;
       if (this.editingMotif) {
         response = await firstValueFrom(
-          this.motifDeplacementService.updateMotifDeplacement(this.editingMotif.uuid, motifData)
+          this.motifDeplacementService.updateMotifDeplacement(this.editingMotif.uuid, cleanedData)
             .pipe(takeUntil(this.destroy$))
         );
       } else {
         response = await firstValueFrom(
-          this.motifDeplacementService.createMotifDeplacement(motifData)
+          this.motifDeplacementService.createMotifDeplacement(cleanedData)
             .pipe(takeUntil(this.destroy$))
         );
       }
@@ -231,8 +252,10 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
         this.closeOffcanvas();
       }
     } catch (error: any) {
-      this.error = error.error?.message || 'Erreur lors de l\'enregistrement';
+      const formData = this.motifForm.value;
+      this.error = error.error?.message || error.message || 'Erreur lors de l\'enregistrement';
       console.error('Erreur lors de l\'enregistrement du motif:', error);
+      console.error('Données du formulaire:', formData);
     } finally {
       this.isSaving = false;
     }
@@ -245,21 +268,38 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
 
   prepareEditMotif(motif: IMotifDeplacement): void {
     this.editingMotif = motif;
-    this.motifForm.patchValue({
-      migrant_uuid: motif.migrant_uuid,
-      type_motif: motif.type_motif,
-      motif_principal: motif.motif_principal,
+    
+    // Préparer les données pour le formulaire
+    const formData = {
+      migrant_uuid: motif.migrant_uuid || '',
+      type_motif: motif.type_motif || '',
+      motif_principal: motif.motif_principal || '',
       motif_secondaire: motif.motif_secondaire || '',
       description: motif.description || '',
-      caractere_volontaire: motif.caractere_volontaire,
+      caractere_volontaire: Boolean(motif.caractere_volontaire),
       urgence: motif.urgence || '',
-      date_declenchement: motif.date_declenchement ? DateUtils.toInputFormat(motif.date_declenchement) : new Date(),
-      duree_estimee: motif.duree_estimee || 0,
-      conflit_arme: motif.conflit_arme,
-      catastrophe_naturelle: motif.catastrophe_naturelle,
-      persecution: motif.persecution,
-      violence_generalisee: motif.violence_generalisee
-    });
+      date_declenchement: this.formatDateForInput(motif.date_declenchement),
+      duree_estimee: motif.duree_estimee || null,
+      conflit_arme: Boolean(motif.conflit_arme),
+      catastrophe_naturelle: Boolean(motif.catastrophe_naturelle),
+      persecution: Boolean(motif.persecution),
+      violence_generalisee: Boolean(motif.violence_generalisee)
+    };
+
+    this.motifForm.patchValue(formData);
+  }
+
+  private formatDateForInput(date: Date | string | undefined): string {
+    if (!date) {
+      return '';
+    }
+    
+    try {
+      return DateUtils.toInputFormat(date);
+    } catch (error) {
+      console.error('Erreur lors du formatage de la date:', error);
+      return '';
+    }
   }
 
   async deleteMotif(motif: IMotifDeplacement): Promise<void> {
@@ -285,13 +325,22 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
 
   resetForm(): void {
     this.motifForm.reset({
+      migrant_uuid: '',
+      type_motif: '',
+      motif_principal: '',
+      motif_secondaire: '',
+      description: '',
       caractere_volontaire: true,
+      urgence: '',
+      date_declenchement: '',
+      duree_estimee: null,
       conflit_arme: false,
       catastrophe_naturelle: false,
       persecution: false,
       violence_generalisee: false
     });
     this.editingMotif = null;
+    this.error = null;
   }
 
   // Search and filters
@@ -396,10 +445,59 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
   getFieldError(fieldName: string): string {
     const field = this.motifForm.get(fieldName);
     if (field?.errors) {
-      if (field.errors['required']) return `${fieldName} est requis`;
-      if (field.errors['min']) return 'Valeur trop petite';
+      if (field.errors['required']) {
+        switch(fieldName) {
+          case 'migrant_uuid': return 'Le migrant est requis';
+          case 'type_motif': return 'Le type de motif est requis';
+          case 'motif_principal': return 'Le motif principal est requis';
+          case 'date_declenchement': return 'La date de déclenchement est requise';
+          default: return `${fieldName} est requis`;
+        }
+      }
+      if (field.errors['min']) return 'La valeur doit être supérieure à 0';
+      if (field.errors['minlength']) return 'Le motif doit contenir au moins 3 caractères';
     }
     return '';
+  }
+
+  // Data transformation helpers
+  private parseFormDate(dateValue: any): Date {
+    if (!dateValue) {
+      return new Date(); // Date par défaut si vide
+    }
+
+    // Si c'est déjà une Date
+    if (dateValue instanceof Date) {
+      return dateValue;
+    }
+
+    // Si c'est une string au format YYYY-MM-DD (input date)
+    if (typeof dateValue === 'string') {
+      // Pour les inputs de type date, on obtient une string YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        const date = new Date(dateValue + 'T00:00:00.000Z');
+        return isNaN(date.getTime()) ? new Date() : date;
+      }
+      
+      // Sinon, essayer de parser normalement
+      const parsed = DateUtils.toDate(dateValue);
+      return parsed || new Date();
+    }
+
+    return new Date();
+  }
+
+  private parseFormNumber(value: any): number | undefined {
+    if (value === null || value === undefined || value === '') {
+      return undefined;
+    }
+
+    const num = Number(value);
+    if (isNaN(num) || num <= 0) {
+      return undefined;
+    }
+
+    return Math.round(num); // S'assurer que c'est un entier
   }
 
   // Modal/Offcanvas controls
