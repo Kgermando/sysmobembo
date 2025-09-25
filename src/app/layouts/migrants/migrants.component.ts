@@ -9,6 +9,7 @@ import { MigrantService, IMigrantFormData, IBackendPaginationResponse } from '..
 import { NATIONALITES, PAYS_ORIGINE_COMMUNS } from '../../shared/utils';
 import { IMotifDeplacement } from '../../shared/models/motif-deplacement.model';
 import { MotifDeplacementService } from '../../core/migration/motif-deplacement.service';
+import { ProvinceList } from '../../utils/province-list';
 
 @Component({
   selector: 'app-migrants',
@@ -79,6 +80,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   dateNaissanceDebut = '';
   dateNaissanceFin = '';
   selectedPaysOrigine = '';
+  selectedProvinceNaissance = '';
+  selectedProvinceActuelle = '';
+  selectedProvinceEntree = '';
 
   // Filter expand state
   filtersExpanded = false;
@@ -123,6 +127,11 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   // Getter pour les nationalités (utilise l'utilitaire)
   get nationaliteOptions(): string[] {
     return NATIONALITES;
+  }
+
+  // Getter pour les provinces de la RDC
+  get provincesRdcOptions(): string[] {
+    return ProvinceList;
   }
 
   constructor(
@@ -296,6 +305,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       if (this.selectedActif) filters.actif = this.selectedActif;
       if (this.selectedTypeDocument) filters.type_document = this.selectedTypeDocument;
       if (this.selectedPaysOrigine) filters.pays_origine = this.selectedPaysOrigine;
+      if (this.selectedProvinceNaissance) filters.lieu_naissance = this.selectedProvinceNaissance;
+      if (this.selectedProvinceActuelle) filters.ville_actuelle = this.selectedProvinceActuelle;
+      if (this.selectedProvinceEntree) filters.point_entree = this.selectedProvinceEntree;
       if (this.dateCreationDebut) filters.date_creation_debut = this.dateCreationDebut;
       if (this.dateCreationFin) filters.date_creation_fin = this.dateCreationFin;
       if (this.dateNaissanceDebut) filters.date_naissance_debut = this.dateNaissanceDebut;
@@ -485,6 +497,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedActif = '';
     this.selectedTypeDocument = '';
     this.selectedPaysOrigine = '';
+    this.selectedProvinceNaissance = '';
+    this.selectedProvinceActuelle = '';
+    this.selectedProvinceEntree = '';
     this.dateCreationDebut = '';
     this.dateCreationFin = '';
     this.dateNaissanceDebut = '';
@@ -765,6 +780,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       pays_origine?: string;
       sexe?: string;
       actif?: string;
+      lieu_naissance?: string;
+      ville_actuelle?: string;
+      point_entree?: string;
     } = {};
     
     if (this.searchTerm) {
@@ -777,6 +795,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.selectedPaysOrigine) exportFilters.pays_origine = this.selectedPaysOrigine;
     if (this.selectedGenre) exportFilters.sexe = this.selectedGenre;
     if (this.selectedActif) exportFilters.actif = this.selectedActif;
+    if (this.selectedProvinceNaissance) exportFilters.lieu_naissance = this.selectedProvinceNaissance;
+    if (this.selectedProvinceActuelle) exportFilters.ville_actuelle = this.selectedProvinceActuelle;
+    if (this.selectedProvinceEntree) exportFilters.point_entree = this.selectedProvinceEntree;
 
     // Afficher un message d'information pendant l'export
     console.log('Début de l\'export Excel des migrants...');

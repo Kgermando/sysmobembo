@@ -15,6 +15,7 @@ import {
 } from './interfaces/deplacement.interface';
 import { DeplacementService } from './services/deplacement.service';
 import { ChartComponent, ApexAxisChartSeries, ApexChart, ApexXAxis, ApexTitleSubtitle, ApexDataLabels, ApexStroke, ApexYAxis, ApexLegend, ApexPlotOptions } from 'ng-apexcharts';
+import { ProvinceList } from '../../../../utils/province-list';
 
 export type ChartOptions = {
   series: ApexAxisChartSeries;
@@ -109,6 +110,11 @@ export class OverviewComponent implements OnInit, OnDestroy {
   constructor(private deplacementService: DeplacementService) {
     this.initializeCausesChart();
     this.initializeProvincesChart();
+  }
+
+  // Getter pour les provinces de la RDC
+  get provincesRdcOptions(): string[] {
+    return ProvinceList;
   }
   
   private initializeCausesChart(): void {

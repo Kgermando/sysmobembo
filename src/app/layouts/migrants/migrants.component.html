@@ -280,7 +280,43 @@
                     </div>
                   </div>
 
-                  <!-- Section 4: Filtres par dates -->
+                  <!-- Section 4: Filtres par provinces -->
+                  <div class="filter-section mb-4">
+                    <h6 class="filter-section-title">
+                      <i class="ti ti-map-pin me-2"></i>Filtres par provinces (RDC)
+                    </h6>
+                    <div class="row">
+                      <div class="col-lg-4 col-md-6">
+                        <div class="input-block mb-3">
+                          <label class="form-label">Province de naissance</label>
+                          <select class="form-select" [(ngModel)]="selectedProvinceNaissance" (change)="applyFilters()">
+                            <option value="">Toutes les provinces</option>
+                            <option *ngFor="let province of provincesRdcOptions" [value]="province">{{ province }}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-lg-4 col-md-6">
+                        <div class="input-block mb-3">
+                          <label class="form-label">Province actuelle</label>
+                          <select class="form-select" [(ngModel)]="selectedProvinceActuelle" (change)="applyFilters()">
+                            <option value="">Toutes les provinces</option>
+                            <option *ngFor="let province of provincesRdcOptions" [value]="province">{{ province }}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-lg-4 col-md-6">
+                        <div class="input-block mb-3">
+                          <label class="form-label">Point d'entrée (Province)</label>
+                          <select class="form-select" [(ngModel)]="selectedProvinceEntree" (change)="applyFilters()">
+                            <option value="">Toutes les provinces</option>
+                            <option *ngFor="let province of provincesRdcOptions" [value]="province">{{ province }}</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Section 5: Filtres par dates -->
                   <div class="filter-section">
                     <h6 class="filter-section-title">
                       <i class="ti ti-calendar me-2"></i>Filtres par dates
@@ -570,9 +606,14 @@
 
                 <div class="col-md-6">
                   <div class="input-block mb-3">
-                    <label class="form-label">Lieu de naissance <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" formControlName="lieu_naissance"
+                    <label class="form-label">Lieu de naissance (Province) <span class="text-danger">*</span></label>
+                    <select class="form-control" formControlName="lieu_naissance"
                       [class.is-invalid]="isFieldInvalid('lieu_naissance')">
+                      <option value="">Sélectionner une province</option>
+                      <option *ngFor="let province of provincesRdcOptions" [value]="province">
+                        {{ province }}
+                      </option>
+                    </select>
                     <div *ngIf="isFieldInvalid('lieu_naissance')" class="invalid-feedback">
                       {{ getFieldError('lieu_naissance') }}
                     </div>
@@ -700,8 +741,13 @@
 
                 <div class="col-md-6">
                   <div class="input-block mb-3">
-                    <label class="form-label">Point d'entrée</label>
-                    <input type="text" class="form-control" formControlName="point_entree">
+                    <label class="form-label">Point d'entrée (Province)</label>
+                    <select class="form-control" formControlName="point_entree">
+                      <option value="">Sélectionner une province</option>
+                      <option *ngFor="let province of provincesRdcOptions" [value]="province">
+                        {{ province }}
+                      </option>
+                    </select>
                   </div>
                 </div>
 
@@ -747,8 +793,13 @@
 
                 <div class="col-md-6">
                   <div class="input-block mb-3">
-                    <label class="form-label">Ville actuelle</label>
-                    <input type="text" class="form-control" formControlName="ville_actuelle">
+                    <label class="form-label">Ville actuelle (Province)</label>
+                    <select class="form-control" formControlName="ville_actuelle">
+                      <option value="">Sélectionner une province</option>
+                      <option *ngFor="let province of provincesRdcOptions" [value]="province">
+                        {{ province }}
+                      </option>
+                    </select>
                   </div>
                 </div>
 

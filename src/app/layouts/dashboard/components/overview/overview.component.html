@@ -28,10 +28,9 @@
                         <label>Province</label>
                         <select (change)="changerProvince($any($event.target).value)" [value]="provinceSelectionnee">
                             <option value="">Toutes les provinces</option>
-                            <option value="Kinshasa">Kinshasa</option>
-                            <option value="Kasaï">Kasaï</option>
-                            <option value="Katanga">Katanga</option>
-                            <option value="Équateur">Équateur</option>
+                            <option *ngFor="let province of provincesRdcOptions" [value]="province">
+                                {{ province }}
+                            </option>
                         </select>
                     </div>
 
