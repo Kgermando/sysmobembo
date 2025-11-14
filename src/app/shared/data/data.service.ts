@@ -12,54 +12,21 @@ export class DataService {
 
   toggleCollapse() {
     this.collapseSubject.next(!this.collapseSubject.value);
-  } 
-
-  public sidebarData = [
+  }
+  
+  
+  public sidebarData = [ 
     {
       tittle: 'Menu Principal',
-      showAsTab: false,
-      separateRoute: false,
-      hasSubRoute: false,
-      showSubRoute: true,
-      menu: [
-        {
-          menuValue: 'Tableau de Bord',
-          hasSubRoute: true,
-          showSubRoute: true,
-          icon: 'dashboard',
-          base: 'dashboard',
-          subMenus: [
-            {
-              menuValue: 'Vue d\'ensemble',
-              route: routes.dashboardSummary,
-            },
-            // {
-            //   menuValue: 'Dashboard GIS',
-            //   route: routes.dashboardGis,
-            // },
-            // {
-            //   menuValue: 'Temps Réel',
-            //   route: routes.dashboardRealtime,
-            // },
-            // {
-            //   menuValue: 'Analyse Prédictive',
-            //   route: routes.dashboardPredictive,
-            // }, 
-          ]
-        },
-      ],
-    },
-    {
-      tittle: 'Gestion',
       showAsTab: true,
       separateRoute: false,
       menu: [
         {
-          menuValue: 'Utilisateurs',
-          icon: 'users',
-          base: 'users',
-          page: 'user-list',
-          route: routes.userList,
+          menuValue: 'Tableau de Bord',
+          icon: 'dashboard',
+          base: 'dashboard',
+          page: 'dashboard',
+          route: routes.dashboardSummary,
           hasSubRoute: false,
           showSubRoute: false,
         },
@@ -140,6 +107,22 @@ export class DataService {
           base: 'motifs',
           page: 'motifs-deplacement',
           route: routes.motifsDeplacementComponent,
+          hasSubRoute: false,
+          showSubRoute: false,
+        },
+      ],
+    },
+    {
+      tittle: 'Gestion',
+      showAsTab: true,
+      separateRoute: false,
+      menu: [
+        {
+          menuValue: 'Utilisateurs',
+          icon: 'users',
+          base: 'users',
+          page: 'user-list',
+          route: routes.userList,
           hasSubRoute: false,
           showSubRoute: false,
         },

@@ -3,13 +3,14 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
 import { PageEvent } from '@angular/material/paginator';
-import { Subject, firstValueFrom, takeUntil } from 'rxjs';
+import { Subject, firstValueFrom, takeUntil, Observable } from 'rxjs';
 import { IMigrant } from '../../shared/models/migrant.model';
 import { MigrantService, IMigrantFormData, IBackendPaginationResponse } from '../../core/migration/migrant.service';
 import { NATIONALITES, PAYS_ORIGINE_COMMUNS } from '../../shared/utils';
 import { IMotifDeplacement } from '../../shared/models/motif-deplacement.model';
 import { MotifDeplacementService } from '../../core/migration/motif-deplacement.service';
 import { ProvinceList } from '../../utils/province-list';
+import { OcrService, OCRProgress, ParsedDocumentData } from '../../core/services/ocr.service';
 
 @Component({
   selector: 'app-migrants',
@@ -22,14 +23,24 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // ViewChild pour gérer le scroll horizontal
   @ViewChild('tableScrollWrapper', { static: false }) tableScrollWrapper!: ElementRef;
+  @ViewChild('fileInput', { static: false }) fileInput!: ElementRef;
 
   // Math reference for template
   Math = Math;
 
+  // OCR Properties
+  selectedImageFile: File | null = null;
+  selectedImagePreview: string | null = null;
+  isProcessingOCR = false;
+  ocrProgress$!: Observable<OCRProgress>;
+  extractedText: string | null = null;
+  ocrSuccessMessage: string | null = null;
+  ocrErrorMessage: string | null = null;
+
   // Angular Material Table
   dataSource = new MatTableDataSource<IMigrant>();
   displayedColumns: string[] = [
-    'nom', 'prenom', 'sexe', 'nationalite', 'numero_identifiant', 
+    'nom', 'sexe', 'nationalite', 'numero_identifiant', 
     'statut_migratoire', 'pays_origine', 'date_naissance', 'actif', 'actions'
   ];
 
@@ -137,9 +148,11 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private fb: FormBuilder,
     private migrantService: MigrantService,
-    private motifDeplacementService: MotifDeplacementService
+    private motifDeplacementService: MotifDeplacementService,
+    private ocrService: OcrService
   ) {
     this.migrantForm = this.createForm();
+    this.ocrProgress$ = this.ocrService.progress$;
   }
 
   ngOnInit(): void {
@@ -151,6 +164,8 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    // Terminate OCR worker
+    this.ocrService.terminateWorker();
   }
 
   ngAfterViewInit(): void {
@@ -852,5 +867,185 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   // TrackBy function for performance optimization
   trackByMotifUuid(index: number, motif: IMotifDeplacement): string {
     return motif.uuid;
+  }
+
+  // ============================
+  // OCR METHODS
+  // ============================
+
+  /**
+   * Gère la sélection du fichier image
+   */
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Vérifier le type de fichier
+      if (!file.type.startsWith('image/')) {
+        this.ocrErrorMessage = 'Veuillez sélectionner un fichier image valide.';
+        return;
+      }
+
+      this.selectedImageFile = file;
+      
+      // Créer un aperçu de l'image
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        this.selectedImagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+
+      // Lancer automatiquement l'OCR
+      this.processOCR();
+    }
+  }
+
+  /**
+   * Traite l'image avec OCR
+   */
+  async processOCR(): Promise<void> {
+    if (!this.selectedImageFile) {
+      this.ocrErrorMessage = 'Aucune image sélectionnée.';
+      return;
+    }
+
+    this.isProcessingOCR = true;
+    this.ocrErrorMessage = null;
+    this.ocrSuccessMessage = null;
+    this.extractedText = null;
+    this.ocrService.resetProgress();
+
+    try {
+      // Extraire le texte de l'image
+      const result = await this.ocrService.extractTextFromImage(this.selectedImageFile);
+      
+      this.extractedText = result.text;
+
+      // Parser le texte pour extraire les données structurées
+      const parsedData: ParsedDocumentData = this.ocrService.parseDocumentText(result.text);
+
+      // Remplir le formulaire avec les données extraites
+      this.autoFillForm(parsedData);
+
+      this.ocrSuccessMessage = `Document scanné avec succès! Confiance: ${Math.round(result.confidence)}%`;
+      
+      // Afficher un résumé des champs remplis
+      const filledFields = Object.keys(parsedData).length;
+      if (filledFields > 0) {
+        this.ocrSuccessMessage += ` - ${filledFields} champ(s) détecté(s) et rempli(s) automatiquement.`;
+      } else {
+        this.ocrSuccessMessage += ' Aucun champ n\'a pu être rempli automatiquement. Vérifiez la qualité de l\'image.';
+      }
+
+    } catch (error) {
+      console.error('Erreur OCR:', error);
+      this.ocrErrorMessage = 'Erreur lors de l\'analyse de l\'image. Veuillez réessayer avec une image de meilleure qualité.';
+    } finally {
+      this.isProcessingOCR = false;
+    }
+  }
+
+  /**
+   * Remplit automatiquement le formulaire avec les données extraites
+   */
+  autoFillForm(data: ParsedDocumentData): void {
+    const fieldsToUpdate: any = {};
+
+    // Remplir uniquement les champs vides ou si la valeur extraite est plus complète
+    if (data.nom && !this.migrantForm.get('nom')?.value) {
+      fieldsToUpdate.nom = data.nom;
+    }
+
+    if (data.prenom && !this.migrantForm.get('prenom')?.value) {
+      fieldsToUpdate.prenom = data.prenom;
+    }
+
+    if (data.date_naissance && !this.migrantForm.get('date_naissance')?.value) {
+      fieldsToUpdate.date_naissance = data.date_naissance;
+    }
+
+    if (data.lieu_naissance && !this.migrantForm.get('lieu_naissance')?.value) {
+      // Vérifier si c'est une province valide
+      const provinceMatch = this.provincesRdcOptions.find(
+        p => p.toLowerCase() === data.lieu_naissance?.toLowerCase()
+      );
+      if (provinceMatch) {
+        fieldsToUpdate.lieu_naissance = provinceMatch;
+      } else {
+        fieldsToUpdate.lieu_naissance = data.lieu_naissance;
+      }
+    }
+
+    if (data.sexe && !this.migrantForm.get('sexe')?.value) {
+      fieldsToUpdate.sexe = data.sexe;
+    }
+
+    if (data.nationalite && !this.migrantForm.get('nationalite')?.value) {
+      // Vérifier si c'est une nationalité valide
+      const nationaliteMatch = this.nationaliteOptions.find(
+        n => n.toLowerCase().includes(data.nationalite!.toLowerCase())
+      );
+      if (nationaliteMatch) {
+        fieldsToUpdate.nationalite = nationaliteMatch;
+      } else {
+        fieldsToUpdate.nationalite = data.nationalite;
+      }
+    }
+
+    if (data.type_document && !this.migrantForm.get('type_document')?.value) {
+      fieldsToUpdate.type_document = data.type_document;
+    }
+
+    if (data.numero_document && !this.migrantForm.get('numero_document')?.value) {
+      fieldsToUpdate.numero_document = data.numero_document;
+    }
+
+    if (data.date_emission_document && !this.migrantForm.get('date_emission_document')?.value) {
+      fieldsToUpdate.date_emission_document = data.date_emission_document;
+    }
+
+    if (data.date_expiration_document && !this.migrantForm.get('date_expiration_document')?.value) {
+      fieldsToUpdate.date_expiration_document = data.date_expiration_document;
+    }
+
+    if (data.telephone && !this.migrantForm.get('telephone')?.value) {
+      fieldsToUpdate.telephone = data.telephone;
+    }
+
+    if (data.email && !this.migrantForm.get('email')?.value) {
+      fieldsToUpdate.email = data.email;
+    }
+
+    if (data.adresse_actuelle && !this.migrantForm.get('adresse_actuelle')?.value) {
+      fieldsToUpdate.adresse_actuelle = data.adresse_actuelle;
+    }
+
+    // Appliquer les mises à jour au formulaire
+    if (Object.keys(fieldsToUpdate).length > 0) {
+      this.migrantForm.patchValue(fieldsToUpdate);
+      
+      // Marquer les champs comme "touched" pour afficher les validations
+      Object.keys(fieldsToUpdate).forEach(key => {
+        this.migrantForm.get(key)?.markAsTouched();
+      });
+    }
+  }
+
+  /**
+   * Efface l'image sélectionnée
+   */
+  clearImage(): void {
+    this.selectedImageFile = null;
+    this.selectedImagePreview = null;
+    this.extractedText = null;
+    this.ocrSuccessMessage = null;
+    this.ocrErrorMessage = null;
+    this.ocrService.resetProgress();
+    
+    // Réinitialiser l'input file
+    if (this.fileInput) {
+      this.fileInput.nativeElement.value = '';
+    }
   }
 }
