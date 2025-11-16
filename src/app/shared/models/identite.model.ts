@@ -6,6 +6,7 @@ export interface IIdentite {
 
   // Informations personnelles (comme dans un passeport)
   nom: string;
+  postnom?: string;
   prenom: string;
   date_naissance: Date;
   lieu_naissance: string;
@@ -19,9 +20,10 @@ export interface IIdentite {
   autorite_emetteur: string;
   numero_passeport: string;
 }
-
+ 
 export interface IIdentiteFormData {
   nom: string;
+  postnom?: string;
   prenom: string;
   date_naissance: string | Date;
   lieu_naissance: string;
@@ -51,6 +53,7 @@ export interface IIdentiteStats {
 // Type pour les données extraites d'un passeport par OCR
 export interface PassportOCRData {
   nom?: string;
+  postnom?: string;
   prenom?: string;
   date_naissance?: string;
   lieu_naissance?: string;

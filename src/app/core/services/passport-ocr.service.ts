@@ -27,14 +27,20 @@ export class PassportOcrService {
         /P<[A-Z]{3}([A-Z0-9<]+)/
       ],
       
-      // Nom et prénom
+      // Nom, postnom et prénom (patterns améliorés pour la RDC)
       nom: [
-        /(?:surname|nom|name)[:\s]*([A-ZÀ-Ÿ][A-ZÀ-Ÿ\s-]+)/i,
-        /^([A-ZÀ-Ÿ]{2,}(?:\s+[A-ZÀ-Ÿ]{2,})*)$/
+        /(?:surname|nom(?:\s*de\s*famille)?|family\s*name)[:\s]*([A-ZÀ-Ÿ][A-ZÀ-Ÿ\s-]+?)(?=\s*(?:postnom|pr[ée]nom|given|$))/i,
+        /^nom[:\s]*([A-ZÀ-Ÿ][A-ZÀ-Ÿ\s-]+)/i
+      ],
+      
+      postnom: [
+        /(?:postnom|post-nom)[:\s]*([A-ZÀ-Ÿ][A-ZÀ-Ÿ\s-]+?)(?=\s*(?:pr[ée]nom|given|$))/i,
+        /^postnom[:\s]*([A-ZÀ-Ÿ][A-ZÀ-Ÿ\s-]+)/i
       ],
       
       prenom: [
-        /(?:given\s*names?|pr[ée]noms?|first\s*name)[:\s]*([A-ZÀ-Ÿ][A-Za-zÀ-ÿ\s-]+)/i
+        /(?:given\s*names?|pr[ée]noms?|first\s*name)[:\s]*([A-ZÀ-Ÿ][A-Za-zÀ-ÿ\s-]+)/i,
+        /^pr[ée]nom[:\s]*([A-ZÀ-Ÿ][A-Za-zÀ-ÿ\s-]+)/i
       ],
 
       // Date de naissance (formats: DD/MM/YYYY, DD MMM YYYY, DDMMMYYYY)
@@ -89,8 +95,18 @@ export class PassportOcrService {
     if (mrzMatch) {
       // Extraire les données de la MRZ
       data.pays_emetteur = this.convertCountryCode(mrzMatch[1]);
-      data.nom = mrzMatch[2].replace(/</g, ' ').trim();
-      data.prenom = mrzMatch[3].replace(/</g, ' ').trim();
+      
+      // Le nom de famille (surname) dans la MRZ
+      const surname = mrzMatch[2].replace(/</g, ' ').trim();
+      
+      // Les prénoms dans la MRZ (peuvent inclure le postnom)
+      const givenNames = mrzMatch[3].replace(/</g, ' ').trim();
+      
+      // Séparer le nom, postnom et prénom intelligemment
+      const namesParsed = this.parseCongoleseName(surname, givenNames);
+      if (namesParsed.nom) data.nom = namesParsed.nom;
+      if (namesParsed.postnom) data.postnom = namesParsed.postnom;
+      if (namesParsed.prenom) data.prenom = namesParsed.prenom;
     }
 
     // Parcourir toutes les lignes pour extraire les informations
@@ -117,12 +133,30 @@ export class PassportOcrService {
         }
       }
 
+      // Postnom (spécifique à la RDC)
+      if (!data.postnom) {
+        for (const pattern of patterns.postnom) {
+          const match = line.match(pattern);
+          if (match && match[1].length >= 2) {
+            data.postnom = match[1].toUpperCase().trim();
+            break;
+          }
+        }
+      }
+
       // Prénom
       if (!data.prenom) {
         for (const pattern of patterns.prenom) {
           const match = line.match(pattern);
           if (match) {
-            data.prenom = this.capitalizeWords(match[1].trim());
+            // Si plusieurs prénoms sont détectés, les séparer intelligemment
+            const prenomText = match[1].trim();
+            const prenomsParsed = this.parseGivenNames(prenomText);
+            data.prenom = prenomsParsed.prenom;
+            // Si pas encore de postnom et qu'on en a détecté un dans les prénoms
+            if (!data.postnom && prenomsParsed.postnom) {
+              data.postnom = prenomsParsed.postnom;
+            }
             break;
           }
         }
@@ -335,5 +369,95 @@ export class PassportOcrService {
    */
   private capitalizeWords(str: string): string {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  }
+
+  /**
+   * Parse les noms congolais (Nom, Postnom, Prénom) à partir de la MRZ
+   * Dans un passeport congolais: 
+   * - La partie surname contient le NOM (et parfois le POSTNOM)
+   * - La partie given names contient le POSTNOM (si pas dans surname) et PRÉNOM(S)
+   */
+  private parseCongoleseName(surname: string, givenNames: string): {nom?: string, postnom?: string, prenom?: string} {
+    const result: {nom?: string, postnom?: string, prenom?: string} = {};
+    
+    // Nettoyer les espaces multiples
+    surname = surname.trim().replace(/\s+/g, ' ');
+    givenNames = givenNames.trim().replace(/\s+/g, ' ');
+    
+    // Séparer les parties du surname
+    const surnameParts = surname.split(' ').filter(p => p.length > 0);
+    
+    // Séparer les parties des given names
+    const givenNameParts = givenNames.split(' ').filter(p => p.length > 0);
+    
+    // Cas 1: Surname contient 2 mots ou plus -> probablement NOM + POSTNOM
+    if (surnameParts.length >= 2) {
+      result.nom = surnameParts[0].toUpperCase();
+      result.postnom = surnameParts.slice(1).join(' ').toUpperCase();
+      // Les given names sont les prénoms
+      if (givenNameParts.length > 0) {
+        result.prenom = this.capitalizeWords(givenNameParts.join(' '));
+      }
+    }
+    // Cas 2: Surname contient 1 mot et givenNames contient 2+ mots
+    // -> Surname = NOM, premier givenName = POSTNOM, reste = PRÉNOM
+    else if (surnameParts.length === 1 && givenNameParts.length >= 2) {
+      result.nom = surnameParts[0].toUpperCase();
+      result.postnom = givenNameParts[0].toUpperCase();
+      result.prenom = this.capitalizeWords(givenNameParts.slice(1).join(' '));
+    }
+    // Cas 3: Surname = 1 mot, givenNames = 1 mot
+    // -> Surname = NOM, givenName = PRÉNOM (pas de postnom détecté)
+    else if (surnameParts.length === 1 && givenNameParts.length === 1) {
+      result.nom = surnameParts[0].toUpperCase();
+      result.prenom = this.capitalizeWords(givenNameParts[0]);
+    }
+    // Cas par défaut
+    else {
+      if (surnameParts.length > 0) {
+        result.nom = surname.toUpperCase();
+      }
+      if (givenNameParts.length > 0) {
+        result.prenom = this.capitalizeWords(givenNames);
+      }
+    }
+    
+    return result;
+  }
+
+  /**
+   * Parse les prénoms pour extraire le postnom s'il est mélangé
+   * Format attendu: "POSTNOM Prénom(s)" ou "Prénom(s)"
+   */
+  private parseGivenNames(givenNamesText: string): {postnom?: string, prenom?: string} {
+    const result: {postnom?: string, prenom?: string} = {};
+    
+    // Nettoyer le texte
+    givenNamesText = givenNamesText.trim().replace(/\s+/g, ' ');
+    
+    const parts = givenNamesText.split(' ').filter(p => p.length > 0);
+    
+    if (parts.length === 0) {
+      return result;
+    }
+    
+    // Si on a plusieurs mots et que le premier est en majuscules -> c'est probablement le POSTNOM
+    if (parts.length >= 2) {
+      const firstPart = parts[0];
+      const isFirstAllCaps = firstPart === firstPart.toUpperCase() && firstPart.length >= 2;
+      
+      if (isFirstAllCaps) {
+        result.postnom = firstPart.toUpperCase();
+        result.prenom = this.capitalizeWords(parts.slice(1).join(' '));
+      } else {
+        // Tous les mots sont des prénoms
+        result.prenom = this.capitalizeWords(parts.join(' '));
+      }
+    } else {
+      // Un seul mot -> c'est un prénom
+      result.prenom = this.capitalizeWords(parts[0]);
+    }
+    
+    return result;
   }
 }

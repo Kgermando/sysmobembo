@@ -214,6 +214,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
   private createForm(): FormGroup {
     return this.fb.group({
       nom: ['', [Validators.required, Validators.minLength(2)]],
+      postnom: [''],
       prenom: ['', [Validators.required, Validators.minLength(2)]],
       date_naissance: ['', Validators.required],
       lieu_naissance: ['', Validators.required],
@@ -305,7 +306,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
       if (response.status === 'success') {
         await this.loadData();
         await this.loadStats();
-        this.closeModal('identiteModal');
+        this.closeAddOffcanvas();
         this.resetForm();
       }
     } catch (error: any) {
@@ -316,21 +317,43 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  openCreateModal(): void {
+  prepareNewIdentite(): void {
     this.editingIdentite = null;
     this.resetForm();
-    this.openModal('identiteModal');
   }
 
-  openEditModal(identite: IIdentite): void {
+  prepareEditIdentite(identite: IIdentite): void {
     this.editingIdentite = identite;
     this.patchFormWithIdentite(identite);
-    this.openModal('identiteModal');
   }
 
   openViewModal(identite: IIdentite): void {
     this.viewingIdentite = identite;
     this.openModal('viewIdentiteModal');
+  }
+
+  // Offcanvas methods
+  openAddOffcanvas(): void {
+    const offcanvasElement = document.getElementById('offcanvas_add');
+    if (offcanvasElement) {
+      const offcanvas = new (window as any).bootstrap.Offcanvas(offcanvasElement);
+      offcanvas.show();
+    }
+  }
+
+  closeAddOffcanvas(): void {
+    const offcanvasElement = document.getElementById('offcanvas_add');
+    if (offcanvasElement) {
+      const offcanvas = (window as any).bootstrap.Offcanvas.getInstance(offcanvasElement);
+      if (offcanvas) {
+        offcanvas.hide();
+      }
+    }
+    this.cancelOCR();
+  }
+
+  openEditOffcanvas(): void {
+    this.openAddOffcanvas(); // Utilise le même offcanvas pour édition
   }
 
   private patchFormWithIdentite(identite: IIdentite): void {
@@ -511,6 +534,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     const formData: any = {};
 
     if (data.nom) formData.nom = data.nom;
+    if (data.postnom) formData.postnom = data.postnom;
     if (data.prenom) formData.prenom = data.prenom;
     if (data.date_naissance) formData.date_naissance = data.date_naissance;
     if (data.lieu_naissance) formData.lieu_naissance = data.lieu_naissance;

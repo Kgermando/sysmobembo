@@ -115,9 +115,7 @@
                     <i class="ti ti-file-export me-2"></i>Exporter Excel
                   </button>
                   <button class="btn btn-primary" 
-                          (click)="openCreateModal()"
-                          data-bs-toggle="modal" 
-                          data-bs-target="#identiteModal">
+                          (click)="prepareNewIdentite(); openAddOffcanvas()">
                     <i class="ti ti-plus me-2"></i>Ajouter une identité
                   </button>
                 </div>
@@ -230,7 +228,10 @@
                     </thead>
                     <tbody>
                       <tr *ngFor="let identite of dataSource.data">
-                        <td>{{ identite.nom }}</td>
+                        <td>
+                          {{ identite.nom }}
+                          <span *ngIf="identite.postnom" class="text-muted"> ({{ identite.postnom }})</span>
+                        </td>
                         <td>{{ identite.prenom }}</td>
                         <td>
                           <span class="badge" [class.bg-info]="identite.sexe === 'M'" 
@@ -248,15 +249,11 @@
                           <div class="d-flex gap-2">
                             <button class="btn btn-sm btn-info" 
                                     (click)="openViewModal(identite)"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#viewIdentiteModal"
                                     title="Voir les détails">
                               <i class="ti ti-eye"></i>
                             </button>
                             <button class="btn btn-sm btn-warning" 
-                                    (click)="openEditModal(identite)"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#identiteModal"
+                                    (click)="prepareEditIdentite(identite); openEditOffcanvas()"
                                     title="Modifier">
                               <i class="ti ti-edit"></i>
                             </button>
@@ -308,20 +305,18 @@
 </div>
 <!-- /Page Wrapper -->
 
-<!-- Add/Edit Modal -->
-<div class="modal fade" id="identiteModal" tabindex="-1" aria-labelledby="identiteModalLabel" aria-hidden="true" data-bs-backdrop="static">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="identiteModalLabel">
-          <i class="ti ti-id-badge me-2"></i>
-          {{ editingIdentite ? 'Modifier l\'identité' : 'Ajouter une identité' }}
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      
-      <div class="modal-body">
-        <!-- OCR Section -->
+<!-- Add/Edit Offcanvas -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvas_add" style="width: 60%;">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title">
+      <i class="ti ti-id-badge me-2"></i>
+      {{ editingIdentite ? 'Modifier l\'identité' : 'Ajouter une identité' }}
+    </h5>
+    <button type="button" class="btn-close" (click)="closeAddOffcanvas()"></button>
+  </div>
+  
+  <div class="offcanvas-body">
+    <!-- OCR Section -->
         <div class="card border-primary mb-4">
           <div class="card-header bg-primary text-white">
             <h6 class="mb-0">
@@ -407,6 +402,9 @@
                       <li class="list-group-item" *ngIf="parsedPassportData.nom">
                         <strong>Nom:</strong> {{ parsedPassportData.nom }}
                       </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.postnom">
+                        <strong>Postnom:</strong> {{ parsedPassportData.postnom }}
+                      </li>
                       <li class="list-group-item" *ngIf="parsedPassportData.prenom">
                         <strong>Prénom:</strong> {{ parsedPassportData.prenom }}
                       </li>
@@ -453,6 +451,15 @@
                      class="text-danger small">
                   Le nom est requis (min. 2 caractères)
                 </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Postnom</label>
+                <input type="text" class="form-control" formControlName="postnom" 
+                       placeholder="Entrez le postnom (optionnel)">
+                <small class="text-muted">Pour les ressortissants congolais</small>
               </div>
             </div>
 
@@ -583,30 +590,28 @@
           <div class="alert alert-danger" *ngIf="error">
             <i class="ti ti-alert-triangle me-2"></i>{{ error }}
           </div>
-        </form>
-      </div>
 
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          <i class="ti ti-x me-2"></i>Annuler
-        </button>
-        <button type="button" class="btn btn-primary" 
-                (click)="onSubmit()" 
-                [disabled]="identiteForm.invalid || isSaving">
-          <span *ngIf="!isSaving">
-            <i class="ti ti-check me-2"></i>{{ editingIdentite ? 'Mettre à jour' : 'Enregistrer' }}
-          </span>
-          <span *ngIf="isSaving">
-            <span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...
-          </span>
-        </button>
-      </div>
-    </div>
+          <!-- Footer Buttons -->
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-secondary" (click)="closeAddOffcanvas()">
+              <i class="ti ti-x me-2"></i>Annuler
+            </button>
+            <button type="submit" class="btn btn-primary" 
+                    [disabled]="identiteForm.invalid || isSaving">
+              <span *ngIf="!isSaving">
+                <i class="ti ti-check me-2"></i>{{ editingIdentite ? 'Mettre à jour' : 'Enregistrer' }}
+              </span>
+              <span *ngIf="isSaving">
+                <span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...
+              </span>
+            </button>
+          </div>
+        </form>
   </div>
 </div>
-<!-- /Add/Edit Modal -->
+<!-- /Add/Edit Offcanvas -->
 
-<!-- View Modal -->
+<!-- View Modal (conservé car plus approprié pour la consultation) -->
 <div class="modal fade" id="viewIdentiteModal" tabindex="-1" aria-labelledby="viewIdentiteModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -626,8 +631,22 @@
           </div>
           
           <div class="col-md-6 mb-3">
-            <label class="text-muted small">Nom complet</label>
-            <p class="fw-semibold">{{ viewingIdentite.prenom }} {{ viewingIdentite.nom }}</p>
+            <label class="text-muted small">Nom</label>
+            <p class="fw-semibold">
+              {{ viewingIdentite.nom }}  
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Postnom</label>
+            <p class="fw-semibold">
+             {{ viewingIdentite.postnom }}
+            </p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Prénom</label>
+            <p class="fw-semibold">
+              {{ viewingIdentite.prenom }}  
+            </p>
           </div>
           
           <div class="col-md-6 mb-3">
@@ -709,10 +728,8 @@
           <i class="ti ti-x me-2"></i>Fermer
         </button>
         <button type="button" class="btn btn-warning" 
-                (click)="openEditModal(viewingIdentite!)" 
-                data-bs-dismiss="modal"
-                data-bs-toggle="modal" 
-                data-bs-target="#identiteModal">
+                (click)="prepareEditIdentite(viewingIdentite!); openEditOffcanvas()" 
+                data-bs-dismiss="modal">
           <i class="ti ti-edit me-2"></i>Modifier
         </button>
       </div>

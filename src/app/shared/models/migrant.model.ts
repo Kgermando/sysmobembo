@@ -138,7 +138,7 @@ export interface IGeolocalisation {
 
   // Relation
   migrant?: IMigrant;
-} 
+}
 
 export interface IAlert {
   uuid: string;
@@ -171,7 +171,7 @@ export interface IAlert {
 // Types pour les formulaires
 export interface IMigrantFormData {
   numero_identifiant: string;
-  
+
   // Relation avec Identite
   identite_uuid: string;
 
@@ -267,34 +267,34 @@ export class DateUtils {
   // Convertit les dates string en Date pour les données reçues de l'API
   static parseApiDates<T extends Record<string, any>>(data: T): T {
     const result = { ...data } as any;
-    const dateFields = ['created_at', 'updated_at', 'deleted_at', 'date_naissance', 
-                       'date_emission_document', 'date_expiration_document', 'date_entree',
-                       'date_capture', 'date_verification', 'date_expiration',
-                       'date_resolution'];
-    
+    const dateFields = ['created_at', 'updated_at', 'deleted_at', 'date_naissance',
+      'date_emission_document', 'date_expiration_document', 'date_entree',
+      'date_capture', 'date_verification', 'date_expiration',
+      'date_resolution'];
+
     dateFields.forEach(field => {
       if (result[field] && typeof result[field] === 'string') {
         result[field] = new Date(result[field]);
       }
     });
-    
+
     return result;
   }
 
   // Convertit les dates Date en string pour l'envoi à l'API
   static stringifyDates<T extends Record<string, any>>(data: T): T {
     const result = { ...data } as any;
-    const dateFields = ['created_at', 'updated_at', 'deleted_at', 'date_naissance', 
-                       'date_emission_document', 'date_expiration_document', 'date_entree',
-                       'date_capture', 'date_verification', 'date_expiration',
-                       'date_resolution'];
-    
+    const dateFields = ['created_at', 'updated_at', 'deleted_at', 'date_naissance',
+      'date_emission_document', 'date_expiration_document', 'date_entree',
+      'date_capture', 'date_verification', 'date_expiration',
+      'date_resolution'];
+
     dateFields.forEach(field => {
       if (result[field] && result[field] instanceof Date) {
         result[field] = (result[field] as Date).toISOString();
       }
     });
-    
+
     return result;
   }
 

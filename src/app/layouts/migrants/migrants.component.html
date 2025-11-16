@@ -15,24 +15,6 @@
     </div>
     <!-- /Page Header -->
 
-    <!-- Enterprise Info Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-info border-0 mb-0">
-                <div class="row align-items-center">
-                    <div class="col-auto">
-                        <i class="ti ti-users fs-3"></i>
-                    </div>
-                    <div class="col">
-                        <h6 class="mb-1">Gestion des Migrants</h6>
-                        <small class="text-muted">Administration et suivi des données migratoires</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- /Enterprise Info Section -->
-
     <!-- Statistics Cards -->
     <div class="row mb-4" *ngIf="migrantStats">
       <div class="col-lg-2 col-md-4 col-sm-6">
@@ -234,15 +216,6 @@
                       </div>
                       <div class="col-lg-3 col-md-6">
                         <div class="input-block mb-3">
-                          <label class="form-label">Pays d'origine</label>
-                          <select class="form-select" [(ngModel)]="selectedPaysOrigine" (change)="applyFilters()">
-                            <option value="">Tous les pays</option>
-                            <option *ngFor="let pays of paysOrigineOptions" [value]="pays">{{ pays }}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-3 col-md-6">
-                        <div class="input-block mb-3">
                           <label class="form-label">Statut actif</label>
                           <select class="form-select" [(ngModel)]="selectedActif" (change)="applyFilters()">
                             <option value="">Tous les statuts</option>
@@ -251,12 +224,16 @@
                         </div>
                       </div>
                     </div>
+                    <small class="text-muted">
+                      <i class="ti ti-info-circle me-1"></i>
+                      Note: Certains filtres détaillés sur les champs d'identité peuvent nécessiter des requêtes supplémentaires.
+                    </small>
                   </div>
 
-                  <!-- Section 3: Statut migratoire et documents -->
+                  <!-- Section 3: Statut migratoire -->
                   <div class="filter-section mb-4">
                     <h6 class="filter-section-title">
-                      <i class="ti ti-shield-check me-2"></i>Statut migratoire et documents
+                      <i class="ti ti-shield-check me-2"></i>Statut migratoire
                     </h6>
                     <div class="row">
                       <div class="col-lg-4 col-md-6">
@@ -268,55 +245,10 @@
                           </select>
                         </div>
                       </div>
-                      <div class="col-lg-4 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Type de document</label>
-                          <select class="form-select" [(ngModel)]="selectedTypeDocument" (change)="applyFilters()">
-                            <option value="">Tous les types</option>
-                            <option *ngFor="let type of typeDocumentOptions" [value]="type.value">{{ type.label }}</option>
-                          </select>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
-                  <!-- Section 4: Filtres par provinces -->
-                  <div class="filter-section mb-4">
-                    <h6 class="filter-section-title">
-                      <i class="ti ti-map-pin me-2"></i>Filtres par provinces (RDC)
-                    </h6>
-                    <div class="row">
-                      <div class="col-lg-4 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Province de naissance</label>
-                          <select class="form-select" [(ngModel)]="selectedProvinceNaissance" (change)="applyFilters()">
-                            <option value="">Toutes les provinces</option>
-                            <option *ngFor="let province of provincesRdcOptions" [value]="province">{{ province }}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-4 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Province actuelle</label>
-                          <select class="form-select" [(ngModel)]="selectedProvinceActuelle" (change)="applyFilters()">
-                            <option value="">Toutes les provinces</option>
-                            <option *ngFor="let province of provincesRdcOptions" [value]="province">{{ province }}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-4 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Point d'entrée (Province)</label>
-                          <select class="form-select" [(ngModel)]="selectedProvinceEntree" (change)="applyFilters()">
-                            <option value="">Toutes les provinces</option>
-                            <option *ngFor="let province of provincesRdcOptions" [value]="province">{{ province }}</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Section 5: Filtres par dates -->
+                  <!-- Section 4: Filtres par dates -->
                   <div class="filter-section">
                     <h6 class="filter-section-title">
                       <i class="ti ti-calendar me-2"></i>Filtres par dates
@@ -385,7 +317,7 @@
                       <td mat-cell *matCellDef="let element" class="min-width-200">
                         <div class="d-flex align-items-center"> 
                           <div>
-                            <strong>{{ element.prenom }} {{ element.nom }}</strong>
+                            <strong>{{ element.identite?.prenom }} {{ element.identite?.nom }}</strong>
                             <div class="text-muted small">{{ element.numero_identifiant }}</div>
                           </div>
                         </div>
@@ -398,7 +330,7 @@
                         <strong>Sexe</strong> 
                       </th>
                       <td mat-cell *matCellDef="let element" class="min-width-100">
-                        <span class="badge bg-secondary">{{ element.sexe === 'M' ? 'Masculin' : 'Féminin' }}</span>
+                        <span class="badge bg-secondary">{{ element.identite?.sexe === 'M' ? 'Masculin' : 'Féminin' }}</span>
                       </td>
                     </ng-container>
 
@@ -408,7 +340,7 @@
                         <strong>Nationalité</strong> 
                       </th>
                       <td mat-cell *matCellDef="let element" class="min-width-150">
-                        {{ element.nationalite }}
+                        {{ element.identite?.nationalite }}
                       </td>
                     </ng-container>
 
@@ -440,7 +372,7 @@
                         <strong>Pays d'origine</strong> 
                       </th>
                       <td mat-cell *matCellDef="let element" class="min-width-150">
-                        {{ element.pays_origine }}
+                        {{ element.identite?.nationalite }}
                       </td>
                     </ng-container>
 
@@ -450,7 +382,7 @@
                         <strong>Date naissance</strong> 
                       </th>
                       <td mat-cell *matCellDef="let element" class="min-width-150">
-                        {{ element.date_naissance | date: 'dd/MM/yyyy' }}
+                        {{ element.identite?.date_naissance | date: 'dd/MM/yyyy' }}
                       </td>
                     </ng-container>
 
@@ -551,136 +483,64 @@
               <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
               <div class="row">
-                <!-- Informations personnelles -->
+                <!-- Sélection de l'identité -->
                 <div class="col-12">
-                  <h6 class="mb-3">Informations personnelles</h6>
+                  <h6 class="mb-3">Identité <span class="text-danger">*</span></h6>
                 </div>
                 
-                <div class="col-md-6">
+                <div class="col-12">
                   <div class="input-block mb-3">
-                    <label class="form-label">Nom <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" formControlName="nom"
-                      [class.is-invalid]="isFieldInvalid('nom')">
-                    <div *ngIf="isFieldInvalid('nom')" class="invalid-feedback">
-                      {{ getFieldError('nom') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Prénom <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" formControlName="prenom"
-                      [class.is-invalid]="isFieldInvalid('prenom')">
-                    <div *ngIf="isFieldInvalid('prenom')" class="invalid-feedback">
-                      {{ getFieldError('prenom') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Date de naissance <span class="text-danger">*</span></label>
-                    <input type="date" class="form-control" formControlName="date_naissance"
-                      [class.is-invalid]="isFieldInvalid('date_naissance')">
-                    <div *ngIf="isFieldInvalid('date_naissance')" class="invalid-feedback">
-                      {{ getFieldError('date_naissance') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Lieu de naissance (Province) <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="lieu_naissance"
-                      [class.is-invalid]="isFieldInvalid('lieu_naissance')">
-                      <option value="">Sélectionner une province</option>
-                      <option *ngFor="let province of provincesRdcOptions" [value]="province">
-                        {{ province }}
+                    <label class="form-label">Sélectionner une identité <span class="text-danger">*</span></label>
+                    
+                    <!-- Champ de recherche -->
+                    <input 
+                      type="text" 
+                      class="form-control mb-2" 
+                      [(ngModel)]="identiteSearchTerm"
+                      [ngModelOptions]="{standalone: true}"
+                      (ngModelChange)="filterIdentites($event)"
+                      placeholder="Rechercher par nom, prénom, passeport..."
+                      *ngIf="!editingMigrant">
+                    
+                    <!-- Dropdown de sélection -->
+                    <select 
+                      class="form-select" 
+                      formControlName="identite_uuid"
+                      [class.is-invalid]="isFieldInvalid('identite_uuid')"
+                      *ngIf="!editingMigrant">
+                      <option value="">-- Sélectionner une identité --</option>
+                      <option *ngFor="let identite of filteredIdentites" [value]="identite.uuid">
+                        {{ getIdentiteDisplayName(identite) }}
                       </option>
                     </select>
-                    <div *ngIf="isFieldInvalid('lieu_naissance')" class="invalid-feedback">
-                      {{ getFieldError('lieu_naissance') }}
+                    
+                    <div *ngIf="isFieldInvalid('identite_uuid')" class="invalid-feedback">
+                      {{ getFieldError('identite_uuid') }}
+                    </div> 
+                  </div>
+                </div>
+                
+                <!-- Affichage des informations d'identité en lecture seule (si en édition) -->
+                <div class="col-12" *ngIf="editingMigrant && editingMigrant.identite">
+                  <div class="card bg-light mb-3">
+                    <div class="card-body">
+                      <h6 class="card-title mb-3">
+                        <i class="ti ti-id-badge me-2"></i>Informations d'identité (lecture seule)
+                      </h6>
+                      <div class="row">
+                        <div class="col-md-6">
+                          <p class="mb-2"><strong>Nom:</strong> {{ editingMigrant.identite.nom }}</p>
+                          <p class="mb-2"><strong>Prénom:</strong> {{ editingMigrant.identite.prenom }}</p>
+                          <p class="mb-2"><strong>Sexe:</strong> {{ editingMigrant.identite.sexe === 'M' ? 'Masculin' : 'Féminin' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                          <p class="mb-2"><strong>Date de naissance:</strong> {{ editingMigrant.identite.date_naissance | date: 'dd/MM/yyyy' }}</p>
+                          <p class="mb-2"><strong>Nationalité:</strong> {{ editingMigrant.identite.nationalite }}</p>
+                          <p class="mb-2"><strong>N° Passeport:</strong> {{ editingMigrant.identite.numero_passeport }}</p>
+                        </div>
+                      </div>
+                      <input type="hidden" formControlName="identite_uuid" [value]="editingMigrant.identite_uuid">
                     </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Sexe <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="sexe"
-                      [class.is-invalid]="isFieldInvalid('sexe')">
-                      <option value="">Sélectionner</option>
-                      <option *ngFor="let sexe of sexeOptions" [value]="sexe.value">{{ sexe.label }}</option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('sexe')" class="invalid-feedback">
-                      {{ getFieldError('sexe') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Nationalité <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="nationalite"
-                      [class.is-invalid]="isFieldInvalid('nationalite')">
-                      <option value="">Sélectionner</option>
-                      <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('nationalite')" class="invalid-feedback">
-                      {{ getFieldError('nationalite') }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Documents d'identité -->
-                <div class="col-12">
-                  <h6 class="mb-3 mt-3">Documents d'identité</h6>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Type de document <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="type_document"
-                      [class.is-invalid]="isFieldInvalid('type_document')">
-                      <option value="">Sélectionner</option>
-                      <option *ngFor="let doc of typeDocumentOptions" [value]="doc.value">{{ doc.label }}</option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('type_document')" class="invalid-feedback">
-                      {{ getFieldError('type_document') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Numéro de document <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" formControlName="numero_document"
-                      [class.is-invalid]="isFieldInvalid('numero_document')">
-                    <div *ngIf="isFieldInvalid('numero_document')" class="invalid-feedback">
-                      {{ getFieldError('numero_document') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Date d'émission du document</label>
-                    <input type="date" class="form-control" formControlName="date_emission_document">
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Date d'expiration du document</label>
-                    <input type="date" class="form-control" formControlName="date_expiration_document">
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Autorité d'émission</label>
-                    <input type="text" class="form-control" formControlName="autorite_emission">
                   </div>
                 </div>
 
@@ -699,20 +559,6 @@
                     </select>
                     <div *ngIf="isFieldInvalid('statut_migratoire')" class="invalid-feedback">
                       {{ getFieldError('statut_migratoire') }}
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <div class="input-block mb-3">
-                    <label class="form-label">Pays d'origine <span class="text-danger">*</span></label>
-                    <select class="form-control" formControlName="pays_origine"
-                      [class.is-invalid]="isFieldInvalid('pays_origine')">
-                      <option value="">Sélectionner</option>
-                      <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
-                    </select>
-                    <div *ngIf="isFieldInvalid('pays_origine')" class="invalid-feedback">
-                      {{ getFieldError('pays_origine') }}
                     </div>
                   </div>
                 </div>
@@ -921,7 +767,8 @@
           </div>
           <div class="modal-body">
             <!-- Info du migrant -->
-            <div class="alert alert-info mb-3">
+            <div class="card bg-light mb-3">
+              <div class="card-body py-2">
               <div class="row align-items-center">
                 <div class="col-auto">
                   <div class="avatar avatar-sm bg-primary text-white">
@@ -934,6 +781,7 @@
                     {{ selectedMigrantForMotifs.numero_identifiant }} - {{ selectedMigrantForMotifs.identite?.nationalite }}
                   </small>
                 </div>
+              </div>
               </div>
             </div>
 
