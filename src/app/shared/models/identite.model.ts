@@ -50,7 +50,7 @@ export interface IIdentiteStats {
   sans_passeport: number;
 }
 
-// Type pour les données extraites d'un passeport par OCR
+// Type for passport data extracted by OCR
 export interface PassportOCRData {
   nom?: string;
   postnom?: string;
@@ -59,6 +59,8 @@ export interface PassportOCRData {
   lieu_naissance?: string;
   sexe?: 'M' | 'F';
   nationalite?: string;
+  adresse?: string;
+  profession?: string;
   numero_passeport?: string;
   pays_emetteur?: string;
   autorite_emetteur?: string;

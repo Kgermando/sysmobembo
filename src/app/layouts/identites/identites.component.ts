@@ -68,7 +68,9 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedNationalite = '';
   selectedSexe = '';
   selectedNom = '';
+  selectedPostnom = '';
   selectedPrenom = '';
+
 
   // Filter expand state
   filtersExpanded = false;
@@ -235,6 +237,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       const filters: any = {};
       if (this.selectedNom) filters.nom = this.selectedNom;
+      if (this.selectedPostnom) filters.postnom = this.selectedPostnom;
       if (this.selectedPrenom) filters.prenom = this.selectedPrenom;
       if (this.selectedNationalite) filters.nationalite = this.selectedNationalite;
       if (this.selectedSexe) filters.sexe = this.selectedSexe;
@@ -413,6 +416,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedNationalite = '';
     this.selectedSexe = '';
     this.selectedNom = '';
+    this.selectedPostnom = '';
     this.selectedPrenom = '';
     this.current_page = 1;
     this.loadData();
@@ -426,6 +430,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       const filters = {
         nom: this.selectedNom,
+        postnom: this.selectedPostnom,
         prenom: this.selectedPrenom,
         nationalite: this.selectedNationalite,
         sexe: this.selectedSexe
@@ -528,7 +533,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Remplit le formulaire avec les données OCR extraites
+   * Fills the form with OCR extracted data
    */
   private fillFormWithOCRData(data: PassportOCRData): void {
     const formData: any = {};
@@ -540,6 +545,8 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     if (data.lieu_naissance) formData.lieu_naissance = data.lieu_naissance;
     if (data.sexe) formData.sexe = data.sexe;
     if (data.nationalite) formData.nationalite = data.nationalite;
+    if (data.adresse) formData.adresse = data.adresse;
+    if (data.profession) formData.profession = data.profession;
     if (data.numero_passeport) formData.numero_passeport = data.numero_passeport;
     if (data.pays_emetteur) formData.pays_emetteur = data.pays_emetteur;
     if (data.autorite_emetteur) formData.autorite_emetteur = data.autorite_emetteur;
@@ -589,16 +596,6 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     if (modalElement) {
       const modal = new (window as any).bootstrap.Modal(modalElement);
       modal.show();
-    }
-  }
-
-  private closeModal(modalId: string): void {
-    const modalElement = document.getElementById(modalId);
-    if (modalElement) {
-      const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
-      if (modal) {
-        modal.hide();
-      }
     }
   }
 
