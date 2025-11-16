@@ -46,6 +46,15 @@ export class DataService {
           hasSubRoute: false,
           showSubRoute: false,
         },
+        {
+          menuValue: 'Identités',
+          icon: 'id',
+          base: 'identity',
+          page: 'identites',
+          route: routes.identites,
+          hasSubRoute: false,
+          showSubRoute: false,
+        }
       ],
     },
     {

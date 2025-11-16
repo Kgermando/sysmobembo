@@ -74,6 +74,13 @@ export class routes {
     return this.migration + '/migrants';
   }
 
+  public static get identite(): string {
+    return this.core + '/web/identity';
+  }
+  public static get identites(): string {
+    return this.identite + '/identites';
+  } 
+
   // GIS
   public static get gis(): string {
     return this.core + '/web/gis';

@@ -1,0 +1,722 @@
+<!-- Page Wrapper -->
+<div class="page-wrapper">
+  <div class="content">
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="row">
+        <div class="col-sm-12">
+          <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a [routerLink]="'/web/dashboard'">Tableau de bord</a></li>
+            <li class="breadcrumb-item active">Gestion des Identités</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- /Page Header -->
+
+    <!-- Info Section -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="alert alert-info border-0 mb-0">
+          <div class="row align-items-center">
+            <div class="col-auto">
+              <i class="ti ti-id-badge fs-3"></i>
+            </div>
+            <div class="col">
+              <h6 class="mb-1">Gestion des Identités</h6>
+              <small class="text-muted">Administration des informations d'identité avec reconnaissance OCR de passeports</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /Info Section -->
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4" *ngIf="identiteStats">
+      <div class="col-lg-3 col-md-6">
+        <div class="card bg-primary text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ identiteStats.total || 0 }}</h4>
+                <p class="mb-0 small">Total Identités</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-id-badge fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="card bg-success text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ identiteStats.avec_passeport || 0 }}</h4>
+                <p class="mb-0 small">Avec passeport</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-file-check fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="card bg-warning text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getSexeCount('M') }}</h4>
+                <p class="mb-0 small">Masculin</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-user fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="card bg-info text-white">
+          <div class="card-body">
+            <div class="d-flex align-items-center">
+              <div class="flex-grow-1">
+                <h4 class="mb-1 text-white">{{ getSexeCount('F') }}</h4>
+                <p class="mb-0 small">Féminin</p>
+              </div>
+              <div class="flex-shrink-0">
+                <i class="ti ti-user fs-2"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /Statistics Cards -->
+
+    <div class="row">
+      <div class="col-sm-12">
+        <div class="card">
+          <div class="card-header">
+            <div class="row align-items-center">
+              <div class="col">
+                <h4 class="card-title">Liste des Identités</h4>
+              </div>
+              <div class="col-auto">
+                <div class="d-flex gap-2">
+                  <button class="btn btn-success" 
+                          (click)="exportToExcel()" 
+                          [disabled]="isLoading"
+                          title="Exporter vers Excel">
+                    <i class="ti ti-file-export me-2"></i>Exporter Excel
+                  </button>
+                  <button class="btn btn-primary" 
+                          (click)="openCreateModal()"
+                          data-bs-toggle="modal" 
+                          data-bs-target="#identiteModal">
+                    <i class="ti ti-plus me-2"></i>Ajouter une identité
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Filters -->
+            <div class="filters-container mb-4">
+              <div class="card border-0 bg-light">
+                <div class="card-header bg-light border-0 py-3">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0 text-primary">
+                      <i class="ti ti-filter me-2"></i>Filtres de recherche
+                    </h6>
+                    <button class="btn btn-sm btn-outline-primary" 
+                            type="button" 
+                            (click)="toggleFilters()">
+                      <i class="ti ti-chevron-down me-1"></i>
+                      {{ filtersExpanded ? 'Masquer' : 'Afficher' }} les filtres
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="collapse" [class.show]="filtersExpanded">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-lg-3 col-md-6">
+                        <div class="input-block mb-3">
+                          <label class="form-label">Nom</label>
+                          <input type="text" class="form-control" 
+                                 placeholder="Rechercher par nom..."
+                                 [(ngModel)]="selectedNom">
+                        </div>
+                      </div>
+                      <div class="col-lg-3 col-md-6">
+                        <div class="input-block mb-3">
+                          <label class="form-label">Prénom</label>
+                          <input type="text" class="form-control" 
+                                 placeholder="Rechercher par prénom..."
+                                 [(ngModel)]="selectedPrenom">
+                        </div>
+                      </div>
+                      <div class="col-lg-3 col-md-6">
+                        <div class="input-block mb-3">
+                          <label class="form-label">Nationalité</label>
+                          <select class="form-select" [(ngModel)]="selectedNationalite">
+                            <option value="">Toutes les nationalités</option>
+                            <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-lg-3 col-md-6">
+                        <div class="input-block mb-3">
+                          <label class="form-label">Sexe</label>
+                          <select class="form-select" [(ngModel)]="selectedSexe">
+                            <option value="">Tous</option>
+                            <option *ngFor="let sexe of sexeOptions" [value]="sexe.value">{{ sexe.label }}</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="row">
+                      <div class="col-12">
+                        <button class="btn btn-primary me-2" (click)="applyFilters()">
+                          <i class="ti ti-search me-2"></i>Rechercher
+                        </button>
+                        <button class="btn btn-outline-secondary" (click)="resetFilters()">
+                          <i class="ti ti-refresh me-2"></i>Réinitialiser
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- /Filters -->
+
+            <!-- Error Alert -->
+            <div class="alert alert-danger" *ngIf="error">
+              <i class="ti ti-alert-triangle me-2"></i>{{ error }}
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="text-center py-5" *ngIf="isLoadingData">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+              </div>
+              <p class="mt-2">Chargement des données...</p>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-container">
+              <div class="table-responsive-custom" *ngIf="!isLoadingData">
+                <div class="table-scroll-wrapper" #tableScrollWrapper>
+                  <table class="table table-hover table-striped datatable">
+                    <thead class="thead-light">
+                      <tr>
+                        <th>Nom</th>
+                        <th>Prénom</th>
+                        <th>Sexe</th>
+                        <th>Date de naissance</th>
+                        <th>Nationalité</th>
+                        <th>N° Passeport</th>
+                        <th>Pays émetteur</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let identite of dataSource.data">
+                        <td>{{ identite.nom }}</td>
+                        <td>{{ identite.prenom }}</td>
+                        <td>
+                          <span class="badge" [class.bg-info]="identite.sexe === 'M'" 
+                                [class.bg-pink]="identite.sexe === 'F'">
+                            {{ identite.sexe === 'M' ? 'Masculin' : 'Féminin' }}
+                          </span>
+                        </td>
+                        <td>{{ formatDate(identite.date_naissance) }}</td>
+                        <td>{{ identite.nationalite }}</td>
+                        <td>
+                          <span class="badge bg-success">{{ identite.numero_passeport }}</span>
+                        </td>
+                        <td>{{ identite.pays_emetteur }}</td>
+                        <td>
+                          <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-info" 
+                                    (click)="openViewModal(identite)"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#viewIdentiteModal"
+                                    title="Voir les détails">
+                              <i class="ti ti-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" 
+                                    (click)="openEditModal(identite)"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#identiteModal"
+                                    title="Modifier">
+                              <i class="ti ti-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" 
+                                    (click)="confirmDelete(identite)"
+                                    title="Supprimer">
+                              <i class="ti ti-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr *ngIf="dataSource.data.length === 0">
+                        <td colspan="8" class="text-center py-4">
+                          <i class="ti ti-inbox fs-2 text-muted"></i>
+                          <p class="text-muted mt-2">Aucune identité trouvée</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="d-flex justify-content-between align-items-center mt-3" *ngIf="!isLoadingData && total_records > 0">
+              <div>
+                <p class="mb-0 text-muted">
+                  Affichage de {{ ((current_page - 1) * page_size) + 1 }} à 
+                  {{ Math.min(current_page * page_size, total_records) }} sur 
+                  {{ total_records }} résultats
+                </p>
+              </div>
+              <mat-paginator 
+                [length]="total_records"
+                [pageSize]="page_size"
+                [pageIndex]="current_page - 1"
+                [pageSizeOptions]="[10, 15, 25, 50, 100]"
+                (page)="onPageChange($event)"
+                showFirstLastButtons>
+              </mat-paginator>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- /Page Wrapper -->
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="identiteModal" tabindex="-1" aria-labelledby="identiteModalLabel" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="identiteModalLabel">
+          <i class="ti ti-id-badge me-2"></i>
+          {{ editingIdentite ? 'Modifier l\'identité' : 'Ajouter une identité' }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- OCR Section -->
+        <div class="card border-primary mb-4">
+          <div class="card-header bg-primary text-white">
+            <h6 class="mb-0">
+              <i class="ti ti-camera me-2"></i>Scanner un passeport (OCR)
+            </h6>
+          </div>
+          <div class="card-body">
+            <!-- Hidden file input -->
+            <input type="file" #fileInput 
+                   accept="image/*" 
+                   style="display: none;" 
+                   (change)="onPassportImageSelected($event)">
+            
+            <!-- Upload button or image preview -->
+            <div *ngIf="!selectedImagePreview" class="text-center py-4">
+              <button type="button" class="btn btn-lg btn-primary" (click)="openFileSelector()">
+                <i class="ti ti-camera me-2"></i>Sélectionner une image de passeport
+              </button>
+              <p class="text-muted mt-3">
+                <small>Prenez une photo claire du passeport pour extraire automatiquement les informations</small>
+              </p>
+            </div>
+
+            <!-- Image preview and OCR controls -->
+            <div *ngIf="selectedImagePreview">
+              <div class="row">
+                <div class="col-md-6">
+                  <img [src]="selectedImagePreview" class="img-fluid rounded border" alt="Passeport">
+                  <div class="mt-3">
+                    <button type="button" class="btn btn-primary me-2" 
+                            (click)="processPassportOCR()" 
+                            [disabled]="isProcessingOCR">
+                      <span *ngIf="!isProcessingOCR">
+                        <i class="ti ti-scan me-2"></i>Scanner le passeport
+                      </span>
+                      <span *ngIf="isProcessingOCR">
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        Traitement en cours...
+                      </span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" 
+                            (click)="cancelOCR()"
+                            [disabled]="isProcessingOCR">
+                      <i class="ti ti-x me-2"></i>Annuler
+                    </button>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <!-- OCR Progress -->
+                  <div *ngIf="isProcessingOCR" class="alert alert-info">
+                    <h6><i class="ti ti-loader me-2"></i>Traitement en cours...</h6>
+                    <div class="progress mt-2" *ngIf="ocrProgress$ | async as progress">
+                      <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                           role="progressbar"
+                           [style.width.%]="progress.progress * 100"
+                           [attr.aria-valuenow]="progress.progress * 100"
+                           aria-valuemin="0" 
+                           aria-valuemax="100">
+                        {{ (progress.progress * 100).toFixed(0) }}%
+                      </div>
+                    </div>
+                    <p class="mb-0 mt-2 small">{{ (ocrProgress$ | async)?.status || 'Initialisation...' }}</p>
+                  </div>
+
+                  <!-- OCR Success -->
+                  <div *ngIf="ocrSuccessMessage && showOcrResults" class="alert alert-success">
+                    <h6><i class="ti ti-check me-2"></i>{{ ocrSuccessMessage }}</h6>
+                    <button type="button" class="btn btn-sm btn-success mt-2" (click)="useOCRData()">
+                      <i class="ti ti-check me-2"></i>Utiliser ces données
+                    </button>
+                  </div>
+
+                  <!-- OCR Error -->
+                  <div *ngIf="ocrErrorMessage" class="alert alert-danger">
+                    <i class="ti ti-alert-triangle me-2"></i>{{ ocrErrorMessage }}
+                  </div>
+
+                  <!-- Extracted data preview -->
+                  <div *ngIf="parsedPassportData && showOcrResults" class="mt-3">
+                    <h6>Données extraites:</h6>
+                    <ul class="list-group list-group-flush">
+                      <li class="list-group-item" *ngIf="parsedPassportData.nom">
+                        <strong>Nom:</strong> {{ parsedPassportData.nom }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.prenom">
+                        <strong>Prénom:</strong> {{ parsedPassportData.prenom }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.date_naissance">
+                        <strong>Date de naissance:</strong> {{ parsedPassportData.date_naissance }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.sexe">
+                        <strong>Sexe:</strong> {{ parsedPassportData.sexe }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.nationalite">
+                        <strong>Nationalité:</strong> {{ parsedPassportData.nationalite }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.numero_passeport">
+                        <strong>N° Passeport:</strong> {{ parsedPassportData.numero_passeport }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.pays_emetteur">
+                        <strong>Pays émetteur:</strong> {{ parsedPassportData.pays_emetteur }}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /OCR Section -->
+
+        <!-- Form -->
+        <form [formGroup]="identiteForm" (ngSubmit)="onSubmit()">
+          <div class="row">
+            <!-- Informations personnelles -->
+            <div class="col-12">
+              <h6 class="border-bottom pb-2 mb-3">
+                <i class="ti ti-user me-2"></i>Informations personnelles
+              </h6>
+            </div>
+
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Nom <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="nom" 
+                       placeholder="Entrez le nom">
+                <div *ngIf="identiteForm.get('nom')?.invalid && identiteForm.get('nom')?.touched" 
+                     class="text-danger small">
+                  Le nom est requis (min. 2 caractères)
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Prénom <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="prenom" 
+                       placeholder="Entrez le prénom">
+                <div *ngIf="identiteForm.get('prenom')?.invalid && identiteForm.get('prenom')?.touched" 
+                     class="text-danger small">
+                  Le prénom est requis (min. 2 caractères)
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="input-block mb-3">
+                <label class="form-label">Date de naissance <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="date_naissance">
+                <div *ngIf="identiteForm.get('date_naissance')?.invalid && identiteForm.get('date_naissance')?.touched" 
+                     class="text-danger small">
+                  La date de naissance est requise
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="input-block mb-3">
+                <label class="form-label">Lieu de naissance <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="lieu_naissance" 
+                       placeholder="Ville, Province, Pays">
+                <div *ngIf="identiteForm.get('lieu_naissance')?.invalid && identiteForm.get('lieu_naissance')?.touched" 
+                     class="text-danger small">
+                  Le lieu de naissance est requis
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="input-block mb-3">
+                <label class="form-label">Sexe <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="sexe">
+                  <option value="">Sélectionner...</option>
+                  <option *ngFor="let sexe of sexeOptions" [value]="sexe.value">{{ sexe.label }}</option>
+                </select>
+                <div *ngIf="identiteForm.get('sexe')?.invalid && identiteForm.get('sexe')?.touched" 
+                     class="text-danger small">
+                  Le sexe est requis
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Nationalité <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="nationalite">
+                  <option value="">Sélectionner...</option>
+                  <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
+                </select>
+                <div *ngIf="identiteForm.get('nationalite')?.invalid && identiteForm.get('nationalite')?.touched" 
+                     class="text-danger small">
+                  La nationalité est requise
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Profession</label>
+                <input type="text" class="form-control" formControlName="profession" 
+                       placeholder="Entrez la profession">
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="input-block mb-3">
+                <label class="form-label">Adresse</label>
+                <textarea class="form-control" formControlName="adresse" 
+                          rows="2" placeholder="Adresse complète"></textarea>
+              </div>
+            </div>
+
+            <!-- Informations du passeport -->
+            <div class="col-12">
+              <h6 class="border-bottom pb-2 mb-3 mt-3">
+                <i class="ti ti-file-text me-2"></i>Informations du passeport
+              </h6>
+            </div>
+
+            <div class="col-md-4">
+              <div class="input-block mb-3">
+                <label class="form-label">Numéro de passeport <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="numero_passeport" 
+                       placeholder="Ex: AB1234567">
+                <div *ngIf="identiteForm.get('numero_passeport')?.invalid && identiteForm.get('numero_passeport')?.touched" 
+                     class="text-danger small">
+                  Le numéro de passeport est requis
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="input-block mb-3">
+                <label class="form-label">Pays émetteur <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="pays_emetteur" 
+                       placeholder="Pays qui a émis le passeport">
+                <div *ngIf="identiteForm.get('pays_emetteur')?.invalid && identiteForm.get('pays_emetteur')?.touched" 
+                     class="text-danger small">
+                  Le pays émetteur est requis
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="input-block mb-3">
+                <label class="form-label">Autorité émetteur <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="autorite_emetteur" 
+                       placeholder="Organisme émetteur">
+                <div *ngIf="identiteForm.get('autorite_emetteur')?.invalid && identiteForm.get('autorite_emetteur')?.touched" 
+                     class="text-danger small">
+                  L'autorité émetteur est requise
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error display -->
+          <div class="alert alert-danger" *ngIf="error">
+            <i class="ti ti-alert-triangle me-2"></i>{{ error }}
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="ti ti-x me-2"></i>Annuler
+        </button>
+        <button type="button" class="btn btn-primary" 
+                (click)="onSubmit()" 
+                [disabled]="identiteForm.invalid || isSaving">
+          <span *ngIf="!isSaving">
+            <i class="ti ti-check me-2"></i>{{ editingIdentite ? 'Mettre à jour' : 'Enregistrer' }}
+          </span>
+          <span *ngIf="isSaving">
+            <span class="spinner-border spinner-border-sm me-2"></span>Enregistrement...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /Add/Edit Modal -->
+
+<!-- View Modal -->
+<div class="modal fade" id="viewIdentiteModal" tabindex="-1" aria-labelledby="viewIdentiteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="viewIdentiteModalLabel">
+          <i class="ti ti-eye me-2"></i>Détails de l'identité
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body" *ngIf="viewingIdentite">
+        <div class="row">
+          <div class="col-12 mb-3">
+            <h6 class="border-bottom pb-2">
+              <i class="ti ti-user me-2"></i>Informations personnelles
+            </h6>
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Nom complet</label>
+            <p class="fw-semibold">{{ viewingIdentite.prenom }} {{ viewingIdentite.nom }}</p>
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Sexe</label>
+            <p>
+              <span class="badge" [class.bg-info]="viewingIdentite.sexe === 'M'" 
+                    [class.bg-pink]="viewingIdentite.sexe === 'F'">
+                {{ viewingIdentite.sexe === 'M' ? 'Masculin' : 'Féminin' }}
+              </span>
+            </p>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Date de naissance</label>
+            <p class="fw-semibold">{{ formatDate(viewingIdentite.date_naissance) }}</p>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Lieu de naissance</label>
+            <p class="fw-semibold">{{ viewingIdentite.lieu_naissance }}</p>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Nationalité</label>
+            <p class="fw-semibold">{{ viewingIdentite.nationalite }}</p>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Profession</label>
+            <p class="fw-semibold">{{ viewingIdentite.profession || '-' }}</p>
+          </div>
+
+          <div class="col-12 mb-3">
+            <label class="text-muted small">Adresse</label>
+            <p class="fw-semibold">{{ viewingIdentite.adresse || '-' }}</p>
+          </div>
+
+          <div class="col-12 mb-3 mt-3">
+            <h6 class="border-bottom pb-2">
+              <i class="ti ti-file-text me-2"></i>Informations du passeport
+            </h6>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Numéro de passeport</label>
+            <p><span class="badge bg-success fs-6">{{ viewingIdentite.numero_passeport }}</span></p>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Pays émetteur</label>
+            <p class="fw-semibold">{{ viewingIdentite.pays_emetteur }}</p>
+          </div>
+
+          <div class="col-12 mb-3">
+            <label class="text-muted small">Autorité émetteur</label>
+            <p class="fw-semibold">{{ viewingIdentite.autorite_emetteur }}</p>
+          </div>
+
+          <div class="col-12 mb-3 mt-3">
+            <h6 class="border-bottom pb-2">
+              <i class="ti ti-clock me-2"></i>Métadonnées
+            </h6>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Date de création</label>
+            <p class="fw-semibold">{{ formatDate(viewingIdentite.created_at) }}</p>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Dernière mise à jour</label>
+            <p class="fw-semibold">{{ formatDate(viewingIdentite.updated_at) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="ti ti-x me-2"></i>Fermer
+        </button>
+        <button type="button" class="btn btn-warning" 
+                (click)="openEditModal(viewingIdentite!)" 
+                data-bs-dismiss="modal"
+                data-bs-toggle="modal" 
+                data-bs-target="#identiteModal">
+          <i class="ti ti-edit me-2"></i>Modifier
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /View Modal -->

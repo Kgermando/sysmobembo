@@ -7,6 +7,7 @@ import { GeolocationsComponent } from './geolocations/geolocations.component';
 import { AlertsComponent } from './alerts/alerts.component';
 import { BiometricsComponent } from './biometrics/biometrics.component';
 import { MotifDeplacementsComponent } from './motif-deplacements/motif-deplacements.component';
+import { IdentitesComponent } from './identites/identites.component';
  
 const routes: Routes = [
   {
@@ -26,6 +27,10 @@ const routes: Routes = [
       {
         path: 'migration/migrants',
         component: MigrantsComponent
+      },
+      {
+        path: 'identity/identites',
+        component: IdentitesComponent
       },
       {
         path: 'gis/geolocations',

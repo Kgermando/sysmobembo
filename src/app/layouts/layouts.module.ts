@@ -11,6 +11,7 @@ import { LayoutCommonComponent } from './common/layout-common/layout-common.comp
 import { SidebarComponent } from './common/sidebar/sidebar.component';
 import { UsersComponent } from './users/users.component';
 import { MigrantsComponent } from './migrants/migrants.component';
+import { IdentitesComponent } from './identites/identites.component';
 import { GeolocationsComponent } from './geolocations/geolocations.component';
 import { AlertsComponent } from './alerts/alerts.component';
 import { BiometricsComponent } from './biometrics/biometrics.component';
@@ -26,6 +27,7 @@ import { MotifDeplacementsComponent } from './motif-deplacements/motif-deplaceme
     SidebarComponent, 
     UsersComponent,
     MigrantsComponent,
+    IdentitesComponent,
     GeolocationsComponent,
     AlertsComponent,
     BiometricsComponent,
