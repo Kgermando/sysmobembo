@@ -550,85 +550,6 @@
               <!-- Error Alert -->
               <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
-              <!-- OCR Scanner Section -->
-              <div class="row mb-4">
-                <div class="col-12">
-                  <div class="card bg-light border-primary">
-                    <div class="card-header bg-primary text-white">
-                      <h6 class="mb-0">
-                        <i class="ti ti-scan me-2"></i>
-                        Scanner un document (OCR)
-                      </h6>
-                      <small>Chargez une image de passeport, carte d'identité ou autre document pour auto-remplir le formulaire</small>
-                    </div>
-                    <div class="card-body">
-                      <!-- Upload Area -->
-                      <div class="text-center">
-                        <input type="file" #fileInput accept="image/*" (change)="onFileSelected($event)" 
-                               class="d-none" id="ocrFileInput">
-                        <label for="ocrFileInput" class="btn btn-outline-primary btn-lg mb-3" 
-                               style="cursor: pointer;" [class.disabled]="isProcessingOCR">
-                          <i class="ti ti-upload me-2"></i>
-                          Choisir une image
-                        </label>
-                        
-                        <!-- Preview de l'image -->
-                        <div *ngIf="selectedImagePreview" class="mb-3">
-                          <img [src]="selectedImagePreview" alt="Document preview" 
-                               style="max-width: 100%; max-height: 300px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                          <button type="button" class="btn btn-sm btn-danger mt-2" (click)="clearImage()">
-                            <i class="ti ti-x me-1"></i>Supprimer
-                          </button>
-                        </div>
-
-                        <!-- Progress Bar -->
-                        <div *ngIf="isProcessingOCR" class="mb-3">
-                          <ng-container *ngIf="ocrProgress$ | async as progress">
-                            <div class="progress mb-2" style="height: 25px;">
-                              <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                   role="progressbar" 
-                                   [style.width.%]="progress.progress"
-                                   [class.bg-success]="progress.status === 'completed'"
-                                   [class.bg-danger]="progress.status === 'error'">
-                                {{ progress.progress }}%
-                              </div>
-                            </div>
-                            <small class="text-muted">{{ progress.message }}</small>
-                          </ng-container>
-                        </div>
-
-                        <!-- Success Message -->
-                        <div *ngIf="ocrSuccessMessage" class="alert alert-success alert-dismissible fade show">
-                          <i class="ti ti-check-circle me-2"></i>
-                          {{ ocrSuccessMessage }}
-                          <button type="button" class="btn-close" (click)="ocrSuccessMessage = null"></button>
-                        </div>
-
-                        <!-- Error Message -->
-                        <div *ngIf="ocrErrorMessage" class="alert alert-danger alert-dismissible fade show">
-                          <i class="ti ti-alert-circle me-2"></i>
-                          {{ ocrErrorMessage }}
-                          <button type="button" class="btn-close" (click)="ocrErrorMessage = null"></button>
-                        </div>
-
-                        <!-- Extracted Text Preview (Optional) -->
-                        <div *ngIf="extractedText" class="mt-3">
-                          <button class="btn btn-sm btn-outline-secondary" type="button" 
-                                  data-bs-toggle="collapse" data-bs-target="#extractedTextCollapse">
-                            <i class="ti ti-eye me-1"></i>Voir le texte extrait
-                          </button>
-                          <div class="collapse mt-2" id="extractedTextCollapse">
-                            <div class="card card-body bg-light text-start" style="max-height: 200px; overflow-y: auto;">
-                              <pre class="mb-0" style="font-size: 12px; white-space: pre-wrap;">{{ extractedText }}</pre>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
               <div class="row">
                 <!-- Informations personnelles -->
                 <div class="col-12">
@@ -945,18 +866,17 @@
             <div class="row">
               <div class="col-md-6">
                 <h6>Informations personnelles</h6>
-                <p><strong>Nom :</strong> {{ viewingMigrant.nom }}</p>
-                <p><strong>Prénom :</strong> {{ viewingMigrant.prenom }}</p>
-                <p><strong>Date de naissance :</strong> {{ viewingMigrant.date_naissance | date: 'dd/MM/yyyy' }}</p>
-                <p><strong>Lieu de naissance :</strong> {{ viewingMigrant.lieu_naissance }}</p>
-                <p><strong>Sexe :</strong> {{ viewingMigrant.sexe === 'M' ? 'Masculin' : 'Féminin' }}</p>
-                <p><strong>Nationalité :</strong> {{ viewingMigrant.nationalite }}</p>
+                <p><strong>Nom :</strong> {{ viewingMigrant.identite?.nom || '-' }}</p>
+                <p><strong>Prénom :</strong> {{ viewingMigrant.identite?.prenom || '-' }}</p>
+                <p><strong>Date de naissance :</strong> {{ viewingMigrant.identite?.date_naissance | date: 'dd/MM/yyyy' }}</p>
+                <p><strong>Lieu de naissance :</strong> {{ viewingMigrant.identite?.lieu_naissance || '-' }}</p>
+                <p><strong>Sexe :</strong> {{ viewingMigrant.identite?.sexe === 'M' ? 'Masculin' : 'Féminin' }}</p>
+                <p><strong>Nationalité :</strong> {{ viewingMigrant.identite?.nationalite || '-' }}</p>
               </div>
               <div class="col-md-6">
                 <h6>Informations migratoires</h6>
                 <p><strong>N° Identifiant :</strong> {{ viewingMigrant.numero_identifiant }}</p>
                 <p><strong>Statut :</strong> {{ viewingMigrant.statut_migratoire | titlecase }}</p>
-                <p><strong>Pays d'origine :</strong> {{ viewingMigrant.pays_origine }}</p>
                 <p><strong>Pays de destination :</strong> {{ viewingMigrant.pays_destination || '-' }}</p>
                 <p><strong>Date d'entrée :</strong> {{ viewingMigrant.date_entree | date: 'dd/MM/yyyy' }}</p>
                 <p><strong>Point d'entrée :</strong> {{ viewingMigrant.point_entree || '-' }}</p>
@@ -972,9 +892,9 @@
               </div>
               <div class="col-md-6">
                 <h6>Documents</h6>
-                <p><strong>Type :</strong> {{ viewingMigrant.type_document | titlecase }}</p>
-                <p><strong>Numéro :</strong> {{ viewingMigrant.numero_document }}</p>
-                <p><strong>Autorité :</strong> {{ viewingMigrant.autorite_emission || '-' }}</p>
+                <p><strong>Numéro Passeport :</strong> {{ viewingMigrant.identite?.numero_passeport || '-' }}</p>
+                <p><strong>Pays émetteur :</strong> {{ viewingMigrant.identite?.pays_emetteur || '-' }}</p>
+                <p><strong>Autorité :</strong> {{ viewingMigrant.identite?.autorite_emetteur || '-' }}</p>
               </div>
             </div>
           </div>
@@ -995,7 +915,7 @@
           <div class="modal-header">
             <h5 class="modal-title">
               <i class="ti ti-route me-2"></i>
-              Motifs de déplacement de {{ selectedMigrantForMotifs.nom }} {{ selectedMigrantForMotifs.prenom }}
+              Motifs de déplacement de {{ selectedMigrantForMotifs.identite?.nom }} {{ selectedMigrantForMotifs.identite?.prenom }}
             </h5>
             <button type="button" class="btn-close" (click)="closeMotifsModal()"></button>
           </div>
@@ -1005,13 +925,13 @@
               <div class="row align-items-center">
                 <div class="col-auto">
                   <div class="avatar avatar-sm bg-primary text-white">
-                    {{ selectedMigrantForMotifs.nom.charAt(0) }}{{ selectedMigrantForMotifs.prenom.charAt(0) }}
+                    {{ selectedMigrantForMotifs.identite?.nom?.charAt(0) || 'M' }}{{ selectedMigrantForMotifs.identite?.prenom?.charAt(0) || 'M' }}
                   </div>
                 </div>
                 <div class="col">
-                  <h6 class="mb-0">{{ selectedMigrantForMotifs.nom }} {{ selectedMigrantForMotifs.prenom }}</h6>
+                  <h6 class="mb-0">{{ selectedMigrantForMotifs.identite?.nom }} {{ selectedMigrantForMotifs.identite?.prenom }}</h6>
                   <small class="text-muted">
-                    {{ selectedMigrantForMotifs.numero_identifiant }} - {{ selectedMigrantForMotifs.nationalite }}
+                    {{ selectedMigrantForMotifs.numero_identifiant }} - {{ selectedMigrantForMotifs.identite?.nationalite }}
                   </small>
                 </div>
               </div>

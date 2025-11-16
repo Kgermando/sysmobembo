@@ -1,3 +1,5 @@
+import { IIdentite } from './identite.model';
+
 export interface IMigrant {
   uuid: string;
   created_at: Date;
@@ -6,20 +8,9 @@ export interface IMigrant {
 
   numero_identifiant: string;
 
-  // Informations personnelles
-  nom: string;
-  prenom: string;
-  date_naissance: Date;
-  lieu_naissance: string;
-  sexe: 'M' | 'F';
-  nationalite: string;
-
-  // Documents d'identité
-  type_document: 'passport' | 'carte_identite' | 'permis_conduire';
-  numero_document: string;
-  date_emission_document?: Date;
-  date_expiration_document?: Date;
-  autorite_emission?: string;
+  // Relation avec Identite
+  identite_uuid: string;
+  identite?: IIdentite;
 
   // Informations de contact
   telephone?: string;
@@ -38,7 +29,6 @@ export interface IMigrant {
   statut_migratoire: 'regulier' | 'irregulier' | 'demandeur_asile' | 'refugie';
   date_entree?: Date;
   point_entree?: string;
-  pays_origine: string;
   pays_destination?: string;
 
   // Relations
@@ -180,31 +170,31 @@ export interface IAlert {
 
 // Types pour les formulaires
 export interface IMigrantFormData {
-  nom: string;
-  prenom: string;
-  date_naissance: string; // Gardé en string pour les formulaires HTML
-  lieu_naissance: string;
-  sexe: string;
-  nationalite: string;
-  type_document: string;
-  numero_document: string;
-  date_emission_document?: string; // Gardé en string pour les formulaires HTML
-  date_expiration_document?: string; // Gardé en string pour les formulaires HTML
-  autorite_emission?: string;
+  numero_identifiant: string;
+  
+  // Relation avec Identite
+  identite_uuid: string;
+
+  // Informations de contact
   telephone?: string;
   email?: string;
   adresse_actuelle?: string;
   ville_actuelle?: string;
   pays_actuel?: string;
+
+  // Informations familiales
   situation_matrimoniale?: string;
   nombre_enfants?: number;
   personne_contact?: string;
   telephone_contact?: string;
+
+  // Statut migration
   statut_migratoire: string;
   date_entree?: string; // Gardé en string pour les formulaires HTML
   point_entree?: string;
-  pays_origine: string;
   pays_destination?: string;
+
+  // Métadonnées
   actif: boolean;
 }
 
@@ -222,15 +212,14 @@ export interface IBackendPaginationResponse<T> {
   applied_filters?: {
     search?: string;
     statut_migratoire?: string;
-    nationalite?: string;
-    pays_origine?: string;
-    genre?: string;
+    pays_actuel?: string;
+    pays_destination?: string;
+    situation_matrimoniale?: string;
     actif?: string;
-    type_document?: string;
-    date_creation_debut?: Date; // Gardé en string pour les filtres de formulaire
-    date_creation_fin?: Date; // Gardé en string pour les filtres de formulaire
-    date_naissance_debut?: Date; // Gardé en string pour les filtres de formulaire
-    date_naissance_fin?: Date; // Gardé en string pour les filtres de formulaire
+    date_creation_debut?: Date;
+    date_creation_fin?: Date;
+    date_entree_debut?: Date;
+    date_entree_fin?: Date;
   };
 }
 
