@@ -379,14 +379,11 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.error = null;
 
     try {
-      const formData: IMigrantFormData = this.migrantForm.value;
+      const formData: any = this.migrantForm.value;
 
       // Convertir tous les champs de date de string (input HTML) vers string (format API)
       const migrantData = {
         ...formData,
-        date_naissance: formData.date_naissance ? new Date(formData.date_naissance).toISOString() : '',
-        date_emission_document: formData.date_emission_document ? new Date(formData.date_emission_document).toISOString() : undefined,
-        date_expiration_document: formData.date_expiration_document ? new Date(formData.date_expiration_document).toISOString() : undefined,
         date_entree: formData.date_entree ? new Date(formData.date_entree).toISOString() : undefined
       };
 
@@ -424,17 +421,17 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   prepareEditMigrant(migrant: IMigrant): void {
     this.editingMigrant = migrant;
     this.migrantForm.patchValue({
-      nom: migrant.nom,
-      prenom: migrant.prenom,
-      date_naissance: migrant.date_naissance ? this.formatDateForInput(migrant.date_naissance) : '',
-      lieu_naissance: migrant.lieu_naissance,
-      sexe: migrant.sexe,
-      nationalite: migrant.nationalite,
-      type_document: migrant.type_document,
-      numero_document: migrant.numero_document,
-      date_emission_document: migrant.date_emission_document ? this.formatDateForInput(migrant.date_emission_document) : '',
-      date_expiration_document: migrant.date_expiration_document ? this.formatDateForInput(migrant.date_expiration_document) : '',
-      autorite_emission: migrant.autorite_emission,
+      nom: migrant.identite?.nom || '',
+      prenom: migrant.identite?.prenom || '',
+      date_naissance: migrant.identite?.date_naissance ? this.formatDateForInput(migrant.identite.date_naissance) : '',
+      lieu_naissance: migrant.identite?.lieu_naissance || '',
+      sexe: migrant.identite?.sexe || '',
+      nationalite: migrant.identite?.nationalite || '',
+      type_document: 'passport',
+      numero_document: migrant.identite?.numero_passeport || '',
+      date_emission_document: '',
+      date_expiration_document: '',
+      autorite_emission: migrant.identite?.autorite_emetteur || '',
       telephone: migrant.telephone,
       email: migrant.email,
       adresse_actuelle: migrant.adresse_actuelle,
@@ -447,7 +444,7 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       statut_migratoire: migrant.statut_migratoire,
       date_entree: migrant.date_entree ? this.formatDateForInput(migrant.date_entree) : '',
       point_entree: migrant.point_entree,
-      pays_origine: migrant.pays_origine,
+      pays_origine: migrant.identite?.pays_emetteur || '',
       pays_destination: migrant.pays_destination,
       actif: migrant.actif
     });
@@ -563,7 +560,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // UI helpers
   getInitials(migrant: IMigrant): string {
-    return `${migrant.nom.charAt(0)}${migrant.prenom.charAt(0)}`.toUpperCase();
+    const nom = migrant.identite?.nom || 'M';
+    const prenom = migrant.identite?.prenom || 'M';
+    return `${nom.charAt(0)}${prenom.charAt(0)}`.toUpperCase();
   }
 
   getStatutBadgeClass(statut: string): string {

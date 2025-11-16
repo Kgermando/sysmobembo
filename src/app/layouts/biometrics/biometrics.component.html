@@ -119,7 +119,7 @@
               (change)="applyFilters()">
               <option value="">Tous les migrants</option>
               <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                {{ migrant.nom }} {{ migrant.prenom }}
+                {{ migrant.identite?.nom }} {{ migrant.identite?.prenom }}
               </option>
             </select>
           </div>
@@ -454,7 +454,7 @@
                 <select class="form-control" formControlName="migrant_uuid" required>
                   <option value="">Sélectionner un migrant</option>
                   <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                    {{ migrant.nom }} {{ migrant.prenom }}
+                    {{ migrant.identite?.nom }} {{ migrant.identite?.prenom }}
                   </option>
                 </select>
                 <div class="invalid-feedback" 

@@ -408,7 +408,7 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
   // UI helpers
   getMigrantName(migrantUuid: string): string {
     const migrant = this.migrants.find(m => m.uuid === migrantUuid);
-    return migrant ? `${migrant.nom} ${migrant.prenom}` : 'Migrant inconnu';
+    return migrant ? `${migrant.identite?.nom || ''} ${migrant.identite?.prenom || ''}`.trim() || 'Migrant inconnu' : 'Migrant inconnu';
   }
 
   getMigrantInitials(migrantUuid: string): string {

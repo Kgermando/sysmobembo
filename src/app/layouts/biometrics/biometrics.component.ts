@@ -442,7 +442,7 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   // Helper Methods
   getMigrantName(migrantUuid: string): string {
     const migrant = this.migrants.find(m => m.uuid === migrantUuid);
-    return migrant ? `${migrant.nom} ${migrant.prenom}` : 'Inconnu';
+    return migrant ? `${migrant.identite?.nom || ''} ${migrant.identite?.prenom || ''}`.trim() || 'Inconnu' : 'Inconnu';
   }
 
   getBiometricTypeLabel(type: string): string {

@@ -728,16 +728,18 @@ export class GeolocationsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // UI helpers
   getInitials(migrant: IMigrant): string {
-    return `${migrant.nom.charAt(0)}${migrant.prenom.charAt(0)}`.toUpperCase();
+    const nom = migrant.identite?.nom || 'M';
+    const prenom = migrant.identite?.prenom || 'M';
+    return `${nom.charAt(0)}${prenom.charAt(0)}`.toUpperCase();
   }
 
   getMigrantName(geolocation: IGeolocalisation): string {
     if (geolocation.migrant) {
-      return `${geolocation.migrant.nom} ${geolocation.migrant.prenom}`;
+      return `${geolocation.migrant.identite?.nom || ''} ${geolocation.migrant.identite?.prenom || ''}`.trim() || 'N/A';
     }
     // Find migrant by UUID if not preloaded
     const migrant = this.migrants.find(m => m.uuid === geolocation.migrant_uuid);
-    return migrant ? `${migrant.nom} ${migrant.prenom}` : 'N/A';
+    return migrant ? `${migrant.identite?.nom || ''} ${migrant.identite?.prenom || ''}`.trim() || 'N/A' : 'N/A';
   }
 
   getTypeLocalisationLabel(typeLocalisation: string): string {

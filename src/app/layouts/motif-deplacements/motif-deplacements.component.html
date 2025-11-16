@@ -174,7 +174,7 @@
                             <select class="form-select" [(ngModel)]="selectedMigrant" (change)="applyFilters()">
                               <option value="">Tous les migrants</option>
                               <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                                {{ migrant.nom }} {{ migrant.prenom }}
+                                {{ migrant.identite?.nom }} {{ migrant.identite?.prenom }}
                               </option>
                             </select>
                           </div>
@@ -409,7 +409,7 @@
                   [class.is-invalid]="isFieldInvalid('migrant_uuid')">
                   <option value="">Sélectionner un migrant</option>
                   <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                    {{ migrant.nom }} {{ migrant.prenom }}
+                    {{ migrant.identite?.nom }} {{ migrant.identite?.prenom }}
                   </option>
                 </select>
                 <div class="invalid-feedback" *ngIf="isFieldInvalid('migrant_uuid')">

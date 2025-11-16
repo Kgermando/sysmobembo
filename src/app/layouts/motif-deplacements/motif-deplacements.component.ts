@@ -376,13 +376,15 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
   // UI helpers
   getMigrantName(migrantUuid: string): string {
     const migrant = this.migrants.find(m => m.uuid === migrantUuid);
-    return migrant ? `${migrant.nom} ${migrant.prenom}` : 'Inconnu';
+    return migrant ? `${migrant.identite?.nom || ''} ${migrant.identite?.prenom || ''}`.trim() || 'Inconnu' : 'Inconnu';
   }
 
   getMigrantInitials(migrantUuid: string): string {
     const migrant = this.migrants.find(m => m.uuid === migrantUuid);
     if (!migrant) return 'IN';
-    return `${migrant.nom.charAt(0)}${migrant.prenom.charAt(0)}`.toUpperCase();
+    const nom = migrant.identite?.nom || 'I';
+    const prenom = migrant.identite?.prenom || 'N';
+    return `${nom.charAt(0)}${prenom.charAt(0)}`.toUpperCase();
   }
 
   getTypeMotifLabel(typeMotif: string): string {

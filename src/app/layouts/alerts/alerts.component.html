@@ -542,7 +542,7 @@
                                     <select id="migrant_uuid" class="form-control" formControlName="migrant_uuid">
                                         <option value="">Sélectionner un migrant</option>
                                         <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                                            {{ migrant.nom }} {{ migrant.prenom }} - {{ migrant.numero_identifiant }}
+                                            {{ migrant.identite?.nom }} {{ migrant.identite?.prenom }} - {{ migrant.numero_identifiant }}
                                         </option>
                                     </select>
                                     <div *ngIf="isFieldInvalid('migrant_uuid')" class="text-danger small">
