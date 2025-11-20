@@ -25,7 +25,7 @@ export interface IBackendPaginationResponse<T> {
     statut_migratoire?: string;
     nationalite?: string;
     pays_origine?: string;
-    genre?: string;
+    sexe?: string;
     actif?: string;
     type_document?: string;
     date_creation_debut?: string;
@@ -52,7 +52,7 @@ export class MigrantService {
       statut_migratoire?: string;
       nationalite?: string;
       pays_origine?: string;
-      genre?: string;
+      sexe?: string;
       actif?: string;
       type_document?: string;
       date_creation_debut?: string;

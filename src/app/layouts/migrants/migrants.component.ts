@@ -30,6 +30,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   // Math reference for template
   Math = Math;
 
+  // Bootstrap Modal instance
+  private migrantModal: any = null;
+
   // OCR Properties
   selectedImageFile: File | null = null;
   selectedImagePreview: string | null = null;
@@ -87,12 +90,14 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   currentPage = 1;
   pageSize = 15;
 
-  // Filters - Updated to match backend
-  searchTerm = '';
+  // Filters - Updated to match backend (backend filters on Migrant fields + Identite via JOIN)
+  searchTerm = ''; // Recherche globale (backend recherche sur nom, prenom, numero_identifiant, nationalite, numero_document)
   selectedNationalite = '';
   selectedStatutMigratoire = '';
   selectedGenre = '';
   selectedActif = '';
+  selectedPaysOrigine = '';
+  selectedTypeDocument = '';
   dateCreationDebut = '';
   dateCreationFin = '';
   dateNaissanceDebut = '';
@@ -171,6 +176,16 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.destroy$.complete();
     // Terminate OCR worker
     this.ocrService.terminateWorker();
+    // Clean up modal if still open
+    if (this.migrantModal) {
+      this.migrantModal.dispose();
+    }
+    // Remove any remaining backdrops
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
   }
 
   ngAfterViewInit(): void {
@@ -320,10 +335,10 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       if (this.searchTerm) filters.search = this.searchTerm;
       if (this.selectedNationalite) filters.nationalite = this.selectedNationalite;
       if (this.selectedStatutMigratoire) filters.statut_migratoire = this.selectedStatutMigratoire;
-      if (this.selectedGenre) filters.sexe = this.selectedGenre; // Backend uses 'sexe' not 'genre'
+      if (this.selectedGenre) filters.sexe = this.selectedGenre;
       if (this.selectedActif) filters.actif = this.selectedActif;
-      // Note: Backend filters on Identite fields (nom, prenom, etc.) are handled via JOIN
-      // and may not be directly available as query params
+      if (this.selectedPaysOrigine) filters.pays_origine = this.selectedPaysOrigine;
+      if (this.selectedTypeDocument) filters.type_document = this.selectedTypeDocument;
       if (this.dateCreationDebut) filters.date_creation_debut = this.dateCreationDebut;
       if (this.dateCreationFin) filters.date_creation_fin = this.dateCreationFin;
       if (this.dateNaissanceDebut) filters.date_naissance_debut = this.dateNaissanceDebut;
@@ -383,10 +398,25 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       const formData: any = this.migrantForm.value;
 
       // Convertir tous les champs de date de string (input HTML) vers string (format API)
-      const migrantData = {
-        ...formData,
-        date_entree: formData.date_entree ? new Date(formData.date_entree).toISOString() : undefined
+      const migrantData: IMigrantFormData = {
+        identite_uuid: formData.identite_uuid,
+        telephone: formData.telephone || undefined,
+        email: formData.email || undefined,
+        adresse_actuelle: formData.adresse_actuelle || undefined,
+        ville_actuelle: formData.ville_actuelle || undefined,
+        pays_actuel: formData.pays_actuel || undefined,
+        situation_matrimoniale: formData.situation_matrimoniale || undefined,
+        nombre_enfants: formData.nombre_enfants || undefined,
+        personne_contact: formData.personne_contact || undefined,
+        telephone_contact: formData.telephone_contact || undefined,
+        statut_migratoire: formData.statut_migratoire,
+        date_entree: formData.date_entree ? new Date(formData.date_entree).toISOString() : undefined,
+        point_entree: formData.point_entree || undefined,
+        pays_destination: formData.pays_destination || undefined,
+        actif: formData.actif !== undefined ? formData.actif : true
       };
+
+      console.log('Données du formulaire à envoyer:', migrantData);
 
       let response;
       if (this.editingMigrant) {
@@ -407,8 +437,25 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
         this.closeOffcanvas();
       }
     } catch (error: any) {
-      this.error = error.error?.message || 'Erreur lors de l\'enregistrement';
+      // Gestion détaillée des erreurs HTTP
+      if (error.error) {
+        // Erreur structurée du backend
+        this.error = error.error.message || error.error.error || 'Erreur lors de l\'enregistrement';
+      } else if (error.message) {
+        // Erreur HTTP générique
+        this.error = error.message;
+      } else {
+        // Erreur inconnue
+        this.error = 'Erreur lors de l\'enregistrement';
+      }
+      
       console.error('Erreur lors de l\'enregistrement du migrant:', error);
+      console.error('Détails de l\'erreur:', {
+        status: error.status,
+        statusText: error.statusText,
+        errorBody: error.error,
+        url: error.url
+      });
     } finally {
       this.isSaving = false;
     }
@@ -509,7 +556,8 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedStatutMigratoire = '';
     this.selectedGenre = '';
     this.selectedActif = '';
-    // Note: Certains filtres détaillés peuvent nécessiter des JOINs côté backend
+    this.selectedPaysOrigine = '';
+    this.selectedTypeDocument = '';
     this.dateCreationDebut = '';
     this.dateCreationFin = '';
     this.dateNaissanceDebut = '';
@@ -624,17 +672,33 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Modal/Offcanvas controls
   openAddOffcanvas(): void {
-    // Open Bootstrap modal
-    const modal = new (window as any).bootstrap.Modal(document.getElementById('migrantModal'));
-    modal.show();
+    const modalElement = document.getElementById('migrantModal');
+    if (modalElement) {
+      this.migrantModal = new (window as any).bootstrap.Modal(modalElement);
+      this.migrantModal.show();
+    }
   }
 
   openEditOffcanvas(): void {
-    // Implement offcanvas open logic
+    const modalElement = document.getElementById('migrantModal');
+    if (modalElement) {
+      this.migrantModal = new (window as any).bootstrap.Modal(modalElement);
+      this.migrantModal.show();
+    }
   }
 
   closeOffcanvas(): void {
-    // Implement offcanvas close logic
+    if (this.migrantModal) {
+      this.migrantModal.hide();
+      this.migrantModal = null;
+    }
+    // Supprimer manuellement les backdrops restants
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    // Retirer la classe modal-open du body
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
   }
 
   openViewModal(migrant: IMigrant): void {
@@ -783,7 +847,7 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isLoading = true;
     this.error = null;
 
-    // Préparer les filtres pour l'export
+    // Préparer les filtres pour l'export (alignés avec le backend)
     const exportFilters: {
       nom?: string;
       prenom?: string;
@@ -792,18 +856,16 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       pays_origine?: string;
       sexe?: string;
       actif?: string;
-      lieu_naissance?: string;
-      ville_actuelle?: string;
-      point_entree?: string;
     } = {};
     
+    // Le backend applique les filtres via JOIN sur Identite
     if (this.searchTerm) {
-      // Le terme de recherche peut contenir nom ou prénom, on l'envoie dans les deux champs
       exportFilters.nom = this.searchTerm;
       exportFilters.prenom = this.searchTerm;
     }
     if (this.selectedNationalite) exportFilters.nationalite = this.selectedNationalite;
     if (this.selectedStatutMigratoire) exportFilters.statut_migratoire = this.selectedStatutMigratoire;
+    if (this.selectedPaysOrigine) exportFilters.pays_origine = this.selectedPaysOrigine;
     if (this.selectedGenre) exportFilters.sexe = this.selectedGenre;
     if (this.selectedActif) exportFilters.actif = this.selectedActif;
 

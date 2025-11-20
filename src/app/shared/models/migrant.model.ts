@@ -170,7 +170,8 @@ export interface IAlert {
 
 // Types pour les formulaires
 export interface IMigrantFormData {
-  numero_identifiant: string;
+  // NOTE: numero_identifiant est auto-généré par le backend (format: MIG-YYYY-XXXXXX)
+  // Il ne doit PAS être inclus dans les données du formulaire
 
   // Relation avec Identite
   identite_uuid: string;
@@ -195,7 +196,7 @@ export interface IMigrantFormData {
   pays_destination?: string;
 
   // Métadonnées
-  actif: boolean;
+  actif?: boolean;
 }
 
 // Interface pour la pagination backend (utilisée maintenant)

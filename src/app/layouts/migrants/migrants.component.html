@@ -193,7 +193,7 @@
                   <!-- Section 2: Filtres principaux -->
                   <div class="filter-section mb-4">
                     <h6 class="filter-section-title">
-                      <i class="ti ti-users me-2"></i>Informations personnelles
+                      <i class="ti ti-users me-2"></i>Informations personnelles et migration
                     </h6>
                     <div class="row">
                       <div class="col-lg-3 col-md-6">
@@ -207,6 +207,15 @@
                       </div>
                       <div class="col-lg-3 col-md-6">
                         <div class="input-block mb-3">
+                          <label class="form-label">Pays d'origine</label>
+                          <select class="form-select" [(ngModel)]="selectedPaysOrigine" (change)="applyFilters()">
+                            <option value="">Tous les pays</option>
+                            <option *ngFor="let pays of paysOrigineOptions" [value]="pays">{{ pays }}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-lg-2 col-md-6">
+                        <div class="input-block mb-3">
                           <label class="form-label">Genre</label>
                           <select class="form-select" [(ngModel)]="selectedGenre" (change)="applyFilters()">
                             <option value="">Tous les genres</option>
@@ -214,7 +223,16 @@
                           </select>
                         </div>
                       </div>
-                      <div class="col-lg-3 col-md-6">
+                      <div class="col-lg-2 col-md-6">
+                        <div class="input-block mb-3">
+                          <label class="form-label">Type Document</label>
+                          <select class="form-select" [(ngModel)]="selectedTypeDocument" (change)="applyFilters()">
+                            <option value="">Tous les types</option>
+                            <option *ngFor="let type of typeDocumentOptions" [value]="type.value">{{ type.label }}</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div class="col-lg-2 col-md-6">
                         <div class="input-block mb-3">
                           <label class="form-label">Statut actif</label>
                           <select class="form-select" [(ngModel)]="selectedActif" (change)="applyFilters()">
@@ -224,10 +242,6 @@
                         </div>
                       </div>
                     </div>
-                    <small class="text-muted">
-                      <i class="ti ti-info-circle me-1"></i>
-                      Note: Certains filtres détaillés sur les champs d'identité peuvent nécessiter des requêtes supplémentaires.
-                    </small>
                   </div>
 
                   <!-- Section 3: Statut migratoire -->
@@ -246,6 +260,10 @@
                         </div>
                       </div>
                     </div>
+                    <small class="text-muted">
+                      <i class="ti ti-info-circle me-1"></i>
+                      Note: Les filtres sur les champs d'identité (nom, prénom, etc.) sont gérés via le backend avec des JOIN sur la table Identite.
+                    </small>
                   </div>
 
                   <!-- Section 4: Filtres par dates -->
@@ -475,7 +493,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">{{ editingMigrant ? 'Modifier' : 'Ajouter' }} un migrant</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" (click)="closeOffcanvas()"></button>
           </div>
           <form [formGroup]="migrantForm" (ngSubmit)="onSubmit()">
             <div class="modal-body">
@@ -539,7 +557,8 @@
                           <p class="mb-2"><strong>N° Passeport:</strong> {{ editingMigrant.identite.numero_passeport }}</p>
                         </div>
                       </div>
-                      <input type="hidden" formControlName="identite_uuid" [value]="editingMigrant.identite_uuid">
+                      <!-- CORRECTION: Utiliser formControlName au lieu de [value] -->
+                      <input type="hidden" formControlName="identite_uuid">
                     </div>
                   </div>
                 </div>
@@ -689,7 +708,7 @@
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="closeOffcanvas()">Annuler</button>
               <button type="submit" class="btn btn-primary" [disabled]="migrantForm.invalid || isSaving">
                 <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
                 {{ editingMigrant ? 'Modifier' : 'Ajouter' }}

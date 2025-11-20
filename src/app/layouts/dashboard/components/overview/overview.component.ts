@@ -322,7 +322,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
    * Prépare le graphique en secteurs des causes
    */
   private preparerCausesPieChart(): void {
-    if (!this.indicateurs) return;
+    if (!this.indicateurs?.causes_deplacements) return;
 
     const causes = this.indicateurs.causes_deplacements;
     this.causesPieData = [
@@ -367,7 +367,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
    * Prépare le graphique d'évolution temporelle
    */
   private preparerEvolutionLineChart(): void {
-    if (!this.indicateurs) return;
+    if (!this.indicateurs?.volume_localisation?.evolution_mensuelle) return;
 
     const evolution = this.indicateurs.volume_localisation.evolution_mensuelle;
     
@@ -400,7 +400,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
    * Prépare le graphique de répartition géographique
    */
   private preparerRepartitionBarChart(): void {
-    if (!this.indicateurs) return;
+    if (!this.indicateurs?.volume_localisation?.repartition_geographique) return;
 
     this.repartitionBarData = this.indicateurs.volume_localisation.repartition_geographique
       .slice(0, 10) // Top 10 provinces
@@ -440,7 +440,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
    * Prépare le graphique démographique
    */
   private preparerDemographiqueChart(): void {
-    if (!this.indicateurs) return;
+    if (!this.indicateurs?.vulnerabilite_besoins?.profil_demographique) return;
 
     const demo = this.indicateurs.vulnerabilite_besoins.profil_demographique;
     this.demographiqueData = [
@@ -455,7 +455,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
    * Prépare le graphique d'accès aux services
    */
   private preparerServicesChart(): void {
-    if (!this.indicateurs) return;
+    if (!this.indicateurs?.vulnerabilite_besoins?.acces_services_base) return;
 
     const services = this.indicateurs.vulnerabilite_besoins.acces_services_base;
     this.servicesData = [
@@ -470,7 +470,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
    * Prépare les données des zones à risque
    */
   private preparerZonesRisqueChart(): void {
-    if (!this.indicateurs) return;
+    if (!this.indicateurs?.dynamiques_alerte?.zones_haut_risque) return;
 
     this.zonesRisqueData = this.indicateurs.dynamiques_alerte.zones_haut_risque
       .slice(0, 8) // Top 8 zones
@@ -488,7 +488,7 @@ export class OverviewComponent implements OnInit, OnDestroy {
    * Prépare le top des provinces avec des pourcentages arrondis
    */
   private preparerTopProvinces(): void {
-    if (!this.indicateurs) return;
+    if (!this.indicateurs?.volume_localisation?.repartition_geographique) return;
 
     this.topProvinces = this.indicateurs.volume_localisation.repartition_geographique
       .slice(0, 5) // Top 5
