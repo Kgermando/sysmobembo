@@ -7,7 +7,7 @@ import {
   IMigrantFormData,
   IBackendApiResponse,
   IMigrantStats
-} from '../../shared/models/migrant.model';
+} from '../../layouts/models/migrant.model';
 
 // Interface pour les réponses API backend avec pagination
 export interface IBackendPaginationResponse<T> {
@@ -20,19 +20,6 @@ export interface IBackendPaginationResponse<T> {
     current_page: number;
     page_size: number;
   };
-  applied_filters?: {
-    search?: string;
-    statut_migratoire?: string;
-    nationalite?: string;
-    pays_origine?: string;
-    sexe?: string;
-    actif?: string;
-    type_document?: string;
-    date_creation_debut?: string;
-    date_creation_fin?: string;
-    date_naissance_debut?: string;
-    date_naissance_fin?: string;
-  };
 }
 
 @Injectable({
@@ -43,34 +30,23 @@ export class MigrantService {
 
   constructor(private http: HttpClient) { }
 
-  // Get paginated migrants with advanced filters
+  // Get paginated migrants
+  // Backend only supports 'search' filter which searches across:
+  // nom, postnom, prenom, numero_identifiant, nationalite, numero_passeport,
+  // adresse_actuelle, ville_actuelle, pays_actuel, situation_matrimoniale
   getPaginatedMigrants(
     page: number = 1,
     limit: number = 15,
     filters?: {
       search?: string;
-      statut_migratoire?: string;
-      nationalite?: string;
-      pays_origine?: string;
-      sexe?: string;
-      actif?: string;
-      type_document?: string;
-      date_creation_debut?: string;
-      date_creation_fin?: string;
-      date_naissance_debut?: string;
-      date_naissance_fin?: string;
     }
   ): Observable<IBackendPaginationResponse<IMigrant>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
 
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value && value.trim() !== '') {
-          params = params.set(key, value);
-        }
-      });
+    if (filters?.search && filters.search.trim() !== '') {
+      params = params.set('search', filters.search);
     }
 
     return this.http.get<IBackendPaginationResponse<IMigrant>>(`${this.apiUrl}/paginate`, { params });
@@ -107,24 +83,15 @@ export class MigrantService {
   }
 
   // Export migrants to Excel
+  // Backend supports start_date and end_date filters for export
   exportMigrantsToExcel(filters: {
-    nom?: string;
-    prenom?: string;
-    nationalite?: string;
-    statut_migratoire?: string;
-    pays_origine?: string;
-    sexe?: string;
-    actif?: string;
+    start_date?: string;  // Format: YYYY-MM-DD
+    end_date?: string;    // Format: YYYY-MM-DD
   } = {}): Observable<Blob> {
     let params = new HttpParams();
 
-    if (filters.nom) params = params.set('nom', filters.nom);
-    if (filters.prenom) params = params.set('prenom', filters.prenom);
-    if (filters.nationalite) params = params.set('nationalite', filters.nationalite);
-    if (filters.statut_migratoire) params = params.set('statut_migratoire', filters.statut_migratoire);
-    if (filters.pays_origine) params = params.set('pays_origine', filters.pays_origine);
-    if (filters.sexe) params = params.set('sexe', filters.sexe);
-    if (filters.actif) params = params.set('actif', filters.actif);
+    if (filters.start_date) params = params.set('start_date', filters.start_date);
+    if (filters.end_date) params = params.set('end_date', filters.end_date);
 
     return this.http.get(`${this.apiUrl}/export/excel`, {
       params,

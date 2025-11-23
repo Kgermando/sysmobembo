@@ -10,7 +10,7 @@ import {
 import {
   IBackendApiResponse,
   IBackendPaginationResponse
-} from '../../shared/models/migrant.model';
+} from '../../layouts/models/migrant.model';
 
 @Injectable({
   providedIn: 'root'
@@ -90,6 +90,23 @@ export class MotifDeplacementService {
   // Get motifs statistics
   getMotifsStats(): Observable<IBackendApiResponse<IMotifDeplacementStats>> {
     return this.http.get<IBackendApiResponse<IMotifDeplacementStats>>(`${this.apiUrl}/stats`);
+  }
+
+  // Export motifs to Excel
+  // Backend supports start_date and end_date filters for export
+  exportMotifsToExcel(filters: {
+    start_date?: string;  // Format: YYYY-MM-DD
+    end_date?: string;    // Format: YYYY-MM-DD
+  } = {}): Observable<Blob> {
+    let params = new HttpParams();
+
+    if (filters.start_date) params = params.set('start_date', filters.start_date);
+    if (filters.end_date) params = params.set('end_date', filters.end_date);
+
+    return this.http.get(`${this.apiUrl}/export/excel`, {
+      params,
+      responseType: 'blob'
+    });
   }
 }
 

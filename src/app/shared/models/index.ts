@@ -8,3 +8,4 @@ export * from './types.model';
 export * from './user-helper.model';
 export * from './appartment.model';
 export * from './caisse.model';
+export * from './motif-deplacement.model';

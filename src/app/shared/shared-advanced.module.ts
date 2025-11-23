@@ -14,6 +14,7 @@ import { NgChartsModule } from 'ng2-charts';
 import { LightboxModule } from 'ngx-lightbox';
 import { TimepickerModule } from 'ngx-bootstrap/timepicker';
 import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
+import { GoogleMapsModule } from '@angular/google-maps';
 
 /**
  * Module pour les fonctionnalités avancées (lourd)
@@ -35,6 +36,7 @@ import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
         LightboxModule,
         TimepickerModule,
         NgxMatTimepickerModule,
+        GoogleMapsModule,
     ],
     imports: [
         CommonModule,
@@ -52,6 +54,7 @@ import { NgxMatTimepickerModule } from 'ngx-mat-timepicker';
         LightboxModule,
         TimepickerModule.forRoot(),
         NgxMatTimepickerModule,
+        GoogleMapsModule,
     ]
 })
 export class SharedAdvancedModule { }

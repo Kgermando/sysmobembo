@@ -54,7 +54,16 @@ export class DataService {
           route: routes.identites,
           hasSubRoute: false,
           showSubRoute: false,
-        }
+        },
+        {
+          menuValue: 'Biométrie',
+          icon: 'fingerprint',
+          base: 'bio',
+          page: 'biometrics',
+          route: routes.biometrics,
+          hasSubRoute: false,
+          showSubRoute: false,
+        },
       ],
     },
     {
@@ -84,22 +93,6 @@ export class DataService {
           base: 'notifications',
           page: 'alerts',
           route: routes.alerts,
-          hasSubRoute: false,
-          showSubRoute: false,
-        },
-      ],
-    },
-    {
-      tittle: 'Biométrie',
-      showAsTab: true,
-      separateRoute: false,
-      menu: [
-        {
-          menuValue: 'Biométrie',
-          icon: 'fingerprint',
-          base: 'bio',
-          page: 'biometrics',
-          route: routes.biometrics,
           hasSubRoute: false,
           showSubRoute: false,
         },

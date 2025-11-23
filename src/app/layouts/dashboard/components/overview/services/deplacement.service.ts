@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 import { 
   IndicateursDeplacementResponse,
   AlertesTempsReelResponse,
-  RepartitionGeographiqueResponse
+  RepartitionGeographiqueResponse,
+  MotifPieChartResponse
 } from '../interfaces/deplacement.interface';
 import { environment } from '../../../../../../environments/environment';
 
@@ -50,5 +51,17 @@ export class DeplacementService {
     if (periode) params = params.set('periode', periode.toString());
     
     return this.http.get<RepartitionGeographiqueResponse>(`${this.baseUrl}/repartition`, { params });
+  }
+
+  /**
+   * Récupère les données du pie chart des motifs de déplacement
+   * GET /api/overview/motifs-pie?periode=12&province=
+   */
+  getMotifsPieChart(periode?: number, province?: string): Observable<MotifPieChartResponse> {
+    let params = new HttpParams();
+    if (periode) params = params.set('periode', periode.toString());
+    if (province && province.trim() !== '') params = params.set('province', province);
+    
+    return this.http.get<MotifPieChartResponse>(`${this.baseUrl}/motifs-pie`, { params });
   }
 }

@@ -4,9 +4,12 @@ import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject, firstValueFrom, takeUntil } from 'rxjs';
-import { IAlert, IMigrant, DateUtils } from '../../shared/models/migrant.model';
+import { IAlert } from '../models/alert.model';
+import { IMigrant } from '../models/migrant.model';
+import { DateUtils } from '../../shared/utils/date.utils';
 import { AlertService, IAlertFormData, IAlertFilters, IAlertStats } from '../../core/migration/alert.service';
 import { MigrantService } from '../../core/migration/migrant.service';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   selector: 'app-alerts',
@@ -54,8 +57,11 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedTypeAlerte = '';
   selectedNiveauGravite = '';
   selectedStatut = '';
-  dateDebut = '';
-  dateFin = '';
+  startDate = '';
+  endDate = '';
+
+  // Export dialog state
+  isExportDialogOpen = false;
 
   // Options with proper typing to match IAlert interface
   typeAlerteOptions: Array<{
@@ -96,12 +102,14 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private fb: FormBuilder,
     private alertService: AlertService,
-    private migrantService: MigrantService
+    private migrantService: MigrantService,
+    private toastr: ToastrService
   ) {
     this.alertForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.initializeDefaultDates();
     this.loadData();
     this.loadMigrants();
     this.loadStats();
@@ -114,6 +122,15 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     // Setup any additional UI interactions
+  }
+
+  private initializeDefaultDates(): void {
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+    
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = oneMonthAgo.toISOString().split('T')[0];
   }
 
   // Custom validators for enum types
@@ -274,7 +291,7 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
       niveau_gravite: alert.niveau_gravite,
       titre: alert.titre,
       description: alert.description,
-      date_expiration: DateUtils.toInputDate(alert.date_expiration),
+      date_expiration: DateUtils.toInputFormat(alert.date_expiration),
       action_requise: alert.action_requise,
       personne_responsable: alert.personne_responsable
     });
@@ -307,7 +324,7 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       const response = await firstValueFrom(
         this.alertService.resolveAlert(alert.uuid, {
-          commentaire_resolution: commentaire
+          comment_resolution: commentaire
         }).pipe(takeUntil(this.destroy$))
       );
 
@@ -344,11 +361,11 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedNiveauGravite = '';
     this.selectedStatut = '';
     this.searchTerm = '';
-    this.dateDebut = '';
-    this.dateFin = '';
+    this.startDate = '';
+    this.endDate = '';
     this.current_page = 1;
     this.loadData();
-  }
+  } 
 
   // Pagination
   onPageChange(event: PageEvent): void {
@@ -458,11 +475,11 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   formatDate(date: Date | string | undefined): string {
-    return DateUtils.formatDate(date);
+    return DateUtils.toDisplayFormat(date);
   }
 
   formatDateTime(date: Date | string | undefined): string {
-    return DateUtils.formatDateTime(date);
+    return DateUtils.toDisplayFormat(date, { includeTime: true });
   }
 
   // Form validation helpers
@@ -547,23 +564,34 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
     return alert.uuid;
   }
 
+  // Open export dialog
+  openExportDialog(): void {
+    this.initializeDefaultDates();
+    this.isExportDialogOpen = true;
+  }
+
+  // Close export dialog
+  closeExportDialog(): void {
+    this.isExportDialogOpen = false;
+  }
+
+  // Export to Excel with date confirmation
+  confirmExportToExcel(): void {
+    this.isExportDialogOpen = false;
+    this.exportToExcel();
+  }
+
   // Export to Excel
   exportToExcel(): void {
     this.isLoading = true;
     this.error = null;
 
-    // Préparer les filtres pour l'export
+    // Préparer les filtres pour l'export (dates uniquement)
     const exportFilters: IAlertFilters = {};
     
-    if (this.searchTerm) exportFilters.search = this.searchTerm;
-    if (this.selectedMigrant) exportFilters.migrant_uuid = this.selectedMigrant;
-    if (this.selectedTypeAlerte) exportFilters.type_alerte = this.selectedTypeAlerte;
-    if (this.selectedNiveauGravite) exportFilters.niveau_gravite = this.selectedNiveauGravite;
-    if (this.selectedStatut) exportFilters.statut = this.selectedStatut;
-    if (this.dateDebut) exportFilters.date_debut = this.dateDebut;
-    if (this.dateFin) exportFilters.date_fin = this.dateFin;
+    if (this.startDate) exportFilters.start_date = this.startDate;
+    if (this.endDate) exportFilters.end_date = this.endDate;
 
-    // Afficher un message d'information pendant l'export
     console.log('Début de l\'export Excel des alertes...');
 
     this.alertService.exportAlertsToExcel(exportFilters).subscribe({
@@ -589,7 +617,7 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.isLoading = false;
           
           // Afficher un message de succès
-          console.log('✅ Export Excel terminé avec succès');
+          console.log('✅ Export Excel des alertes terminé avec succès');
           this.showSuccessMessage('Export Excel terminé avec succès');
           
         } catch (downloadError) {
@@ -611,6 +639,7 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         
         this.error = errorMessage;
+        this.showMessage(errorMessage, 'error');
         this.isLoading = false;
       }
     });
@@ -618,39 +647,24 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Méthode utilitaire pour afficher un message de succès
   private showSuccessMessage(message: string): void {
-    // Créer un élément de notification temporaire
-    const notification = document.createElement('div');
-    notification.className = 'alert alert-success position-fixed';
-    notification.style.cssText = `
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
-      max-width: 300px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    `;
-    notification.innerHTML = `
-      <div class="d-flex align-items-center">
-        <i class="ti ti-check-circle me-2"></i>
-        <span>${message}</span>
-      </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    // Animation d'apparition
-    setTimeout(() => {
-      notification.style.opacity = '1';
-    }, 100);
-    
-    // Suppression automatique après 3 secondes
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      setTimeout(() => {
-        if (notification.parentElement) {
-          document.body.removeChild(notification);
-        }
-      }, 300);
-    }, 3000);
+    this.toastr.success(message, 'Succès');
+  }
+
+  // Méthode utilitaire pour afficher un message
+  private showMessage(message: string, type: 'success' | 'error' | 'info' | 'warning'): void {
+    switch (type) {
+      case 'success':
+        this.toastr.success(message, 'Succès');
+        break;
+      case 'error':
+        this.toastr.error(message, 'Erreur');
+        break;
+      case 'info':
+        this.toastr.info(message, 'Information');
+        break;
+      case 'warning':
+        this.toastr.warning(message, 'Attention');
+        break;
+    }
   }
 }

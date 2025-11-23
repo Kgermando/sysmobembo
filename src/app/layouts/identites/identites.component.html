@@ -108,11 +108,13 @@
               </div>
               <div class="col-auto">
                 <div class="d-flex gap-2">
-                  <button class="btn btn-success" 
-                          (click)="exportToExcel()" 
-                          [disabled]="isLoading"
+                  <button type="button" class="btn btn-outline-success" 
+                          (click)="openExportDialog()" 
+                          [disabled]="isLoadingData || isLoading"
                           title="Exporter vers Excel">
-                    <i class="ti ti-file-export me-2"></i>Exporter Excel
+                    <i class="ti ti-file-excel me-1"></i>
+                    <span class="d-none d-md-inline">Exporter Excel</span>
+                    <span class="d-md-none">Excel</span>
                   </button>
                   <button class="btn btn-primary" 
                           (click)="prepareNewIdentite(); openAddOffcanvas()">
@@ -124,77 +126,23 @@
           </div>
 
           <div class="card-body">
-            <!-- Filters -->
-            <div class="filters-container mb-4">
-              <div class="card border-0 bg-light">
-                <div class="card-header bg-light border-0 py-3">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-primary">
-                      <i class="ti ti-filter me-2"></i>Filtres de recherche
-                    </h6>
-                    <button class="btn btn-sm btn-outline-primary" 
-                            type="button" 
-                            (click)="toggleFilters()">
-                      <i class="ti ti-chevron-down me-1"></i>
-                      {{ filtersExpanded ? 'Masquer' : 'Afficher' }} les filtres
-                    </button>
-                  </div>
-                </div>
-                
-                <div class="collapse" [class.show]="filtersExpanded">
-                  <div class="card-body">
-                    <div class="row">
-                      <div class="col-lg-3 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Nom</label>
-                          <input type="text" class="form-control" 
-                                 placeholder="Rechercher par nom..."
-                                 [(ngModel)]="selectedNom">
-                        </div>
-                      </div>
-                      <div class="col-lg-3 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Prénom</label>
-                          <input type="text" class="form-control" 
-                                 placeholder="Rechercher par prénom..."
-                                 [(ngModel)]="selectedPrenom">
-                        </div>
-                      </div>
-                      <div class="col-lg-3 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Nationalité</label>
-                          <select class="form-select" [(ngModel)]="selectedNationalite">
-                            <option value="">Toutes les nationalités</option>
-                            <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-3 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Sexe</label>
-                          <select class="form-select" [(ngModel)]="selectedSexe">
-                            <option value="">Tous</option>
-                            <option *ngFor="let sexe of sexeOptions" [value]="sexe.value">{{ sexe.label }}</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="row">
-                      <div class="col-12">
-                        <button class="btn btn-primary me-2" (click)="applyFilters()">
-                          <i class="ti ti-search me-2"></i>Rechercher
-                        </button>
-                        <button class="btn btn-outline-secondary" (click)="resetFilters()">
-                          <i class="ti ti-refresh me-2"></i>Réinitialiser
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+            <!-- Search -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="ti ti-search"></i>
+                  </span>
+                  <input type="text" 
+                         class="form-control" 
+                         placeholder="Rechercher une identité..."
+                         [(ngModel)]="searchTerm"
+                         (input)="onSearch()"
+                         [disabled]="isLoading">
                 </div>
               </div>
             </div>
-            <!-- /Filters -->
+            <!-- /Search -->
 
             <!-- Error Alert -->
             <div class="alert alert-danger" *ngIf="error">
@@ -217,9 +165,11 @@
                     <thead class="thead-light">
                       <tr>
                         <th>Nom</th>
+                        <th>Postnom</th>
                         <th>Prénom</th>
                         <th>Sexe</th>
                         <th>Date de naissance</th>
+                        <th>Lieu de naissance</th>
                         <th>Nationalité</th>
                         <th>N° Passeport</th>
                         <th>Pays émetteur</th>
@@ -228,10 +178,8 @@
                     </thead>
                     <tbody>
                       <tr *ngFor="let identite of dataSource.data">
-                        <td>
-                          {{ identite.nom }}
-                          <span *ngIf="identite.postnom" class="text-muted"> ({{ identite.postnom }})</span>
-                        </td>
+                        <td>{{ identite.nom }}</td>
+                        <td>{{ identite.postnom || '-' }}</td>
                         <td>{{ identite.prenom }}</td>
                         <td>
                           <span class="badge" [class.bg-info]="identite.sexe === 'M'" 
@@ -240,6 +188,7 @@
                           </span>
                         </td>
                         <td>{{ formatDate(identite.date_naissance) }}</td>
+                        <td>{{ identite.lieu_naissance || '-' }}</td>
                         <td>{{ identite.nationalite }}</td>
                         <td>
                           <span class="badge bg-success">{{ identite.numero_passeport }}</span>
@@ -266,7 +215,7 @@
                         </td>
                       </tr>
                       <tr *ngIf="dataSource.data.length === 0">
-                        <td colspan="8" class="text-center py-4">
+                        <td colspan="10" class="text-center py-4">
                           <i class="ti ti-inbox fs-2 text-muted"></i>
                           <p class="text-muted mt-2">Aucune identité trouvée</p>
                         </td>
@@ -503,7 +452,8 @@
                 <label class="form-label">Sexe <span class="text-danger">*</span></label>
                 <select class="form-select" formControlName="sexe">
                   <option value="">Sélectionner...</option>
-                  <option *ngFor="let sexe of sexeOptions" [value]="sexe.value">{{ sexe.label }}</option>
+                  <option value="M">Masculin</option>
+                  <option value="F">Féminin</option>
                 </select>
                 <div *ngIf="identiteForm.get('sexe')?.invalid && identiteForm.get('sexe')?.touched" 
                      class="text-danger small">
@@ -737,3 +687,89 @@
   </div>
 </div>
 <!-- /View Modal -->
+
+<!-- Export Dialog -->
+<div class="modal fade" id="exportDialog" tabindex="-1" [class.show]="isExportDialogOpen" [style.display]="isExportDialogOpen ? 'block' : 'none'" aria-labelledby="exportDialogLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="exportDialogLabel">
+          <i class="ti ti-file-excel me-2"></i>
+          Exporter les données des identités
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeExportDialog()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info border-0">
+          <i class="ti ti-info-circle me-2"></i>
+          Sélectionnez la plage de dates pour filtrer les données à exporter.
+          <br>
+          <small>Par défaut, l'intervalle est défini sur 1 mois.</small>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de début
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="startDate"
+                   placeholder="Date de début">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de fin
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="endDate"
+                   placeholder="Date de fin">
+          </div>
+        </div>
+
+        <div class="mt-3 p-3 bg-light rounded">
+          <h6 class="mb-2">
+            <i class="ti ti-clipboard-list me-1"></i>
+            Aperçu de l'export
+          </h6>
+          <ul class="list-unstyled mb-0">
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Période:</strong> 
+              {{ startDate || 'Non définie' }} au {{ endDate || 'Non définie' }}
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Format:</strong> Fichier Excel (.xlsx)
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Contenu:</strong> Données des identités + Statistiques
+            </li>
+            <li class="text-muted small mt-2">
+              <i class="ti ti-id-badge me-1"></i>
+              Toutes les informations d'identité seront incluses
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeExportDialog()">
+          <i class="ti ti-x me-1"></i>
+          Annuler
+        </button>
+        <button type="button" class="btn btn-success" (click)="confirmExportToExcel()" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isLoading" class="ti ti-download me-2"></i>
+          {{ isLoading ? 'Export en cours...' : 'Exporter maintenant' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade" [class.show]="isExportDialogOpen" *ngIf="isExportDialogOpen"></div>

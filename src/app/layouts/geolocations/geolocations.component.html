@@ -15,666 +15,205 @@
     </div>
     <!-- /Page Header -->
 
-    <!-- Enterprise Info Section -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="alert alert-info border-0 mb-0">
-          <div class="row align-items-center">
-            <div class="col-auto">
-              <i class="ti ti-map-pin fs-3"></i>
+    <!-- Action Buttons -->
+    <div class="row mb-3">
+      <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <h4 class="mb-0">Carte des Géolocalisations</h4>
+          <div class="btn-group">
+            <button class="btn btn-primary" (click)="refreshData()" [disabled]="isLoading">
+              <i class="ti ti-refresh me-1"></i>
+              Actualiser
+            </button>
+            <button type="button" class="btn btn-outline-success" 
+                    (click)="openExportDialog()" 
+                    [disabled]="isLoading"
+                    title="Exporter vers Excel">
+              <i class="ti ti-file-excel me-1"></i>
+              <span class="d-none d-md-inline">Exporter Excel</span>
+              <span class="d-md-none">Excel</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <i class="ti ti-alert-circle me-2"></i>
+      {{ error }}
+      <button type="button" class="btn-close" (click)="error = null"></button>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div *ngIf="isLoading" class="text-center my-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <p class="mt-2">Chargement des données...</p>
+    </div>
+
+    <!-- Map Container -->
+    <div class="card" *ngIf="!isLoading">
+      <div class="card-body">
+        <div class="map-container" style="height: 600px; width: 100%;">
+          <google-map
+            [height]="600"
+            [width]="'100%'"
+            [center]="center"
+            [zoom]="zoom"
+            [options]="mapOptions">
+            
+            <!-- Markers -->
+            <map-marker
+              *ngFor="let marker of markers; let i = index"
+              [position]="marker.position!"
+              [title]="marker.title || ''"
+              (mapClick)="openInfoWindow(marker, i)">
+            </map-marker>
+
+            <!-- Info Window -->
+            <map-info-window>
+              <div [innerHTML]="infoWindowContent"></div>
+            </map-info-window>
+          </google-map>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mt-4">
+          <div class="col-md-12">
+            <div class="alert alert-info">
+              <i class="ti ti-info-circle me-2"></i>
+              <strong>{{ coordinatesData.length }}</strong> géolocalisations affichées sur la carte
             </div>
-            <div class="col">
-              <h6 class="mb-1">Géolocalisations</h6>
-              <small class="text-muted">Suivi des positions géographiques des migrants</small>
+          </div>
+        </div>
+
+        <!-- Coordinates List -->
+        <div class="row mt-3" *ngIf="coordinatesData.length > 0">
+          <div class="col-md-12">
+            <h5 class="mb-3">Liste des Coordonnées</h5>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Nom Complet</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let coord of coordinatesData; let i = index">
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ coord.fullname }}</td>
+                    <td>{{ coord.latitude | number:'1.6-6' }}</td>
+                    <td>{{ coord.longitude | number:'1.6-6' }}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <div class="col-auto" *ngIf="geolocationStats">
-              <div class="text-end">
-                <h5 class="mb-0">{{ getTotalGeolocations() }}</h5>
-                <small class="text-muted">Total géolocalisations</small>
-              </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="row mt-3" *ngIf="coordinatesData.length === 0 && !isLoading">
+          <div class="col-md-12">
+            <div class="alert alert-warning text-center">
+              <i class="ti ti-map-off me-2"></i>
+              Aucune géolocalisation disponible pour le moment
             </div>
           </div>
         </div>
       </div>
     </div>
-    <!-- /Enterprise Info Section -->
 
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="row align-items-center">
-              <div class="col">
-                <h4 class="card-title">Liste des Géolocalisations</h4>
-              </div>
-              <div class="col-auto">
-                <div class="d-flex gap-2">
-                  <button type="button" class="btn btn-outline-success" 
-                          (click)="exportToExcel()" 
-                          [disabled]="isLoadingData || isLoading"
-                          title="Exporter vers Excel">
-                    <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                    <i *ngIf="!isLoading" class="ti ti-file-excel me-1"></i>
-                    <span class="d-none d-md-inline">{{ isLoading ? 'Export en cours...' : 'Exporter Excel' }}</span>
-                    <span class="d-md-none">{{ isLoading ? 'Export...' : 'Excel' }}</span>
-                  </button>
-                  <button class="btn btn-primary" (click)="prepareNewGeolocation()" data-bs-toggle="offcanvas"
-                    data-bs-target="#addGeolocationOffcanvas" #offcanvasToggle>
-                    <i class="ti ti-plus me-2"></i>Ajouter une géolocalisation
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card-body">
-            <!-- Search & Filters -->
-            <div class="row">
-              <div class="col-md-12">
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-3">
-                      <div class="input-block mb-3">
-                        <label class="form-label">Migrant :</label>
-                        <select class="form-control" [(ngModel)]="selectedMigrant" (change)="applyFilters()">
-                          <option value="">Tous les migrants</option>
-                          <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-                            {{ migrant.identite?.nom }} {{ migrant.identite?.prenom }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="input-block mb-3">
-                        <label class="form-label">Type de localisation :</label>
-                        <select class="form-control" [(ngModel)]="selectedTypeLocalisation" (change)="applyFilters()">
-                          <option value="">Tous les types</option>
-                          <option *ngFor="let type of typeLocalisationOptions" [value]="type.value">{{ type.label }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="input-block mb-3">
-                        <label class="form-label">Pays :</label>
-                        <select class="form-control" [(ngModel)]="selectedPays" (change)="applyFilters()">
-                          <option value="">Tous les pays</option>
-                          <option *ngFor="let pays of paysOptions" [value]="pays">{{ pays }}</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="input-block mb-3">
-                        <label class="form-label">Type de mouvement :</label>
-                        <select class="form-control" [(ngModel)]="selectedTypeMouvement" (change)="applyFilters()">
-                          <option value="">Tous les mouvements</option>
-                          <option *ngFor="let type of typeMouvementOptions" [value]="type.value">{{ type.label }}
-                          </option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="row">
-                    <div class="col-md-9">
-                      <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary" (click)="resetFilters()">
-                          <i class="ti ti-refresh me-2"></i>Réinitialiser
-                        </button>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="d-flex justify-content-end">
-                        <small class="text-muted d-flex align-items-center">
-                          <i class="ti ti-info-circle me-1"></i>
-                          L'export Excel applique tous les filtres actifs
-                        </small>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- /Search & Filters -->
-
-            <!-- Error Alert -->
-            <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
-              {{ error }}
-              <button type="button" class="btn-close" (click)="error = null"></button>
-            </div>
-
-            <!-- Loading -->
-            <div *ngIf="isLoadingData" class="text-center py-4">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Chargement...</span>
-              </div>
-            </div>
-
-            <!-- Table -->
-            <div class="table-container">
-              <div class="table-responsive-custom" *ngIf="!isLoadingData">
-                <div class="table-scroll-wrapper" #tableScrollWrapper>
-                  <table class="table table-striped custom-table">
-                    <thead>
-                      <tr>
-                        <th class="min-width-200">Migrant</th>
-                        <th class="min-width-150">Type localisation</th>
-                        <th class="min-width-150">Coordonnées</th>
-                        <th class="min-width-120">Pays</th>
-                        <th class="min-width-120">Ville</th>
-                        <th class="min-width-150">Type mouvement</th>
-                        <th class="min-width-150">Date création</th>
-                        <th class="min-width-120">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let geolocation of geolocations; trackBy: trackByGeolocationUuid">
-                        <!-- Migrant -->
-                        <td class="min-width-200">
-                          <div class="d-flex align-items-center">
-                            <div class="avatar avatar-sm me-2">
-                              <span class="avatar-title bg-primary text-white rounded-circle">
-                                {{ geolocation.migrant ? getInitials(geolocation.migrant) : 'N/A' }}
-                              </span>
-                            </div>
-                            <div>
-                              <strong>{{ getMigrantName(geolocation) }}</strong>
-                            </div>
-                          </div>
-                        </td>
-
-                        <!-- Type de localisation -->
-                        <td class="min-width-150">
-                          <span class="badge bg-info">{{ getTypeLocalisationLabel(geolocation.type_localisation) }}</span>
-                        </td>
-
-                        <!-- Coordonnées -->
-                        <td class="min-width-150">
-                          <div class="text-wrap">
-                            <small class="text-dark fw-medium">{{ formatCoordinates(geolocation.latitude, geolocation.longitude) }}</small>
-                            <br>
-                            <small class="text-muted" style="font-size: 0.75rem;">
-                              {{ getCoordinatesDMS(geolocation.latitude, geolocation.longitude).latitude }}
-                              <br>
-                              {{ getCoordinatesDMS(geolocation.latitude, geolocation.longitude).longitude }}
-                            </small>
-                          </div>
-                        </td>
-
-                        <!-- Pays -->
-                        <td class="min-width-120">{{ geolocation.pays }}</td>
-
-                        <!-- Ville -->
-                        <td class="min-width-120">{{ geolocation.ville || '-' }}</td>
-
-                        <!-- Type de mouvement -->
-                        <td class="min-width-150">
-                          <span *ngIf="geolocation.type_mouvement"
-                            [class]="getTypeMouvementBadgeClass(geolocation.type_mouvement)">
-                            {{ getTypeMouvementLabel(geolocation.type_mouvement) }}
-                          </span>
-                          <span *ngIf="!geolocation.type_mouvement" class="text-muted">-</span>
-                        </td>
-
-                        <!-- Date création -->
-                        <td class="min-width-150">{{ geolocation.created_at }}</td>
-
-                        <!-- Actions -->
-                        <td class="min-width-120">
-                          <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-primary" (click)="openViewModal(geolocation)"
-                              data-bs-toggle="modal" data-bs-target="#viewGeolocationModal">
-                              <i class="ti ti-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-warning" (click)="prepareEditGeolocation(geolocation)"
-                              data-bs-toggle="offcanvas" data-bs-target="#addGeolocationOffcanvas">
-                              <i class="ti ti-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" (click)="deleteGeolocation(geolocation)">
-                              <i class="ti ti-trash"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center mt-3"
-              *ngIf="!isLoadingData && geolocations.length > 0">
-              <div>
-                <span class="text-muted">
-                  Affichage de {{ (current_page - 1) * page_size + 1 }} à {{ Math.min(current_page * page_size,
-                  total_records) }}
-                  sur {{ total_records }} géolocalisations
-                </span>
-              </div>
-
-              <!-- Custom Pagination -->
-              <nav aria-label="Pagination">
-                <ul class="pagination">
-                  <!-- First page button -->
-                  <li class="page-item" [class.disabled]="current_page === 1">
-                    <a class="page-link" (click)="current_page > 1 && changePage(1)"
-                      href="javascript:void(0);" title="Première page">
-                      <i class="ti ti-chevrons-left"></i>
-                    </a>
-                  </li>
-
-                  <!-- Previous page -->
-                  <li class="page-item" [class.disabled]="current_page === 1">
-                    <a class="page-link" (click)="current_page > 1 && changePage(current_page - 1)"
-                      href="javascript:void(0);" title="Page précédente">
-                      <i class="ti ti-chevron-left"></i>
-                    </a>
-                  </li>
-
-                  <!-- First page -->
-                  <li class="page-item" [class.active]="current_page === 1">
-                    <a class="page-link" (click)="changePage(1)" href="javascript:void(0);">1</a>
-                  </li>
-
-                  <!-- Previous pages -->
-                  <li class="page-item" *ngIf="current_page > 3">
-                    <span class="page-link">...</span>
-                  </li>
-
-                  <li class="page-item" *ngIf="current_page > 2" [class.active]="false">
-                    <a class="page-link" (click)="changePage(current_page - 1)" href="javascript:void(0);">{{
-                      current_page - 1 }}</a>
-                  </li>
-
-                  <!-- Current page (if not first) -->
-                  <li class="page-item active" *ngIf="current_page > 1">
-                    <a class="page-link" href="javascript:void(0);">{{ current_page }}</a>
-                  </li>
-
-                  <!-- Next pages -->
-                  <li class="page-item" *ngIf="current_page < getTotalPages()" [class.active]="false">
-                    <a class="page-link" (click)="changePage(current_page + 1)" href="javascript:void(0);">{{
-                      current_page + 1 }}</a>
-                  </li>
-
-                  <li class="page-item" *ngIf="current_page < getTotalPages() - 2">
-                    <span class="page-link">...</span>
-                  </li>
-
-                  <!-- Last page -->
-                  <li class="page-item" *ngIf="getTotalPages() > 1" [class.active]="current_page === getTotalPages()">
-                    <a class="page-link" (click)="changePage(getTotalPages())" href="javascript:void(0);">{{
-                      getTotalPages() }}</a>
-                  </li>
-
-                  <!-- Next page -->
-                  <li class="page-item" [class.disabled]="current_page === getTotalPages()">
-                    <a class="page-link" (click)="current_page < getTotalPages() && changePage(current_page + 1)"
-                      href="javascript:void(0);" title="Page suivante">
-                      <i class="ti ti-chevron-right"></i>
-                    </a>
-                  </li>
-
-                  <!-- Last page button -->
-                  <li class="page-item" [class.disabled]="current_page === getTotalPages()">
-                    <a class="page-link" (click)="current_page < getTotalPages() && changePage(getTotalPages())"
-                      href="javascript:void(0);" title="Dernière page">
-                      <i class="ti ti-chevrons-right"></i>
-                    </a>
-                  </li>
-                </ul>
-              </nav>
-            </div>
-
-            <!-- No Data -->
-            <div *ngIf="!isLoadingData && geolocations.length === 0" class="text-center py-5">
-              <i class="ti ti-map-pin-off display-4 text-muted"></i>
-              <h5 class="mt-3">Aucune géolocalisation trouvée</h5>
-              <p class="text-muted">Commencez par ajouter une géolocalisation pour un migrant.</p>
-              <button class="btn btn-primary" (click)="prepareNewGeolocation()" data-bs-toggle="offcanvas"
-                data-bs-target="#addGeolocationOffcanvas">
-                <i class="ti ti-plus me-2"></i>Ajouter une géolocalisation
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
-<!-- Add/Edit Geolocation Offcanvas -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="addGeolocationOffcanvas">
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title">
-      {{ editingGeolocation ? 'Modifier la géolocalisation' : 'Ajouter une géolocalisation' }}
-    </h5>
-    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-  </div>
-  <div class="offcanvas-body">
-    <form [formGroup]="geolocationForm" (ngSubmit)="onSubmit()">
-      <!-- Error Alert -->
-      <div *ngIf="error" class="alert alert-danger">
-        {{ error }}
-      </div>
-
-      <!-- Success Alert -->
-      <div *ngIf="successMessage" class="alert alert-success">
-        <i class="ti ti-check me-2"></i>
-        {{ successMessage }}
-      </div>
-
-      <!-- Migrant Selection -->
-      <div class="input-block mb-3">
-        <label class="form-label">Migrant <span class="text-danger">*</span></label>
-        <select class="form-control" formControlName="migrant_uuid" [class.is-invalid]="isFieldInvalid('migrant_uuid')">
-          <option value="">Sélectionner un migrant</option>
-          <option *ngFor="let migrant of migrants" [value]="migrant.uuid">
-            {{ migrant.identite?.nom }} {{ migrant.identite?.prenom }} - {{ migrant.numero_identifiant }}
-          </option>
-        </select>
-        <div *ngIf="isFieldInvalid('migrant_uuid')" class="invalid-feedback">
-          Veuillez sélectionner un migrant
-        </div>
-      </div>
-
-      <!-- Auto-geolocation section -->
-      <div class="row mb-3">
-        <div class="col-12">
-          <div class="card border-primary">
-            <div class="card-header bg-primary text-white">
-              <h6 class="mb-0">
-                <i class="ti ti-location me-2"></i>
-                Géolocalisation Automatique
-              </h6>
-            </div>
-            <div class="card-body">
-              <!-- Current coordinates display -->
-              <div class="row mb-3" *ngIf="geolocationForm.get('latitude')?.value && geolocationForm.get('longitude')?.value">
-                <div class="col-12">
-                  <div class="alert alert-success" role="alert">
-                    <i class="ti ti-check me-2"></i>
-                    <strong>Position récupérée:</strong>
-                    {{ formatCoordinatesDisplay(geolocationForm.get('latitude')?.value, geolocationForm.get('longitude')?.value) }}
-                    <br>
-                    <small class="text-muted">
-                      {{ getCoordinatesDMS(geolocationForm.get('latitude')?.value, geolocationForm.get('longitude')?.value).latitude }} - 
-                      {{ getCoordinatesDMS(geolocationForm.get('latitude')?.value, geolocationForm.get('longitude')?.value).longitude }}
-                    </small>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Geolocation buttons -->
-              <div class="row" *ngIf="isGeolocationSupported()">
-                <div class="col-12">
-                  <div class="d-flex gap-2 flex-wrap">
-                    <button type="button" class="btn btn-success btn-sm" 
-                      (click)="getCurrentLocation()" 
-                      [disabled]="isGettingLocation || isSaving">
-                      <i class="ti ti-current-location me-1" *ngIf="!isGettingLocation"></i>
-                      <span class="spinner-border spinner-border-sm me-1" *ngIf="isGettingLocation"></span>
-                      {{ isGettingLocation ? 'Localisation en cours...' : 'Obtenir ma position' }}
-                    </button>
-                    
-                    <button type="button" class="btn btn-primary btn-sm" 
-                      (click)="getCurrentLocationWithAddress()" 
-                      [disabled]="isGettingLocation || isReverseGeocoding || isSaving">
-                      <i class="ti ti-map-pin me-1" *ngIf="!isGettingLocation && !isReverseGeocoding"></i>
-                      <span class="spinner-border spinner-border-sm me-1" *ngIf="isGettingLocation || isReverseGeocoding"></span>
-                      {{ (isGettingLocation || isReverseGeocoding) ? 'Récupération en cours...' : 'Position + Adresse' }}
-                    </button>
-                    
-                    <button type="button" class="btn btn-outline-info btn-sm" 
-                      (click)="reverseGeocodeCurrentPosition()" 
-                      [disabled]="isReverseGeocoding || isSaving || !geolocationForm.get('latitude')?.value || !geolocationForm.get('longitude')?.value">
-                      <i class="ti ti-search me-1" *ngIf="!isReverseGeocoding"></i>
-                      <span class="spinner-border spinner-border-sm me-1" *ngIf="isReverseGeocoding"></span>
-                      {{ isReverseGeocoding ? 'Recherche d\'adresse...' : 'Rechercher l\'adresse' }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Geolocation error message -->
-              <div class="row mt-3" *ngIf="locationError">
-                <div class="col-12">
-                  <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    <i class="ti ti-alert-triangle me-2"></i>
-                    {{ locationError }}
-                    <button type="button" class="btn-close" (click)="clearLocationError()"></button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Geolocation not supported warning -->
-              <div class="row mt-3" *ngIf="!isGeolocationSupported()">
-                <div class="col-12">
-                  <div class="alert alert-info" role="alert">
-                    <i class="ti ti-info-circle me-2"></i>
-                    La géolocalisation automatique n'est pas supportée par ce navigateur.
-                  </div>
-                </div>
-              </div>
-
-              <!-- Loading indicator -->
-              <div class="row mt-3" *ngIf="isGettingLocation || isReverseGeocoding">
-                <div class="col-12">
-                  <div class="d-flex align-items-center">
-                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                    <span class="text-muted">
-                      {{ isGettingLocation ? 'Récupération de votre position...' : 'Recherche de l\'adresse...' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Type de localisation -->
-      <div class="input-block mb-3">
-        <label class="form-label">Type de localisation <span class="text-danger">*</span></label>
-        <select class="form-control" formControlName="type_localisation"
-          [class.is-invalid]="isFieldInvalid('type_localisation')">
-          <option value="">Sélectionner un type</option>
-          <option *ngFor="let type of typeLocalisationOptions" [value]="type.value">
-            {{ type.label }}
-          </option>
-        </select>
-        <div *ngIf="isFieldInvalid('type_localisation')" class="invalid-feedback">
-          Veuillez sélectionner un type de localisation
-        </div>
-      </div>
-
-      <!-- Location Details -->
-      <div class="input-block mb-3">
-        <label class="form-label">Pays <span class="text-danger">*</span></label>
-        <select class="form-control" formControlName="pays" [class.is-invalid]="isFieldInvalid('pays')">
-          <option value="">Sélectionner un pays</option>
-          <option *ngFor="let pays of paysOptions" [value]="pays">{{ pays }}</option>
-        </select>
-        <div *ngIf="isFieldInvalid('pays')" class="invalid-feedback">
-          Veuillez sélectionner un pays
-        </div>
-      </div>
-
-      <div class="input-block mb-3">
-        <label class="form-label">Ville</label>
-        <input type="text" class="form-control" formControlName="ville" placeholder="Nom de la ville">
-      </div>
-
-      <div class="input-block mb-3">
-        <label class="form-label">Adresse</label>
-        <textarea class="form-control" formControlName="adresse" rows="2" placeholder="Adresse complète"></textarea>
-      </div>
-
-      <!-- Movement Information -->
-      <div class="input-block mb-3">
-        <label class="form-label">Type de mouvement</label>
-        <select class="form-control" formControlName="type_mouvement">
-          <option value="">Sélectionner un type de mouvement</option>
-          <option *ngFor="let type of typeMouvementOptions" [value]="type.value">
-            {{ type.label }}
-          </option>
-        </select>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6">
-          <div class="input-block mb-3">
-            <label class="form-label">Durée de séjour (jours)</label>
-            <input type="number" class="form-control" formControlName="duree_sejour" min="0"
-              placeholder="Nombre de jours">
-          </div>
-        </div>
-      </div>
-
-      <div class="input-block mb-3">
-        <label class="form-label">Prochaine destination</label>
-        <input type="text" class="form-control" formControlName="prochaine_destination"
-          placeholder="Destination prévue">
-      </div>
-
-      <div class="input-block mb-3">
-        <label class="form-label">Description</label>
-        <textarea class="form-control" formControlName="description" rows="3"
-          placeholder="Description de la localisation"></textarea>
-      </div>
-
-      <!-- Form Actions -->
-      <div class="d-flex justify-content-end gap-2">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">
-          Annuler
-        </button>
-        <button type="submit" class="btn btn-primary" 
-          [disabled]="geolocationForm.invalid || isSaving || !hasValidCoordinates()"
-          [title]="!hasValidCoordinates() ? 'Veuillez d\'abord récupérer votre position géographique' : ''">
-          <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-          <i class="ti ti-device-floppy me-1" *ngIf="!isSaving"></i>
-          {{ editingGeolocation ? 'Modifier' : 'Ajouter' }}
-        </button>
-      </div>
-
-      <!-- Warning if no coordinates -->
-      <div class="alert alert-warning mt-3" *ngIf="!hasValidCoordinates() && !isGettingLocation && !locationError">
-        <i class="ti ti-alert-triangle me-2"></i>
-        <strong>Coordonnées manquantes :</strong> Veuillez utiliser les boutons de géolocalisation ci-dessus pour récupérer votre position avant d'enregistrer.
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- View Geolocation Modal -->
-<div class="modal fade" id="viewGeolocationModal" tabindex="-1">
-  <div class="modal-dialog modal-lg">
+<!-- Export Dialog -->
+<div class="modal fade" id="exportDialog" tabindex="-1" [class.show]="isExportDialogOpen" [style.display]="isExportDialogOpen ? 'block' : 'none'" aria-labelledby="exportDialogLabel" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Détails de la géolocalisation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="exportDialogLabel">
+          <i class="ti ti-file-excel me-2"></i>
+          Exporter les données de géolocalisation
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeExportDialog()" aria-label="Close"></button>
       </div>
-      <div class="modal-body" *ngIf="viewingGeolocation">
-        <div class="row">
+      <div class="modal-body">
+        <div class="alert alert-info border-0">
+          <i class="ti ti-info-circle me-2"></i>
+          Sélectionnez la plage de dates pour filtrer les données à exporter.
+          <br>
+          <small>Par défaut, l'intervalle est défini sur 1 mois.</small>
+        </div>
+
+        <div class="row g-3">
           <div class="col-md-6">
-            <h6>Informations générales</h6>
-            <table class="table table-borderless">
-              <tr>
-                <td><strong>Migrant:</strong></td>
-                <td>{{ getMigrantName(viewingGeolocation) }}</td>
-              </tr>
-              <tr>
-                <td><strong>Type:</strong></td>
-                <td>{{ getTypeLocalisationLabel(viewingGeolocation.type_localisation) }}</td>
-              </tr>
-              <tr>
-                <td><strong>Pays:</strong></td>
-                <td>{{ viewingGeolocation.pays || '-' }}</td>
-              </tr>
-              <tr>
-                <td><strong>Ville:</strong></td>
-                <td>{{ viewingGeolocation.ville || '-' }}</td>
-              </tr>
-              <tr>
-                <td><strong>Adresse:</strong></td>
-                <td>{{ viewingGeolocation.adresse || '-' }}</td>
-              </tr>
-            </table>
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de début
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="startDate"
+                   placeholder="Date de début">
           </div>
           <div class="col-md-6">
-            <h6>Coordonnées et mouvement</h6>
-            <table class="table table-borderless">
-              <tr>
-                <td><strong>Latitude:</strong></td>
-                <td>
-                  <div>{{ viewingGeolocation.latitude || '-' }}</div>
-                  <small class="text-muted" *ngIf="viewingGeolocation && viewingGeolocation.latitude">
-                    {{ getCoordinatesDMS(viewingGeolocation.latitude, viewingGeolocation.longitude).latitude }}
-                  </small>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Longitude:</strong></td>
-                <td>
-                  <div>{{ viewingGeolocation.longitude || '-' }}</div>
-                  <small class="text-muted" *ngIf="viewingGeolocation && viewingGeolocation.longitude">
-                    {{ getCoordinatesDMS(viewingGeolocation.latitude, viewingGeolocation.longitude).longitude }}
-                  </small>
-                </td>
-              </tr>
-              <tr *ngIf="viewingGeolocation && viewingGeolocation.latitude && viewingGeolocation.longitude">
-                <td><strong>Coordonnées:</strong></td>
-                <td>
-                  <small class="text-muted">{{ formatCoordinatesDisplay(viewingGeolocation.latitude, viewingGeolocation.longitude) }}</small>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Type mouvement:</strong></td>
-                <td>
-                  <span *ngIf="viewingGeolocation && viewingGeolocation.type_mouvement"
-                    [class]="getTypeMouvementBadgeClass(viewingGeolocation.type_mouvement)">
-                    {{ getTypeMouvementLabel(viewingGeolocation.type_mouvement) }}
-                  </span>
-                  <span *ngIf="!viewingGeolocation || !viewingGeolocation.type_mouvement">-</span>
-                </td>
-              </tr>
-              <tr>
-                <td><strong>Durée séjour:</strong></td>
-                <td>{{ viewingGeolocation && viewingGeolocation.duree_sejour ? viewingGeolocation.duree_sejour + ' jours' : '-' }}</td>
-              </tr>
-              <tr>
-                <td><strong>Prochaine destination:</strong></td>
-                <td>{{ viewingGeolocation && viewingGeolocation.prochaine_destination || '-' }}</td>
-              </tr>
-            </table>
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de fin
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="endDate"
+                   placeholder="Date de fin">
           </div>
         </div>
-        <div class="row" *ngIf="viewingGeolocation?.description">
-          <div class="col-12">
-            <h6>Description</h6>
-            <p>{{ viewingGeolocation.description }}</p>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-12">
-            <h6>Métadonnées</h6>
-            <small class="text-muted">
-              Créé le {{ viewingGeolocation ? viewingGeolocation.created_at : '-' }}
-              <span *ngIf="viewingGeolocation && viewingGeolocation.updated_at !== viewingGeolocation.created_at">
-                • Modifié le {{ viewingGeolocation.updated_at }}
-              </span>
-            </small>
-          </div>
+
+        <div class="mt-3 p-3 bg-light rounded">
+          <h6 class="mb-2">
+            <i class="ti ti-clipboard-list me-1"></i>
+            Aperçu de l'export
+          </h6>
+          <ul class="list-unstyled mb-0">
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Période:</strong> 
+              {{ startDate || 'Non définie' }} au {{ endDate || 'Non définie' }}
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Format:</strong> Fichier Excel (.xlsx)
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Contenu:</strong> Données de géolocalisation + Coordonnées
+            </li>
+            <li class="text-muted small mt-2">
+              <i class="ti ti-map-pin me-1"></i>
+              Les coordonnées GPS seront exportées avec précision
+            </li>
+          </ul>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-        <button type="button" class="btn btn-warning"
-          (click)="prepareEditGeolocation(viewingGeolocation!); closeViewModal()" data-bs-toggle="offcanvas"
-          data-bs-target="#addGeolocationOffcanvas">
-          <i class="ti ti-edit me-2"></i>Modifier
+        <button type="button" class="btn btn-secondary" (click)="closeExportDialog()">
+          <i class="ti ti-x me-1"></i>
+          Annuler
+        </button>
+        <button type="button" class="btn btn-success" (click)="confirmExportToExcel()" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isLoading" class="ti ti-download me-2"></i>
+          {{ isLoading ? 'Export en cours...' : 'Exporter maintenant' }}
         </button>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade" [class.show]="isExportDialogOpen" *ngIf="isExportDialogOpen"></div>
+ 

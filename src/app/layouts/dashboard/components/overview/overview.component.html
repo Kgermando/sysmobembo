@@ -3,7 +3,6 @@
 <div class="page-wrapper">
     <div class="content deplacement-dashboard">
 
-
         <!-- Header avec contrôles -->
         <div class="dashboard-header">
             <div class="header-content">
@@ -196,10 +195,10 @@
                     </div>
                 </div>
 
-                <!-- Causes de déplacement -->
+                <!-- Motifs de déplacement - Donut Chart -->
                 <div class="card flex-fill">
                     <div class="card-body">
-                        <!-- Graphique ApexCharts en barres horizontales -->
+                        <!-- Graphique ApexCharts en donut (cercle) -->
                         <div *ngIf="causesPieData.length > 0; else emptyCauses">
                             <apx-chart 
                                 #causesChart
@@ -207,17 +206,18 @@
                                 [chart]="causesChartOptions.chart!"
                                 [plotOptions]="causesChartOptions.plotOptions!"
                                 [dataLabels]="causesChartOptions.dataLabels!"
-                                [xaxis]="causesChartOptions.xaxis!"
-                                [yaxis]="causesChartOptions.yaxis!"
+                                [labels]="causesChartOptions.labels!"
                                 [colors]="causesChartOptions.colors!"
                                 [title]="causesChartOptions.title!"
-                                [legend]="causesChartOptions.legend!">
+                                [legend]="causesChartOptions.legend!"
+                                [responsive]="causesChartOptions.responsive!"
+                                [stroke]="causesChartOptions.stroke!">
                             </apx-chart>
                         </div>
                         <ng-template #emptyCauses>
                             <div class="empty-state">
-                                <i class="las la-chart-bar"></i>
-                                <p>Aucune donnée sur les causes disponible</p>
+                                <i class="las la-chart-pie"></i>
+                                <p>Aucune donnée sur les motifs disponible</p>
                             </div>
                         </ng-template>
                     </div>

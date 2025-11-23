@@ -1,4 +1,4 @@
-import { IMigrant } from '../../layouts/models/migrant.model';
+import { IMigrant } from './migrant.model';
 
 export interface IMotifDeplacement {
     uuid: string;

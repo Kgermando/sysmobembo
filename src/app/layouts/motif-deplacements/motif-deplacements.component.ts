@@ -4,11 +4,15 @@ import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
 import { PageEvent } from '@angular/material/paginator';
 import { Subject, firstValueFrom, takeUntil } from 'rxjs';
-import { IMotifDeplacement, IMotifDeplacementFormData, IMotifDeplacementStats } from '../../shared/models/motif-deplacement.model';
 import { MotifDeplacementService } from '../../core/migration/motif-deplacement.service';
 import { MigrantService } from '../../core/migration/migrant.service';
-import { IMigrant } from '../../shared/models/migrant.model';
 import { DateUtils } from '../../shared/utils/date.utils';
+import { 
+  IMotifDeplacement, 
+  IMotifDeplacementFormData, 
+  IMotifDeplacementStats 
+} from '../../shared/models/motif-deplacement.model';
+import { IMigrant } from '../models/migrant.model';
 
 @Component({
   selector: 'app-motif-deplacements',
@@ -27,7 +31,6 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
     'caractere_volontaire',
     'urgence',
     'date_declenchement',
-    'facteurs_externes',
     'actions'
   ];
 
@@ -55,6 +58,11 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
   searchTerm = '';
   selectedMigrant = '';
 
+  // Date filters for export only
+  startDate = '';
+  endDate = '';
+  isExportDialogOpen = false;
+
   // Options
   typeMotifOptions = [
     { value: 'economique', label: 'Économique' },
@@ -63,7 +71,10 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
     { value: 'naturelle', label: 'Catastrophe naturelle' },
     { value: 'familial', label: 'Familial' },
     { value: 'education', label: 'Éducation' },
-    { value: 'sanitaire', label: 'Sanitaire' }
+    { value: 'sanitaire', label: 'Sanitaire' },
+    { value: 'conflit_arme', label: 'Conflit armé' },
+    { value: 'catastrophe_naturelle', label: 'Catastrophe naturelle' },
+    { value: 'violence_generalisee', label: 'Violence généralisée' }
   ];
 
   urgenceOptions = [
@@ -113,11 +124,7 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
       caractere_volontaire: [true],
       urgence: [''],
       date_declenchement: ['', [Validators.required]],
-      duree_estimee: [null, [Validators.min(1)]],
-      conflit_arme: [false],
-      catastrophe_naturelle: [false],
-      persecution: [false],
-      violence_generalisee: [false]
+      duree_estimee: [null, [Validators.min(1)]]
     });
 
     this.filterForm = this.fb.group({
@@ -204,11 +211,7 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
         caractere_volontaire: Boolean(formData.caractere_volontaire),
         urgence: formData.urgence?.trim() || undefined,
         date_declenchement: this.parseFormDate(formData.date_declenchement),
-        duree_estimee: this.parseFormNumber(formData.duree_estimee),
-        conflit_arme: Boolean(formData.conflit_arme),
-        catastrophe_naturelle: Boolean(formData.catastrophe_naturelle),
-        persecution: Boolean(formData.persecution),
-        violence_generalisee: Boolean(formData.violence_generalisee)
+        duree_estimee: this.parseFormNumber(formData.duree_estimee)
       };
 
       // Validation supplémentaire
@@ -279,11 +282,7 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
       caractere_volontaire: Boolean(motif.caractere_volontaire),
       urgence: motif.urgence || '',
       date_declenchement: this.formatDateForInput(motif.date_declenchement),
-      duree_estimee: motif.duree_estimee || null,
-      conflit_arme: Boolean(motif.conflit_arme),
-      catastrophe_naturelle: Boolean(motif.catastrophe_naturelle),
-      persecution: Boolean(motif.persecution),
-      violence_generalisee: Boolean(motif.violence_generalisee)
+      duree_estimee: motif.duree_estimee || null
     };
 
     this.motifForm.patchValue(formData);
@@ -333,11 +332,7 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
       caractere_volontaire: true,
       urgence: '',
       date_declenchement: '',
-      duree_estimee: null,
-      conflit_arme: false,
-      catastrophe_naturelle: false,
-      persecution: false,
-      violence_generalisee: false
+      duree_estimee: null
     });
     this.editingMotif = null;
     this.error = null;
@@ -420,22 +415,9 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
     return DateUtils.toDisplayFormat(date);
   }
 
-  getFacteursExternes(motif: IMotifDeplacement): string[] {
-    const facteurs: string[] = [];
-    if (motif.conflit_arme) facteurs.push('Conflit armé');
-    if (motif.catastrophe_naturelle) facteurs.push('Catastrophe naturelle');
-    if (motif.persecution) facteurs.push('Persécution');
-    if (motif.violence_generalisee) facteurs.push('Violence généralisée');
-    return facteurs;
-  }
-
   // Stats helpers
   getStatValue(statKey: string): number {
     return this.motifStats ? (this.motifStats as any)[statKey] || 0 : 0;
-  }
-
-  getFacteurExterneCount(facteur: string): number {
-    return this.motifStats?.facteurs_externes ? (this.motifStats.facteurs_externes as any)[facteur] || 0 : 0;
   }
 
   // Form validation helpers
@@ -539,4 +521,90 @@ export class MotifDeplacementsComponent implements OnInit, OnDestroy, AfterViewI
   closeViewModal(): void {
     this.viewingMotif = null;
   }
+
+  // Export Excel Methods
+  openExportDialog(): void {
+    // Set default dates (1 month range)
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = oneMonthAgo.toISOString().split('T')[0];
+    this.isExportDialogOpen = true;
+  }
+
+  closeExportDialog(): void {
+    this.isExportDialogOpen = false;
+  }
+
+  confirmExportToExcel(): void {
+    this.isExportDialogOpen = false;
+    this.exportToExcel();
+  }
+
+  exportToExcel(): void {
+    this.isLoading = true;
+    this.error = null;
+
+    // Préparer les filtres pour l'export (backend supporte start_date et end_date)
+    const exportFilters: {
+      start_date?: string;
+      end_date?: string;
+    } = {};
+    
+    // Le backend utilise created_at pour filtrer par date
+    if (this.startDate) exportFilters.start_date = this.startDate;
+    if (this.endDate) exportFilters.end_date = this.endDate;
+
+    // Afficher un message d'information pendant l'export
+    console.log('Début de l\'export Excel des motifs de déplacement...');
+
+    this.motifDeplacementService.exportMotifsToExcel(exportFilters).subscribe({
+      next: (blob: Blob) => {
+        try {
+          // Créer un lien de téléchargement pour le fichier Excel
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          
+          // Générer un nom de fichier avec timestamp
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+          link.download = `motifs-deplacement-export-${timestamp}.xlsx`;
+          
+          // Déclencher le téléchargement
+          document.body.appendChild(link);
+          link.click();
+          
+          // Nettoyer
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          
+          this.isLoading = false;
+          console.log('✅ Export Excel des motifs de déplacement terminé avec succès');
+          
+        } catch (downloadError) {
+          console.error('Erreur lors du téléchargement:', downloadError);
+          this.error = 'Erreur lors du téléchargement du fichier Excel';
+          this.isLoading = false;
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de l\'export Excel:', error);
+        let errorMessage = 'Erreur lors de l\'export Excel. Veuillez réessayer.';
+        
+        if (error.status === 404) {
+          errorMessage = 'Service d\'export non disponible. Contactez l\'administrateur.';
+        } else if (error.status === 500) {
+          errorMessage = 'Erreur serveur lors de l\'export. Veuillez réessayer plus tard.';
+        } else if (error.status === 0) {
+          errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet.';
+        }
+        
+        this.error = errorMessage;
+        this.isLoading = false;
+      }
+    });
+  }
 }
+

@@ -2,39 +2,19 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { 
-  IGeolocalisation, 
-  IBackendPaginationResponse, 
-  IBackendApiResponse 
-} from '../../shared/models/migrant.model';
+import { IGeolocalisation } from '../../layouts/models/geolocalisation.model';
+import { IBackendApiResponse } from '../../layouts/models/migrant.model';
 
 export interface IGeolocationFormData {
-  migrant_uuid: string;
+  identite_uuid: string;
   latitude: number;
   longitude: number;
-  type_localisation: 'residence_actuelle' | 'lieu_travail' | 'point_passage' | 'frontiere' | 'centre_accueil' | 'urgence';
-  description?: string;
-  adresse?: string;
-  ville?: string;
-  pays: string;
-  code_postal?: string;
-  
-  // Required fields for backend
-  date_enregistrement: string;
-  methode_capture: 'gps' | 'manuel' | 'automatique';
-  fiabilite_source: 'elevee' | 'moyenne' | 'faible';
-  actif: boolean;
-  
-  // Optional fields
-  altitude?: number;
-  precision?: number;
-  dispositif_source?: string;
-  commentaire?: string;
-  
-  // Movement information
-  type_mouvement?: 'arrivee' | 'depart' | 'transit' | 'residence_temporaire' | 'residence_permanente';
-  duree_sejour?: number;
-  prochaine_destination?: string;
+}
+
+export interface ICoordinateData {
+  latitude: number;
+  longitude: number;
+  fullname: string;
 }
 
 @Injectable({
@@ -45,46 +25,9 @@ export class GeolocationService {
 
   constructor(private http: HttpClient) {}
 
-  // Get paginated geolocations
-  getPaginatedGeolocations(
-    page: number = 1,
-    limit: number = 15,
-    migrantUuid?: string,
-    typeLocalisation?: string,
-    pays?: string
-  ): Observable<IBackendPaginationResponse<IGeolocalisation>> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
-
-    if (migrantUuid) params = params.set('migrant_uuid', migrantUuid);
-    if (typeLocalisation) params = params.set('type_localisation', typeLocalisation);
-    if (pays) params = params.set('pays', pays);
-
-    return this.http.get<IBackendPaginationResponse<IGeolocalisation>>(`${this.apiUrl}/paginate`, { params });
-  }
-
-  // Get all geolocations
-  getAllGeolocations(): Observable<IBackendApiResponse<IGeolocalisation[]>> {
-    return this.http.get<IBackendApiResponse<IGeolocalisation[]>>(`${this.apiUrl}/all`);
-  }
-
-  // Get one geolocation
-  getGeolocation(uuid: string): Observable<IBackendApiResponse<IGeolocalisation>> {
-    return this.http.get<IBackendApiResponse<IGeolocalisation>>(`${this.apiUrl}/get/${uuid}`);
-  }
-
-  // Get geolocations by migrant with pagination
-  getGeolocationsByMigrant(
-    migrantUuid: string, 
-    page: number = 1, 
-    limit: number = 15
-  ): Observable<IBackendPaginationResponse<IGeolocalisation>> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
-
-    return this.http.get<IBackendPaginationResponse<IGeolocalisation>>(`${this.apiUrl}/migrant/${migrantUuid}`, { params });
+  // Get coordinates list with full names
+  getCoordinatesList(): Observable<IBackendApiResponse<ICoordinateData[]>> {
+    return this.http.get<IBackendApiResponse<ICoordinateData[]>>(`${this.apiUrl}/coordinates`);
   }
 
   // Create geolocation
@@ -102,22 +45,15 @@ export class GeolocationService {
     return this.http.delete<IBackendApiResponse<null>>(`${this.apiUrl}/delete/${uuid}`);
   }
 
-  // Get geolocations statistics
-  getGeolocationsStats(): Observable<IBackendApiResponse<any>> {
-    return this.http.get<IBackendApiResponse<any>>(`${this.apiUrl}/stats`);
-  }
-
   // Export geolocations to Excel
   exportGeolocationsToExcel(
-    migrantUuid?: string,
-    typeLocalisation?: string,
-    pays?: string
+    startDate?: string,
+    endDate?: string
   ): Observable<Blob> {
     let params = new HttpParams();
 
-    if (migrantUuid) params = params.set('migrant_uuid', migrantUuid);
-    if (typeLocalisation) params = params.set('type_localisation', typeLocalisation);
-    if (pays) params = params.set('pays', pays);
+    if (startDate) params = params.set('start_date', startDate);
+    if (endDate) params = params.set('end_date', endDate);
 
     return this.http.get(`${this.apiUrl}/export/excel`, {
       params,

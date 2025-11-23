@@ -38,8 +38,8 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
   // Angular Material Table
   dataSource = new MatTableDataSource<IIdentite>();
   displayedColumns: string[] = [
-    'nom', 'prenom', 'sexe', 'nationalite', 
-    'numero_passeport', 'date_naissance', 'pays_emetteur', 'actions'
+    'nom', 'postnom', 'prenom', 'sexe', 'nationalite', 
+    'numero_passeport', 'date_naissance', 'lieu_naissance', 'pays_emetteur', 'actions'
   ];
 
   // Data
@@ -63,23 +63,13 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
   page_size = 15;
   current_page = 1;
 
-  // Filters
+  // Search
   searchTerm = '';
-  selectedNationalite = '';
-  selectedSexe = '';
-  selectedNom = '';
-  selectedPostnom = '';
-  selectedPrenom = '';
 
-
-  // Filter expand state
-  filtersExpanded = false;
-
-  // Options pour les filtres
-  sexeOptions = [
-    { value: 'M', label: 'Masculin' },
-    { value: 'F', label: 'Féminin' }
-  ];
+  // Export dialog state
+  isExportDialogOpen = false;
+  startDate = '';
+  endDate = '';
 
   // Getter pour les nationalités
   get nationaliteOptions(): string[] {
@@ -236,11 +226,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
 
     try {
       const filters: any = {};
-      if (this.selectedNom) filters.nom = this.selectedNom;
-      if (this.selectedPostnom) filters.postnom = this.selectedPostnom;
-      if (this.selectedPrenom) filters.prenom = this.selectedPrenom;
-      if (this.selectedNationalite) filters.nationalite = this.selectedNationalite;
-      if (this.selectedSexe) filters.sexe = this.selectedSexe;
+      if (this.searchTerm) filters.search = this.searchTerm;
 
       const response = await firstValueFrom(
         this.identiteService.getPaginatedIdentites(this.current_page, this.page_size, filters)
@@ -248,12 +234,12 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
       );
 
       if (response.status === 'success') {
-        this.identites = response.data.identites;
-        this.dataList = response.data.identites;
-        this.dataSource.data = response.data.identites;
-        this.total_records = response.data.total;
-        this.current_page = response.data.page;
-        this.page_size = response.data.limit;
+        this.identites = response.data || [];
+        this.dataList = response.data || [];
+        this.dataSource.data = response.data || [];
+        this.total_records = response.pagination?.total_records || 0;
+        this.current_page = response.pagination?.current_page || 1;
+        this.page_size = response.pagination?.page_size || 15;
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors du chargement des données';
@@ -365,6 +351,7 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
 
     this.identiteForm.patchValue({
       nom: identite.nom,
+      postnom: identite.postnom,
       prenom: identite.prenom,
       date_naissance: dateNaissance,
       lieu_naissance: identite.lieu_naissance,
@@ -406,51 +393,109 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     this.loadData();
   }
 
-  applyFilters(): void {
+  onSearch(): void {
     this.current_page = 1;
     this.loadData();
   }
 
-  resetFilters(): void {
-    this.searchTerm = '';
-    this.selectedNationalite = '';
-    this.selectedSexe = '';
-    this.selectedNom = '';
-    this.selectedPostnom = '';
-    this.selectedPrenom = '';
-    this.current_page = 1;
-    this.loadData();
+  // ==================== EXPORT FUNCTIONS ====================
+
+  /**
+   * Ouvre le dialogue d'export
+   */
+  openExportDialog(): void {
+    // Set default dates (1 month range)
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = oneMonthAgo.toISOString().split('T')[0];
+    this.isExportDialogOpen = true;
   }
 
-  toggleFilters(): void {
-    this.filtersExpanded = !this.filtersExpanded;
+  /**
+   * Ferme le dialogue d'export
+   */
+  closeExportDialog(): void {
+    this.isExportDialogOpen = false;
   }
 
+  /**
+   * Confirme et lance l'export Excel
+   */
+  confirmExportToExcel(): void {
+    this.isExportDialogOpen = false;
+    this.exportToExcel();
+  }
+
+  /**
+   * Exporte les données vers Excel avec filtres de date
+   */
   async exportToExcel(): Promise<void> {
+    this.isLoading = true;
+    this.error = null;
+
     try {
-      const filters = {
-        nom: this.selectedNom,
-        postnom: this.selectedPostnom,
-        prenom: this.selectedPrenom,
-        nationalite: this.selectedNationalite,
-        sexe: this.selectedSexe
-      };
+      // Préparer les filtres pour l'export (dates uniquement)
+      const filters: any = {};
+      if (this.startDate) filters.start_date = this.startDate;
+      if (this.endDate) filters.end_date = this.endDate;
+
+      console.log('Début de l\'export Excel des identités...');
 
       const blob = await firstValueFrom(
         this.identiteService.exportIdentitesToExcel(filters)
           .pipe(takeUntil(this.destroy$))
       );
 
+      // Créer un lien de téléchargement pour le fichier Excel
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `identites_${new Date().getTime()}.xlsx`;
+      
+      // Générer un nom de fichier avec timestamp
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+      link.download = `identites_export_${timestamp}.xlsx`;
+      
+      // Déclencher le téléchargement
+      document.body.appendChild(link);
       link.click();
+      
+      // Nettoyer
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      
+      console.log('✅ Export Excel des identités terminé avec succès');
+      
     } catch (error: any) {
-      console.error('Erreur lors de l\'export:', error);
-      alert('Erreur lors de l\'export des données');
+      console.error('Erreur lors de l\'export Excel:', error);
+      let errorMessage = 'Erreur lors de l\'export Excel. Veuillez réessayer.';
+      
+      if (error.status === 404) {
+        errorMessage = 'Service d\'export non disponible. Contactez l\'administrateur.';
+      } else if (error.status === 500) {
+        errorMessage = 'Erreur serveur lors de l\'export. Veuillez réessayer plus tard.';
+      } else if (error.status === 0) {
+        errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet.';
+      }
+      
+      this.error = errorMessage;
+    } finally {
+      this.isLoading = false;
     }
+  }
+
+  /**
+   * Réinitialise les filtres d'export
+   */
+  resetExportFilters(): void {
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = oneMonthAgo.toISOString().split('T')[0];
   }
 
   // ==================== OCR FUNCTIONS ====================

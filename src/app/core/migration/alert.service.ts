@@ -2,12 +2,22 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { 
-  IAlert, 
-  IBackendPaginationResponse, 
-  IBackendApiResponse,
-  DateUtils 
-} from '../../shared/models/migrant.model';
+import { IAlert } from '../../layouts/models/alert.model';
+import { IBackendApiResponse } from '../../layouts/models/migrant.model';
+import { DateUtils } from '../../shared/utils/date.utils';
+
+// Interface pour les réponses API backend avec pagination
+export interface IBackendPaginationResponse<T> {
+  status: string;
+  message: string;
+  data: T[];
+  pagination: {
+    total_records: number;
+    total_pages: number;
+    current_page: number;
+    page_size: number;
+  };
+}
 
 export interface IAlertFormData {
   migrant_uuid: string;
@@ -27,8 +37,8 @@ export interface IAlertFilters {
   gravite?: string;
   type_alerte?: string;
   niveau_gravite?: string;
-  date_debut?: string;
-  date_fin?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface IAlertStats {
@@ -98,7 +108,13 @@ export class AlertService {
     if (filters.statut) params = params.set('statut', filters.statut);
     if (filters.gravite) params = params.set('gravite', filters.gravite);
 
-    return this.http.get<IBackendPaginationResponse<IAlert>>(`${this.apiUrl}/migrant/${migrantUuid}`, { params });
+    return this.http.get<IBackendPaginationResponse<IAlert>>(`${this.apiUrl}/migrant/${migrantUuid}`, { params })
+      .pipe(
+        map(response => ({
+          ...response,
+          data: response.data.map((alert: any) => DateUtils.parseApiDates(alert))
+        }))
+      );
   }
 
   // Create alert
@@ -113,7 +129,7 @@ export class AlertService {
 
   // Resolve alert
   resolveAlert(uuid: string, resolutionData: {
-    commentaire_resolution: string;
+    comment_resolution: string;
   }): Observable<IBackendApiResponse<IAlert>> {
     return this.http.put<IBackendApiResponse<IAlert>>(`${this.apiUrl}/resolve/${uuid}`, resolutionData);
   }
@@ -132,13 +148,8 @@ export class AlertService {
   exportAlertsToExcel(filters: IAlertFilters = {}): Observable<Blob> {
     let params = new HttpParams();
 
-    if (filters.migrant_uuid) params = params.set('migrant_uuid', filters.migrant_uuid);
-    if (filters.type_alerte) params = params.set('type_alerte', filters.type_alerte);
-    if (filters.niveau_gravite) params = params.set('niveau_gravite', filters.niveau_gravite);
-    if (filters.statut) params = params.set('statut', filters.statut);
-    if (filters.search) params = params.set('search', filters.search);
-    if (filters.date_debut) params = params.set('date_debut', filters.date_debut);
-    if (filters.date_fin) params = params.set('date_fin', filters.date_fin);
+    if (filters.start_date) params = params.set('start_date', filters.start_date);
+    if (filters.end_date) params = params.set('end_date', filters.end_date);
 
     return this.http.get(`${this.apiUrl}/export/excel`, {
       params,

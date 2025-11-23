@@ -13,12 +13,12 @@ import {
 export interface IBackendPaginationResponse<T> {
   status: string;
   message?: string;
-  data: {
-    identites: T[];
-    total: number;
-    page: number;
-    limit: number;
+  data: T[];
+  pagination: {
+    total_records: number;
     total_pages: number;
+    current_page: number;
+    page_size: number;
   };
 }
 
@@ -35,7 +35,9 @@ export class IdentiteService {
     page: number = 1,
     limit: number = 15,
     filters?: {
+      search?: string;
       nom?: string;
+      postnom?: string;
       prenom?: string;
       nationalite?: string;
       sexe?: string;
@@ -91,6 +93,7 @@ export class IdentiteService {
   // Export identites to Excel
   exportIdentitesToExcel(filters: {
     nom?: string;
+    postnom?: string;
     prenom?: string;
     nationalite?: string;
     sexe?: string;
@@ -98,6 +101,7 @@ export class IdentiteService {
     let params = new HttpParams();
 
     if (filters.nom) params = params.set('nom', filters.nom);
+    if (filters.postnom) params = params.set('postnom', filters.postnom);
     if (filters.prenom) params = params.set('prenom', filters.prenom);
     if (filters.nationalite) params = params.set('nationalite', filters.nationalite);
     if (filters.sexe) params = params.set('sexe', filters.sexe);

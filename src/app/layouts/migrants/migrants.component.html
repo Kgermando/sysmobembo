@@ -33,21 +33,6 @@
         </div>
       </div>
       <div class="col-lg-2 col-md-4 col-sm-6">
-        <div class="card bg-success text-white">
-          <div class="card-body">
-            <div class="d-flex align-items-center">
-              <div class="flex-grow-1">
-                <h4 class="mb-1 text-white">{{ getStatValue('active_migrants') }}</h4>
-                <p class="mb-0 small">Actifs</p>
-              </div>
-              <div class="flex-shrink-0">
-                <i class="ti ti-user-check fs-2"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-2 col-md-4 col-sm-6">
         <div class="card bg-info text-white">
           <div class="card-body">
             <div class="d-flex align-items-center">
@@ -120,16 +105,13 @@
               </div>
               <div class="col-auto">
                 <div class="d-flex gap-2">
-                  <button class="btn btn-success" 
-                          (click)="exportToExcel()" 
+                  <button type="button" class="btn btn-outline-success" 
+                          (click)="openExportDialog()" 
                           [disabled]="isLoading"
-                          title="Exporter la liste des migrants vers Excel">
-                    <i class="ti ti-file-export me-2"></i>
-                    <span *ngIf="!isLoading">Exporter Excel</span>
-                    <span *ngIf="isLoading">
-                      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Export en cours...
-                    </span>
+                          title="Exporter vers Excel">
+                    <i class="ti ti-file-excel me-1"></i>
+                    <span class="d-none d-md-inline">Exporter Excel</span>
+                    <span class="d-md-none">Excel</span>
                   </button>
                   <a href="javascript:void(0);" class="btn btn-primary" 
                     (click)="prepareNewMigrant(); openAddOffcanvas()">
@@ -144,165 +126,38 @@
             <!-- Search & Filters -->
             <div class="filters-container mb-4">
               <div class="card border-0 bg-light">
-                <div class="card-header bg-light border-0 py-3">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-primary">
-                      <i class="ti ti-filter me-2"></i>Filtres de recherche
-                    </h6>
-                    <button class="btn btn-sm btn-outline-primary" type="button" 
-                            data-bs-toggle="collapse" data-bs-target="#filtersCollapse" 
-                            aria-expanded="false" aria-controls="filtersCollapse"
-                            (click)="toggleFilters()">
-                      <i class="ti ti-chevron-down me-1"></i>
-                      <span class="filter-toggle-text">Afficher les filtres</span>
-                    </button>
-                  </div>
-                </div>
-                <div class="collapse" id="filtersCollapse">
-                  <div class="card-body">
-                  <!-- Section 1: Recherche principale -->
-                  <div class="filter-section mb-4">
-                    <div class="row align-items-end">
-                      <div class="col-lg-4 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label fw-semibold">
-                            <i class="ti ti-search me-1"></i>Recherche globale
-                          </label>
-                          <input type="text" class="form-control form-control-lg" 
-                            placeholder="Nom, prénom, email, numéro identifiant..."
-                            [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange($event)">
-                        </div>
+                <div class="card-body">
+                  <!-- Recherche globale -->
+                  <div class="row align-items-end mb-3">
+                    <div class="col-lg-8 col-md-8">
+                      <div class="input-block mb-3">
+                        <label class="form-label fw-semibold">
+                          <i class="ti ti-search me-1"></i>Recherche globale
+                        </label>
+                        <input type="text" class="form-control form-control-lg" 
+                          placeholder="Nom, prénom, nationalité, numéro identifiant, passeport, adresse, ville, pays..."
+                          [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange($event)">
+                        <small class="text-muted">
+                          <i class="ti ti-info-circle me-1"></i>
+                          La recherche s'effectue sur tous les champs du migrant et de son identité
+                        </small>
                       </div>
-                      <div class="col-lg-2 col-md-3">
-                        <div class="input-block mb-3">
-                          <button class="btn btn-primary btn-lg w-100" (click)="search()">
-                            <i class="ti ti-search me-2"></i>Rechercher
-                          </button>
-                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-2">
+                      <div class="input-block mb-3">
+                        <button class="btn btn-primary w-100" (click)="search()">
+                          <i class="ti ti-search me-2"></i>Rechercher
+                        </button>
                       </div>
-                      <div class="col-lg-2 col-md-3">
-                        <div class="input-block mb-3">
-                          <button class="btn btn-outline-secondary btn-lg w-100" (click)="resetFilters()">
-                            <i class="ti ti-refresh me-2"></i>Réinitialiser
-                          </button>
-                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-2">
+                      <div class="input-block mb-3">
+                        <button class="btn btn-outline-secondary w-100" (click)="resetFilters()">
+                          <i class="ti ti-refresh me-2"></i>
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  <!-- Section 2: Filtres principaux -->
-                  <div class="filter-section mb-4">
-                    <h6 class="filter-section-title">
-                      <i class="ti ti-users me-2"></i>Informations personnelles et migration
-                    </h6>
-                    <div class="row">
-                      <div class="col-lg-3 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Nationalité</label>
-                          <select class="form-select" [(ngModel)]="selectedNationalite" (change)="applyFilters()">
-                            <option value="">Toutes les nationalités</option>
-                            <option *ngFor="let nat of nationaliteOptions" [value]="nat">{{ nat }}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-3 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Pays d'origine</label>
-                          <select class="form-select" [(ngModel)]="selectedPaysOrigine" (change)="applyFilters()">
-                            <option value="">Tous les pays</option>
-                            <option *ngFor="let pays of paysOrigineOptions" [value]="pays">{{ pays }}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-2 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Genre</label>
-                          <select class="form-select" [(ngModel)]="selectedGenre" (change)="applyFilters()">
-                            <option value="">Tous les genres</option>
-                            <option *ngFor="let sexe of sexeOptions" [value]="sexe.value">{{ sexe.label }}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-2 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Type Document</label>
-                          <select class="form-select" [(ngModel)]="selectedTypeDocument" (change)="applyFilters()">
-                            <option value="">Tous les types</option>
-                            <option *ngFor="let type of typeDocumentOptions" [value]="type.value">{{ type.label }}</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div class="col-lg-2 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Statut actif</label>
-                          <select class="form-select" [(ngModel)]="selectedActif" (change)="applyFilters()">
-                            <option value="">Tous les statuts</option>
-                            <option *ngFor="let actif of actifOptions" [value]="actif.value">{{ actif.label }}</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Section 3: Statut migratoire -->
-                  <div class="filter-section mb-4">
-                    <h6 class="filter-section-title">
-                      <i class="ti ti-shield-check me-2"></i>Statut migratoire
-                    </h6>
-                    <div class="row">
-                      <div class="col-lg-4 col-md-6">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Statut migratoire</label>
-                          <select class="form-select" [(ngModel)]="selectedStatutMigratoire" (change)="applyFilters()">
-                            <option value="">Tous les statuts</option>
-                            <option *ngFor="let statut of statutMiratoireOptions" [value]="statut.value">{{ statut.label }}</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                    <small class="text-muted">
-                      <i class="ti ti-info-circle me-1"></i>
-                      Note: Les filtres sur les champs d'identité (nom, prénom, etc.) sont gérés via le backend avec des JOIN sur la table Identite.
-                    </small>
-                  </div>
-
-                  <!-- Section 4: Filtres par dates -->
-                  <div class="filter-section">
-                    <h6 class="filter-section-title">
-                      <i class="ti ti-calendar me-2"></i>Filtres par dates
-                    </h6>
-                    <div class="row">
-                      <div class="col-lg-6 col-md-12">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Période de création</label>
-                          <div class="date-range-container">
-                            <div class="d-flex align-items-center gap-2">
-                              <input type="date" class="form-control" [(ngModel)]="dateCreationDebut" 
-                                (change)="applyFilters()" placeholder="Date début">
-                              <span class="text-muted">à</span>
-                              <input type="date" class="form-control" [(ngModel)]="dateCreationFin" 
-                                (change)="applyFilters()" placeholder="Date fin">
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-lg-6 col-md-12">
-                        <div class="input-block mb-3">
-                          <label class="form-label">Période de naissance</label>
-                          <div class="date-range-container">
-                            <div class="d-flex align-items-center gap-2">
-                              <input type="date" class="form-control" [(ngModel)]="dateNaissanceDebut" 
-                                (change)="applyFilters()" placeholder="Date début">
-                              <span class="text-muted">à</span>
-                              <input type="date" class="form-control" [(ngModel)]="dateNaissanceFin" 
-                                (change)="applyFilters()" placeholder="Date fin">
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
             <!-- /Search & Filters -->
@@ -401,18 +256,6 @@
                       </th>
                       <td mat-cell *matCellDef="let element" class="min-width-150">
                         {{ element.identite?.date_naissance | date: 'dd/MM/yyyy' }}
-                      </td>
-                    </ng-container>
-
-                    <!-- Actif Column -->
-                    <ng-container matColumnDef="actif">
-                      <th mat-header-cell *matHeaderCellDef class="min-width-100"> 
-                        <strong>Statut</strong> 
-                      </th>
-                      <td mat-cell *matCellDef="let element" class="min-width-100">
-                        <span [class]="getStatusBadgeClass(element.actif)">
-                          {{ element.actif ? 'Actif' : 'Inactif' }}
-                        </span>
                       </td>
                     </ng-container>
 
@@ -591,13 +434,9 @@
 
                 <div class="col-md-6">
                   <div class="input-block mb-3">
-                    <label class="form-label">Point d'entrée (Province)</label>
-                    <select class="form-control" formControlName="point_entree">
-                      <option value="">Sélectionner une province</option>
-                      <option *ngFor="let province of provincesRdcOptions" [value]="province">
-                        {{ province }}
-                      </option>
-                    </select>
+                    <label class="form-label">Point d'entrée</label>
+                    <input type="text" class="form-control" formControlName="point_entree" 
+                      placeholder="Ex: Kinshasa, Goma, Lubumbashi...">
                   </div>
                 </div>
 
@@ -643,13 +482,9 @@
 
                 <div class="col-md-6">
                   <div class="input-block mb-3">
-                    <label class="form-label">Ville actuelle (Province)</label>
-                    <select class="form-control" formControlName="ville_actuelle">
-                      <option value="">Sélectionner une province</option>
-                      <option *ngFor="let province of provincesRdcOptions" [value]="province">
-                        {{ province }}
-                      </option>
-                    </select>
+                    <label class="form-label">Ville actuelle</label>
+                    <input type="text" class="form-control" formControlName="ville_actuelle" 
+                      placeholder="Ex: Kinshasa, Goma, Lubumbashi...">
                   </div>
                 </div>
 
@@ -693,16 +528,6 @@
                   <div class="input-block mb-3">
                     <label class="form-label">Téléphone de contact</label>
                     <input type="tel" class="form-control" formControlName="telephone_contact">
-                  </div>
-                </div>
-
-                <!-- Statut -->
-                <div class="col-12">
-                  <div class="input-block mb-3">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" formControlName="actif" id="actif">
-                      <label class="form-check-label" for="actif">Actif</label>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -840,7 +665,7 @@
                     <th>Caractère</th>
                     <th>Urgence</th>
                     <th>Date Déclenchement</th>
-                    <th>Facteurs Externes</th>
+                    <th>Description</th>
                     <th>Durée Estimée</th>
                   </tr>
                 </thead>
@@ -869,15 +694,7 @@
                     </td>
                     <td>{{ motif.date_declenchement | date: 'dd/MM/yyyy' }}</td>
                     <td>
-                      <div class="d-flex flex-wrap gap-1">
-                        <span *ngFor="let facteur of getFacteursExternes(motif)" 
-                              class="badge bg-warning badge-sm">
-                          {{ facteur }}
-                        </span>
-                        <span *ngIf="getFacteursExternes(motif).length === 0" class="text-muted small">
-                          Aucun
-                        </span>
-                      </div>
+                      <span class="text-muted small">{{ motif.description || '-' }}</span>
                     </td>
                     <td>
                       <span *ngIf="motif.duree_estimee" class="badge bg-secondary">
@@ -968,5 +785,187 @@
     <!-- Backdrop pour le modal des motifs -->
     <div class="modal-backdrop fade show" *ngIf="selectedMigrantForMotifs" (click)="closeMotifsModal()"></div>
 
+    <!-- Geolocation Modal -->
+    <div class="modal fade" id="geolocationModal" tabindex="-1">
+      <div class="modal-dialog modal-md">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              {{ editingGeolocation ? 'Modifier la géolocalisation' : 'Ajouter une géolocalisation' }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" (click)="closeGeolocationModal()"></button>
+          </div>
+          <form [formGroup]="geolocationForm" (ngSubmit)="onSubmitGeolocation()">
+            <div class="modal-body">
+              <!-- Error Message -->
+              <div *ngIf="geoError" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="ti ti-alert-circle me-2"></i>
+                {{ geoError }}
+                <button type="button" class="btn-close" (click)="geoError = null"></button>
+              </div>
+
+              <!-- Selected Identity Display -->
+              <div *ngIf="selectedIdentiteForGeo" class="alert alert-info mb-3">
+                <strong>Identité sélectionnée:</strong><br>
+                {{ selectedIdentiteForGeo.nom }} {{ selectedIdentiteForGeo.prenom }}<br>
+                <small>{{ selectedIdentiteForGeo.numero_passeport }} ({{ selectedIdentiteForGeo.nationalite }})</small>
+              </div>
+
+              <!-- Identity Selection -->
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Identité <span class="text-danger">*</span></label>
+                    <select class="form-select" formControlName="identite_uuid"
+                            [class.is-invalid]="isGeoFieldInvalid('identite_uuid')">
+                      <option value="">Sélectionner une identité</option>
+                      <option *ngFor="let identite of filteredIdentites" [value]="identite.uuid">
+                        {{ getIdentiteDisplayName(identite) }}
+                      </option>
+                    </select>
+                    <div class="invalid-feedback" *ngIf="isGeoFieldInvalid('identite_uuid')">
+                      {{ getGeoFieldError('identite_uuid') }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Latitude -->
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Latitude <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" formControlName="latitude"
+                           step="0.000001" min="-90" max="90"
+                           placeholder="-90 à 90"
+                           [class.is-invalid]="isGeoFieldInvalid('latitude')">
+                    <div class="invalid-feedback" *ngIf="isGeoFieldInvalid('latitude')">
+                      {{ getGeoFieldError('latitude') }}
+                    </div>
+                    <small class="form-text text-muted">Valeur entre -90 et 90</small>
+                  </div>
+                </div>
+
+                <!-- Longitude -->
+                <div class="col-md-6">
+                  <div class="input-block mb-3">
+                    <label class="form-label">Longitude <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" formControlName="longitude"
+                           step="0.000001" min="-180" max="180"
+                           placeholder="-180 à 180"
+                           [class.is-invalid]="isGeoFieldInvalid('longitude')">
+                    <div class="invalid-feedback" *ngIf="isGeoFieldInvalid('longitude')">
+                      {{ getGeoFieldError('longitude') }}
+                    </div>
+                    <small class="form-text text-muted">Valeur entre -180 et 180</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Help Text -->
+              <div class="alert alert-warning">
+                <i class="ti ti-info-circle me-2"></i>
+                <strong>Note:</strong> Assurez-vous d'entrer des coordonnées valides. Vous pouvez obtenir les coordonnées GPS 
+                en utilisant Google Maps ou tout autre service de cartographie.
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="closeGeolocationModal()">
+                Annuler
+              </button>
+              <button type="submit" class="btn btn-primary" [disabled]="geolocationForm.invalid || isSavingGeo">
+                <span *ngIf="isSavingGeo" class="spinner-border spinner-border-sm me-2"></span>
+                {{ editingGeolocation ? 'Modifier' : 'Ajouter' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
+
+<!-- Export Dialog -->
+<div class="modal fade" id="exportDialog" tabindex="-1" [class.show]="isExportDialogOpen" [style.display]="isExportDialogOpen ? 'block' : 'none'" aria-labelledby="exportDialogLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="exportDialogLabel">
+          <i class="ti ti-file-excel me-2"></i>
+          Exporter les données des migrants
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeExportDialog()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info border-0">
+          <i class="ti ti-info-circle me-2"></i>
+          Sélectionnez la plage de dates pour filtrer les données à exporter.
+          <br>
+          <small>Par défaut, l'intervalle est défini sur 1 mois.</small>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de début
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="startDate"
+                   placeholder="Date de début">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de fin
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="endDate"
+                   placeholder="Date de fin">
+          </div>
+        </div>
+
+        <div class="mt-3 p-3 bg-light rounded">
+          <h6 class="mb-2">
+            <i class="ti ti-clipboard-list me-1"></i>
+            Aperçu de l'export
+          </h6>
+          <ul class="list-unstyled mb-0">
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Période:</strong> 
+              {{ startDate || 'Non définie' }} au {{ endDate || 'Non définie' }}
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Format:</strong> Fichier Excel (.xlsx)
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Contenu:</strong> Données des migrants + Statistiques
+            </li>
+            <li class="text-muted small mt-2">
+              <i class="ti ti-users me-1"></i>
+              Toutes les informations personnelles seront incluses
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeExportDialog()">
+          <i class="ti ti-x me-1"></i>
+          Annuler
+        </button>
+        <button type="button" class="btn btn-success" (click)="confirmExportToExcel()" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isLoading" class="ti ti-download me-2"></i>
+          {{ isLoading ? 'Export en cours...' : 'Exporter maintenant' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade" [class.show]="isExportDialogOpen" *ngIf="isExportDialogOpen"></div>

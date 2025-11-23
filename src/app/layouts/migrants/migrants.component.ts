@@ -3,16 +3,17 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { Sort } from '@angular/material/sort';
 import { PageEvent } from '@angular/material/paginator';
-import { Subject, firstValueFrom, takeUntil, Observable, debounceTime, distinctUntilChanged } from 'rxjs';
-import { IMigrant } from '../../shared/models/migrant.model';
-import { MigrantService, IMigrantFormData, IBackendPaginationResponse } from '../../core/migration/migrant.service';
-import { NATIONALITES, PAYS_ORIGINE_COMMUNS } from '../../shared/utils';
-import { IMotifDeplacement } from '../../shared/models/motif-deplacement.model';
+import { Subject, firstValueFrom, takeUntil, Observable } from 'rxjs';
+import { IMigrant, IMigrantFormData } from '../models/migrant.model';
+import { MigrantService } from '../../core/migration/migrant.service';
+import { NATIONALITES } from '../../shared/utils'; 
 import { MotifDeplacementService } from '../../core/migration/motif-deplacement.service';
-import { ProvinceList } from '../../utils/province-list';
 import { OcrService, OCRProgress, ParsedDocumentData } from '../../core/services/ocr.service';
 import { IIdentite } from '../../shared/models/identite.model';
 import { IdentiteService } from '../../core/migration/identite.service';
+import { IMotifDeplacement } from '../models/motifdeplacement.model';
+import { IGeolocalisation } from '../models/geolocalisation.model';
+import { GeolocationService, IGeolocationFormData } from '../../core/migration/geolocation.service';
 
 @Component({
   selector: 'app-migrants',
@@ -46,7 +47,7 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   dataSource = new MatTableDataSource<IMigrant>();
   displayedColumns: string[] = [
     'nom', 'sexe', 'nationalite', 'numero_identifiant', 
-    'statut_migratoire', 'pays_origine', 'date_naissance', 'actif', 'actions'
+    'statut_migratoire', 'date_naissance', 'actions'
   ];
 
   // Data
@@ -65,6 +66,15 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     page_size: 5,
     current_page: 1
   };
+
+  // Géolocalisation data
+  geolocationForm: FormGroup;
+  selectedIdentiteForGeo: IIdentite | null = null;
+  editingGeolocation: IGeolocalisation | null = null;
+  geolocalisations: IGeolocalisation[] = [];
+  isLoadingGeolocalisations = false;
+  geoError: string | null = null;
+  isSavingGeo = false;
 
   // Form
   migrantForm: FormGroup;
@@ -90,34 +100,19 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   currentPage = 1;
   pageSize = 15;
 
-  // Filters - Updated to match backend (backend filters on Migrant fields + Identite via JOIN)
-  searchTerm = ''; // Recherche globale (backend recherche sur nom, prenom, numero_identifiant, nationalite, numero_document)
-  selectedNationalite = '';
-  selectedStatutMigratoire = '';
-  selectedGenre = '';
-  selectedActif = '';
-  selectedPaysOrigine = '';
-  selectedTypeDocument = '';
+  // Filters - Backend only supports 'search' parameter
+  // search filters across: nom, postnom, prenom, numero_identifiant, nationalite, 
+  // numero_passeport, adresse_actuelle, ville_actuelle, pays_actuel, situation_matrimoniale
+  searchTerm = '';
+  
+  // Date filters for export only
+  startDate = '';
+  endDate = '';
   dateCreationDebut = '';
   dateCreationFin = '';
-  dateNaissanceDebut = '';
-  dateNaissanceFin = '';
+  isExportDialogOpen = false;
 
-  // Filter expand state
-  filtersExpanded = false;
-
-  // Options pour les filtres
-  sexeOptions = [
-    { value: 'M', label: 'Masculin' },
-    { value: 'F', label: 'Féminin' }
-  ];
-
-  typeDocumentOptions = [
-    { value: 'passport', label: 'Passeport' },
-    { value: 'carte_identite', label: 'Carte d\'identité' },
-    { value: 'permis_conduire', label: 'Permis de conduire' }
-  ];
-
+  // Options for display
   situationMatrimonialeOptions = [
     { value: 'celibataire', label: 'Célibataire' },
     { value: 'marie', label: 'Marié(e)' },
@@ -132,25 +127,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     { value: 'refugie', label: 'Réfugié' }
   ];
 
-  // Options pour les filtres de statut actif
-  actifOptions = [
-    { value: 'true', label: 'Actif' },
-    { value: 'false', label: 'Inactif' }
-  ];
-
-  // Getter pour les pays d'origine (utilise l'utilitaire)
-  get paysOrigineOptions(): string[] {
-    return PAYS_ORIGINE_COMMUNS;
-  }
-
   // Getter pour les nationalités (utilise l'utilitaire)
   get nationaliteOptions(): string[] {
     return NATIONALITES;
-  }
-
-  // Getter pour les provinces de la RDC
-  get provincesRdcOptions(): string[] {
-    return ProvinceList;
   }
 
   constructor(
@@ -158,9 +137,11 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     private migrantService: MigrantService,
     private motifDeplacementService: MotifDeplacementService,
     private ocrService: OcrService,
-    private identiteService: IdentiteService
+    private identiteService: IdentiteService,
+    private geolocationService: GeolocationService
   ) {
     this.migrantForm = this.createForm();
+    this.geolocationForm = this.createGeolocationForm();
     this.ocrProgress$ = this.ocrService.progress$;
   }
 
@@ -316,12 +297,18 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       statut_migratoire: ['', Validators.required],
       date_entree: [''],
       point_entree: [''],
-      pays_destination: [''],
+      pays_destination: ['']
       
-      // Métadonnées
-      actif: [true]
       // Note: numero_identifiant is auto-generated by backend
       // Note: Les champs nom, prenom, date_naissance, etc. sont maintenant dans Identite
+    });
+  }
+
+  private createGeolocationForm(): FormGroup {
+    return this.fb.group({
+      identite_uuid: ['', Validators.required],
+      latitude: ['', [Validators.required, Validators.min(-90), Validators.max(90)]],
+      longitude: ['', [Validators.required, Validators.min(-180), Validators.max(180)]]
     });
   }
 
@@ -330,19 +317,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.error = null;
 
     try {
-      // Build filters object - aligned with backend support
+      // Backend only supports 'search' filter
       const filters: any = {};
       if (this.searchTerm) filters.search = this.searchTerm;
-      if (this.selectedNationalite) filters.nationalite = this.selectedNationalite;
-      if (this.selectedStatutMigratoire) filters.statut_migratoire = this.selectedStatutMigratoire;
-      if (this.selectedGenre) filters.sexe = this.selectedGenre;
-      if (this.selectedActif) filters.actif = this.selectedActif;
-      if (this.selectedPaysOrigine) filters.pays_origine = this.selectedPaysOrigine;
-      if (this.selectedTypeDocument) filters.type_document = this.selectedTypeDocument;
-      if (this.dateCreationDebut) filters.date_creation_debut = this.dateCreationDebut;
-      if (this.dateCreationFin) filters.date_creation_fin = this.dateCreationFin;
-      if (this.dateNaissanceDebut) filters.date_naissance_debut = this.dateNaissanceDebut;
-      if (this.dateNaissanceFin) filters.date_naissance_fin = this.dateNaissanceFin;
 
       const response = await firstValueFrom(
         this.migrantService.getPaginatedMigrants(this.current_page, this.page_size, filters)
@@ -412,8 +389,7 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
         statut_migratoire: formData.statut_migratoire,
         date_entree: formData.date_entree ? new Date(formData.date_entree).toISOString() : undefined,
         point_entree: formData.point_entree || undefined,
-        pays_destination: formData.pays_destination || undefined,
-        actif: formData.actif !== undefined ? formData.actif : true
+        pays_destination: formData.pays_destination || undefined
       };
 
       console.log('Données du formulaire à envoyer:', migrantData);
@@ -432,6 +408,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       }
 
       if (response.status === 'success') {
+        // Capturer automatiquement la géolocalisation après l'enregistrement du migrant
+        await this.captureAndSaveGeolocation(formData.identite_uuid);
+        
         await this.loadData();
         this.resetForm();
         this.closeOffcanvas();
@@ -459,6 +438,74 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     } finally {
       this.isSaving = false;
     }
+  }
+
+  /**
+   * Capture et enregistre automatiquement la géolocalisation
+   * Cette méthode est appelée après l'enregistrement ou la mise à jour d'un migrant
+   */
+  private async captureAndSaveGeolocation(identiteUuid: string): Promise<void> {
+    try {
+      // Vérifier si la géolocalisation est disponible dans le navigateur
+      if (!navigator.geolocation) {
+        console.warn('La géolocalisation n\'est pas supportée par ce navigateur');
+        return;
+      }
+
+      // Demander la position actuelle de l'utilisateur
+      const position = await this.getCurrentPosition();
+      
+      if (position) {
+        const geolocationData: IGeolocationFormData = {
+          identite_uuid: identiteUuid,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+
+        // Enregistrer la géolocalisation dans la base de données
+        const response = await firstValueFrom(
+          this.geolocationService.createGeolocation(geolocationData)
+            .pipe(takeUntil(this.destroy$))
+        );
+
+        if (response.status === 'success') {
+          console.log('Géolocalisation enregistrée avec succès:', {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+        }
+      }
+    } catch (error: any) {
+      // Ne pas bloquer l'enregistrement du migrant si la géolocalisation échoue
+      console.error('Erreur lors de la capture de la géolocalisation:', error);
+      
+      // Afficher un message informatif (optionnel)
+      if (error.code === 1) {
+        console.warn('L\'utilisateur a refusé l\'accès à la géolocalisation');
+      } else if (error.code === 2) {
+        console.warn('Position non disponible');
+      } else if (error.code === 3) {
+        console.warn('Délai d\'attente dépassé pour obtenir la position');
+      }
+    }
+  }
+
+  /**
+   * Obtient la position géographique actuelle de l'utilisateur
+   * @returns Promise<GeolocationPosition>
+   */
+  private getCurrentPosition(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve(position),
+        (error) => reject(error),
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
   }
 
   prepareNewMigrant(): void {
@@ -489,10 +536,7 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       statut_migratoire: migrant.statut_migratoire,
       date_entree: migrant.date_entree ? this.formatDateForInput(migrant.date_entree) : '',
       point_entree: migrant.point_entree,
-      pays_destination: migrant.pays_destination,
-      
-      // Métadonnées
-      actif: migrant.actif
+      pays_destination: migrant.pays_destination
     });
     
     // Note: Les informations d'identité (nom, prenom, etc.) sont maintenant affichées
@@ -510,6 +554,9 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce migrant ?')) return;
 
     try {
+      // Capturer la géolocalisation avant la suppression
+      await this.captureAndSaveGeolocation(migrant.identite_uuid);
+
       const response = await firstValueFrom(
         this.migrantService.deleteMigrant(migrant.uuid)
           .pipe(takeUntil(this.destroy$))
@@ -527,8 +574,7 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   resetForm(): void {
     this.migrantForm.reset();
     this.migrantForm.patchValue({
-      nombre_enfants: 0,
-      actif: true
+      nombre_enfants: 0
     });
     this.error = null;
   }
@@ -543,25 +589,10 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.loadData();
   }
 
-  applyFilters(): void {
-    this.current_page = 1;
-    this.loadData();
-  }
-
-  // Remove deprecated searchWithFilters method since filtering is now integrated in loadData
-  
   resetFilters(): void {
     this.searchTerm = '';
-    this.selectedNationalite = '';
-    this.selectedStatutMigratoire = '';
-    this.selectedGenre = '';
-    this.selectedActif = '';
-    this.selectedPaysOrigine = '';
-    this.selectedTypeDocument = '';
     this.dateCreationDebut = '';
     this.dateCreationFin = '';
-    this.dateNaissanceDebut = '';
-    this.dateNaissanceFin = '';
     this.current_page = 1;
     this.loadData();
   }
@@ -569,27 +600,6 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   search(): void {
     this.current_page = 1;
     this.loadData();
-  }
-
-  toggleFilters(): void {
-    this.filtersExpanded = !this.filtersExpanded;
-    
-    // Update button text and icon
-    setTimeout(() => {
-      const button = document.querySelector('[data-bs-target="#filtersCollapse"]');
-      const icon = button?.querySelector('i');
-      const text = button?.querySelector('.filter-toggle-text');
-      
-      if (this.filtersExpanded) {
-        icon?.classList.remove('ti-chevron-down');
-        icon?.classList.add('ti-chevron-up');
-        if (text) text.textContent = 'Masquer les filtres';
-      } else {
-        icon?.classList.remove('ti-chevron-up');
-        icon?.classList.add('ti-chevron-down');
-        if (text) text.textContent = 'Afficher les filtres';
-      }
-    }, 10);
   }
 
   // Pagination
@@ -619,14 +629,6 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'refugie': return 'badge bg-primary';
       default: return 'badge bg-secondary';
     }
-  }
-
-  getStatusBadgeClass(actif: boolean): string {
-    return actif ? 'badge bg-success' : 'badge bg-danger';
-  }
-
-  getStatusLabel(actif: boolean): string {
-    return actif ? 'Actif' : 'Inactif';
   }
 
   getStatutLabel(statut: string): string {
@@ -808,15 +810,6 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     return volontaire ? 'badge-success' : 'badge-danger';
   }
 
-  getFacteursExternes(motif: IMotifDeplacement): string[] {
-    const facteurs: string[] = [];
-    if (motif.conflit_arme) facteurs.push('Conflit armé');
-    if (motif.catastrophe_naturelle) facteurs.push('Catastrophe naturelle');
-    if (motif.persecution) facteurs.push('Persécution');
-    if (motif.violence_generalisee) facteurs.push('Violence généralisée');
-    return facteurs;
-  }
-
   getMotifsCount(migrantUuid: string): number {
     return this.motifsByMigrant[migrantUuid]?.length || 0;
   }
@@ -842,32 +835,43 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
   // EXPORT FUNCTIONALITY
   // ============================
 
+  // Ouvre le dialogue d'export
+  openExportDialog(): void {
+    // Set default dates (1 month range)
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = oneMonthAgo.toISOString().split('T')[0];
+    this.isExportDialogOpen = true;
+  }
+
+  // Ferme le dialogue d'export
+  closeExportDialog(): void {
+    this.isExportDialogOpen = false;
+  }
+
+  // Confirme et lance l'export Excel
+  confirmExportToExcel(): void {
+    this.isExportDialogOpen = false;
+    this.exportToExcel();
+  }
+
   // Export to Excel
   exportToExcel(): void {
     this.isLoading = true;
     this.error = null;
 
-    // Préparer les filtres pour l'export (alignés avec le backend)
+    // Préparer les filtres pour l'export (backend supporte start_date et end_date)
     const exportFilters: {
-      nom?: string;
-      prenom?: string;
-      nationalite?: string;
-      statut_migratoire?: string;
-      pays_origine?: string;
-      sexe?: string;
-      actif?: string;
+      start_date?: string;
+      end_date?: string;
     } = {};
     
-    // Le backend applique les filtres via JOIN sur Identite
-    if (this.searchTerm) {
-      exportFilters.nom = this.searchTerm;
-      exportFilters.prenom = this.searchTerm;
-    }
-    if (this.selectedNationalite) exportFilters.nationalite = this.selectedNationalite;
-    if (this.selectedStatutMigratoire) exportFilters.statut_migratoire = this.selectedStatutMigratoire;
-    if (this.selectedPaysOrigine) exportFilters.pays_origine = this.selectedPaysOrigine;
-    if (this.selectedGenre) exportFilters.sexe = this.selectedGenre;
-    if (this.selectedActif) exportFilters.actif = this.selectedActif;
+    // Le backend utilise created_at pour filtrer par date
+    if (this.startDate) exportFilters.start_date = this.startDate;
+    if (this.endDate) exportFilters.end_date = this.endDate;
 
     // Afficher un message d'information pendant l'export
     console.log('Début de l\'export Excel des migrants...');
@@ -893,7 +897,7 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
           window.URL.revokeObjectURL(url);
           
           this.isLoading = false;
-          console.log('Export Excel terminé avec succès');
+          console.log('✅ Export Excel des migrants terminé avec succès');
           
         } catch (downloadError) {
           console.error('Erreur lors du téléchargement:', downloadError);
@@ -917,6 +921,16 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
         this.isLoading = false;
       }
     });
+  }
+
+  // Réinitialise les filtres d'export
+  resetExportFilters(): void {
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = oneMonthAgo.toISOString().split('T')[0];
   }
 
   // TrackBy function for performance optimization
@@ -1003,67 +1017,13 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /**
    * Remplit automatiquement le formulaire avec les données extraites
+   * Note: Les champs d'identité (nom, prenom, etc.) ne sont plus dans le formulaire Migrant
+   * Ils doivent être gérés via le formulaire Identité
    */
   autoFillForm(data: ParsedDocumentData): void {
     const fieldsToUpdate: any = {};
 
-    // Remplir uniquement les champs vides ou si la valeur extraite est plus complète
-    if (data.nom && !this.migrantForm.get('nom')?.value) {
-      fieldsToUpdate.nom = data.nom;
-    }
-
-    if (data.prenom && !this.migrantForm.get('prenom')?.value) {
-      fieldsToUpdate.prenom = data.prenom;
-    }
-
-    if (data.date_naissance && !this.migrantForm.get('date_naissance')?.value) {
-      fieldsToUpdate.date_naissance = data.date_naissance;
-    }
-
-    if (data.lieu_naissance && !this.migrantForm.get('lieu_naissance')?.value) {
-      // Vérifier si c'est une province valide
-      const provinceMatch = this.provincesRdcOptions.find(
-        p => p.toLowerCase() === data.lieu_naissance?.toLowerCase()
-      );
-      if (provinceMatch) {
-        fieldsToUpdate.lieu_naissance = provinceMatch;
-      } else {
-        fieldsToUpdate.lieu_naissance = data.lieu_naissance;
-      }
-    }
-
-    if (data.sexe && !this.migrantForm.get('sexe')?.value) {
-      fieldsToUpdate.sexe = data.sexe;
-    }
-
-    if (data.nationalite && !this.migrantForm.get('nationalite')?.value) {
-      // Vérifier si c'est une nationalité valide
-      const nationaliteMatch = this.nationaliteOptions.find(
-        n => n.toLowerCase().includes(data.nationalite!.toLowerCase())
-      );
-      if (nationaliteMatch) {
-        fieldsToUpdate.nationalite = nationaliteMatch;
-      } else {
-        fieldsToUpdate.nationalite = data.nationalite;
-      }
-    }
-
-    if (data.type_document && !this.migrantForm.get('type_document')?.value) {
-      fieldsToUpdate.type_document = data.type_document;
-    }
-
-    if (data.numero_document && !this.migrantForm.get('numero_document')?.value) {
-      fieldsToUpdate.numero_document = data.numero_document;
-    }
-
-    if (data.date_emission_document && !this.migrantForm.get('date_emission_document')?.value) {
-      fieldsToUpdate.date_emission_document = data.date_emission_document;
-    }
-
-    if (data.date_expiration_document && !this.migrantForm.get('date_expiration_document')?.value) {
-      fieldsToUpdate.date_expiration_document = data.date_expiration_document;
-    }
-
+    // Migrant form fields only (contact and migration info)
     if (data.telephone && !this.migrantForm.get('telephone')?.value) {
       fieldsToUpdate.telephone = data.telephone;
     }
@@ -1104,6 +1064,153 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  // ============================
+  // GESTION DES GÉOLOCALISATIONS
+  // ============================
+
+  /**
+   * Ouvre le formulaire de géolocalisation pour une identité sélectionnée
+   */
+  openGeolocationForm(identite: IIdentite): void {
+    this.selectedIdentiteForGeo = identite;
+    this.editingGeolocation = null;
+    this.geolocationForm.patchValue({
+      identite_uuid: identite.uuid,
+      latitude: '',
+      longitude: ''
+    });
+    this.geoError = null;
+  }
+
+  /**
+   * Prépare l'édition d'une géolocalisation existante
+   */
+  prepareEditGeolocation(geolocation: IGeolocalisation): void {
+    this.editingGeolocation = geolocation;
+    this.selectedIdentiteForGeo = geolocation.identite || null;
+    this.geolocationForm.patchValue({
+      identite_uuid: geolocation.identite_uuid,
+      latitude: geolocation.latitude,
+      longitude: geolocation.longitude
+    });
+    this.geoError = null;
+  }
+
+  /**
+   * Soumet le formulaire de géolocalisation (création ou modification)
+   */
+  async onSubmitGeolocation(): Promise<void> {
+    if (this.geolocationForm.invalid || this.isSavingGeo) return;
+
+    this.isSavingGeo = true;
+    this.geoError = null;
+
+    try {
+      const formData: IGeolocationFormData = this.geolocationForm.value;
+
+      let response;
+      if (this.editingGeolocation) {
+        response = await firstValueFrom(
+          this.geolocationService.updateGeolocation(this.editingGeolocation.uuid, formData)
+            .pipe(takeUntil(this.destroy$))
+        );
+      } else {
+        response = await firstValueFrom(
+          this.geolocationService.createGeolocation(formData)
+            .pipe(takeUntil(this.destroy$))
+        );
+      }
+
+      if (response.status === 'success') {
+        this.resetGeolocationForm();
+        this.closeGeolocationModal();
+        // Optionally reload geolocations list if needed
+      }
+    } catch (error: any) {
+      this.geoError = error.error?.message || 'Erreur lors de l\'enregistrement de la géolocalisation';
+      console.error('Erreur lors de l\'enregistrement:', error);
+    } finally {
+      this.isSavingGeo = false;
+    }
+  }
+
+  /**
+   * Supprime une géolocalisation
+   */
+  async deleteGeolocation(geolocation: IGeolocalisation): Promise<void> {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette géolocalisation ?')) return;
+
+    try {
+      const response = await firstValueFrom(
+        this.geolocationService.deleteGeolocation(geolocation.uuid)
+          .pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success') {
+        // Optionally reload geolocations list if needed
+      }
+    } catch (error: any) {
+      this.geoError = error.error?.message || 'Erreur lors de la suppression';
+      console.error('Erreur lors de la suppression:', error);
+    }
+  }
+
+  /**
+   * Réinitialise le formulaire de géolocalisation
+   */
+  resetGeolocationForm(): void {
+    this.geolocationForm.reset();
+    this.selectedIdentiteForGeo = null;
+    this.editingGeolocation = null;
+    this.geoError = null;
+  }
+
+  /**
+   * Ferme le modal de géolocalisation
+   */
+  closeGeolocationModal(): void {
+    this.resetGeolocationForm();
+    const modalElement = document.getElementById('geolocationModal');
+    if (modalElement) {
+      const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
+      if (modal) {
+        modal.hide();
+      }
+    }
+  }
+
+  /**
+   * Ouvre le modal de géolocalisation
+   */
+  openGeolocationModal(): void {
+    const modalElement = document.getElementById('geolocationModal');
+    if (modalElement) {
+      const modal = new (window as any).bootstrap.Modal(modalElement);
+      modal.show();
+    }
+  }
+
+  /**
+   * Vérifie si un champ du formulaire de géolocalisation est invalide
+   */
+  isGeoFieldInvalid(fieldName: string): boolean {
+    const field = this.geolocationForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
+  }
+
+  /**
+   * Obtient le message d'erreur pour un champ du formulaire de géolocalisation
+   */
+  getGeoFieldError(fieldName: string): string {
+    const field = this.geolocationForm.get(fieldName);
+    if (field?.errors) {
+      if (field.errors['required']) return `${fieldName} est requis`;
+      if (field.errors['min']) return 'Valeur trop petite';
+      if (field.errors['max']) return 'Valeur trop grande';
+    }
+    return '';
+  }
+
   // ===== GESTION DES IDENTITÉS =====
   
   /**
@@ -1118,7 +1225,8 @@ export class MigrantsComponent implements OnInit, OnDestroy, AfterViewInit {
       );
       
       if (response.status === 'success') {
-        this.identites = response.data.identites;
+        // Backend returns data as array directly
+        this.identites = response.data;
         this.filteredIdentites = this.identites;
       }
     } catch (error: any) {

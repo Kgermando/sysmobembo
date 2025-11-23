@@ -16,11 +16,6 @@ export interface IBiometricFormData {
   operateur_capture?: string;
 }
 
-export interface IBiometricVerificationData {
-  score_confiance: number;
-  operateur_verification: string;
-}
-
 export interface IBiometricStats {
   total_biometrics: number;
   verified_biometrics: number;
@@ -32,12 +27,8 @@ export interface IBiometricStats {
 }
 
 export interface IBiometricFilters {
-  migrant_uuid?: string;
-  type_biometrie?: string;
-  qualite_donnee?: string;
-  verifie?: string;
-  chiffre?: string;
-  dispositif_capture?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 @Injectable({
@@ -51,17 +42,13 @@ export class BiometricService {
   getPaginatedBiometrics(
     page: number = 1,
     limit: number = 15,
-    migrantUuid?: string,
-    typeBiometrie?: string,
-    verifie?: string
+    search?: string
   ): Observable<any> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('limit', limit.toString());
 
-    if (migrantUuid) params = params.set('migrant_uuid', migrantUuid);
-    if (typeBiometrie) params = params.set('type_biometrie', typeBiometrie);
-    if (verifie) params = params.set('verifie', verifie);
+    if (search) params = params.set('search', search);
 
     return this.http.get<any>(`${this.apiUrl}/paginate`, { params });
   }
@@ -75,20 +62,19 @@ export class BiometricService {
     return this.http.get<any>(`${this.apiUrl}/get/${uuid}`, { params });
   }
 
-  getBiometricsByMigrant(migrantUuid: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/migrant/${migrantUuid}`);
-  }
-
-  getVerifiedBiometrics(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/verified`);
+  getBiometricsByMigrant(
+    migrantUuid: string,
+    page: number = 1,
+    limit: number = 15
+  ): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+    return this.http.get<any>(`${this.apiUrl}/migrant/${migrantUuid}`, { params });
   }
 
   createBiometric(biometricData: IBiometricFormData): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/create`, biometricData);
-  }
-
-  verifyBiometric(uuid: string, verificationData: IBiometricVerificationData): Observable<any> {
-    return this.http.put<any>(`${this.apiUrl}/verify/${uuid}`, verificationData);
   }
 
   updateBiometric(uuid: string, biometricData: Partial<IBiometricFormData>): Observable<any> {
@@ -106,12 +92,8 @@ export class BiometricService {
   exportBiometricsToExcel(filters: IBiometricFilters = {}): Observable<Blob> {
     let params = new HttpParams();
 
-    if (filters.migrant_uuid) params = params.set('migrant_uuid', filters.migrant_uuid);
-    if (filters.type_biometrie) params = params.set('type_biometrie', filters.type_biometrie);
-    if (filters.qualite_donnee) params = params.set('qualite_donnee', filters.qualite_donnee);
-    if (filters.verifie) params = params.set('verifie', filters.verifie);
-    if (filters.chiffre) params = params.set('chiffre', filters.chiffre);
-    if (filters.dispositif_capture) params = params.set('dispositif_capture', filters.dispositif_capture);
+    if (filters.start_date) params = params.set('start_date', filters.start_date);
+    if (filters.end_date) params = params.set('end_date', filters.end_date);
 
     return this.http.get(`${this.apiUrl}/export/excel`, {
       params,

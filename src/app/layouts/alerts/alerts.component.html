@@ -109,13 +109,12 @@
                             <div class="col-auto">
                                 <div class="d-flex gap-2">
                                     <button type="button" class="btn btn-outline-success" 
-                                            (click)="exportToExcel()" 
+                                            (click)="openExportDialog()" 
                                             [disabled]="isLoadingData || isLoading"
                                             title="Exporter vers Excel">
-                                        <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                        <i *ngIf="!isLoading" class="ti ti-file-excel me-1"></i>
-                                        <span class="d-none d-md-inline">{{ isLoading ? 'Export en cours...' : 'Exporter Excel' }}</span>
-                                        <span class="d-md-none">{{ isLoading ? 'Export...' : 'Excel' }}</span>
+                                        <i class="ti ti-file-excel me-1"></i>
+                                        <span class="d-none d-md-inline">Exporter Excel</span>
+                                        <span class="d-md-none">Excel</span>
                                     </button>
                                     <a href="javascript:void(0);" class="btn btn-primary" (click)="prepareNewAlert(); openAddOffcanvas()">
                                         <i class="ti ti-plus me-2"></i>Créer une alerte
@@ -196,14 +195,14 @@
                                             <div class="input-block mb-3">
                                                 <label class="form-label">Date début :</label>
                                                 <input type="date" class="form-control" 
-                                                       [(ngModel)]="dateDebut" (ngModelChange)="applyFilters()">
+                                                       [(ngModel)]="startDate" (ngModelChange)="applyFilters()">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
                                             <div class="input-block mb-3">
                                                 <label class="form-label">Date fin :</label>
                                                 <input type="date" class="form-control" 
-                                                       [(ngModel)]="dateFin" (ngModelChange)="applyFilters()">
+                                                       [(ngModel)]="endDate" (ngModelChange)="applyFilters()">
                                             </div>
                                         </div>
                                         <div class="col-md-3">
@@ -471,15 +470,15 @@
                             <div class="p-3 bg-light rounded">{{ viewingAlert!.action_requise }}</div>
                         </div>
 
-                        <div *ngIf="viewingAlert!.date_resolution || viewingAlert!.commentaire_resolution" class="mb-3">
+                        <div *ngIf="viewingAlert!.date_resolution || viewingAlert!.comment_resolution" class="mb-3">
                             <label class="form-label fw-semibold">Résolution</label>
                             <div class="p-3 bg-light rounded">
                                 <div *ngIf="viewingAlert!.date_resolution" class="mb-2">
                                     <strong>Date de résolution:</strong> {{ viewingAlert!.date_resolution | date:
                                     'dd/MM/yyyy' }}
                                 </div>
-                                <div *ngIf="viewingAlert!.commentaire_resolution">
-                                    <strong>Commentaire:</strong> {{ viewingAlert!.commentaire_resolution }}
+                                <div *ngIf="viewingAlert!.comment_resolution">
+                                    <strong>Commentaire:</strong> {{ viewingAlert!.comment_resolution }}
                                 </div>
                             </div>
                         </div>
@@ -641,3 +640,89 @@
         </div>
     </div>
 </div>
+
+<!-- Export Dialog -->
+<div class="modal fade" id="exportDialog" tabindex="-1" [class.show]="isExportDialogOpen" [style.display]="isExportDialogOpen ? 'block' : 'none'" aria-labelledby="exportDialogLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="exportDialogLabel">
+          <i class="ti ti-file-excel me-2"></i>
+          Exporter les données des alertes
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeExportDialog()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info border-0">
+          <i class="ti ti-info-circle me-2"></i>
+          Sélectionnez la plage de dates pour filtrer les données à exporter.
+          <br>
+          <small>Par défaut, l'intervalle est défini sur 1 mois.</small>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de début
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="startDate"
+                   placeholder="Date de début">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de fin
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="endDate"
+                   placeholder="Date de fin">
+          </div>
+        </div>
+
+        <div class="mt-3 p-3 bg-light rounded">
+          <h6 class="mb-2">
+            <i class="ti ti-clipboard-list me-1"></i>
+            Aperçu de l'export
+          </h6>
+          <ul class="list-unstyled mb-0">
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Période:</strong> 
+              {{ startDate || 'Non définie' }} au {{ endDate || 'Non définie' }}
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Format:</strong> Fichier Excel (.xlsx)
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Contenu:</strong> Données des alertes + Statistiques
+            </li>
+            <li class="text-muted small mt-2">
+              <i class="ti ti-alert-circle me-1"></i>
+              Toutes les informations des alertes seront incluses
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeExportDialog()">
+          <i class="ti ti-x me-1"></i>
+          Annuler
+        </button>
+        <button type="button" class="btn btn-success" (click)="confirmExportToExcel()" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isLoading" class="ti ti-download me-2"></i>
+          {{ isLoading ? 'Export en cours...' : 'Exporter maintenant' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade" [class.show]="isExportDialogOpen" *ngIf="isExportDialogOpen"></div>

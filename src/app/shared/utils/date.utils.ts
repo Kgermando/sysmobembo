@@ -286,4 +286,47 @@ export class DateUtils {
     
     return age;
   }
+
+  /**
+   * Parse les dates d'un objet reçu de l'API
+   * Convertit automatiquement les champs de date courants (created_at, updated_at, date_*, etc.)
+   * @param obj Objet à parser
+   * @returns Objet avec les dates converties en Date
+   */
+  static parseApiDates<T extends Record<string, any>>(obj: T): T {
+    if (!obj || typeof obj !== 'object') return obj;
+    
+    const result: any = { ...obj };
+    
+    // Liste des champs de date courants à parser
+    const dateFieldPatterns = [
+      'created_at',
+      'updated_at',
+      'date_entree',
+      'date_expiration',
+      'date_naissance',
+      'date_recrutement',
+      'date_debut',
+      'date_fin',
+      'date_emission',
+      'date_capture',
+      'timestamp'
+    ];
+    
+    Object.keys(result).forEach(key => {
+      // Vérifier si le champ correspond à un pattern de date
+      const isDateField = dateFieldPatterns.some(pattern => 
+        key === pattern || key.startsWith('date_')
+      );
+      
+      if (isDateField && result[key]) {
+        const converted = this.toDate(result[key] as string | Date);
+        if (converted) {
+          result[key] = converted;
+        }
+      }
+    });
+    
+    return result as T;
+  }
 }

@@ -10,12 +10,12 @@ import { Subject } from 'rxjs';
 import { 
   BiometricService, 
   IBiometricFormData, 
-  IBiometricVerificationData,
   IBiometricStats,
   IBiometricFilters
 } from '../../core/migration/biometric.service';
 import { MigrantService } from '../../core/migration/migrant.service';
-import { IBiometrie, IMigrant } from '../../shared/models/migrant.model';
+import { IBiometrie } from '../models/biometrie.model';
+import { IMigrant } from '../models/migrant.model'; 
 
 @Component({
   selector: 'app-biometrics',
@@ -31,34 +31,31 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   Math = Math;
 
   displayedColumns: string[] = [
-    'migrant_nom',
+    'numero_identifiant',
     'type_biometrie',
     'index_doigt',
     'qualite_donnee',
     'date_capture',
     'dispositif_capture',
     'verifie',
-    'score_confiance',
     'chiffre',
     'actions'
   ];
 
   dataSource = new MatTableDataSource<IBiometrie>();
   biometricForm!: FormGroup;
-  verificationForm!: FormGroup;
   
   // States
   isLoading = false;
   isLoadingData = false;
   isSaving = false;
   isModalOpen = false;
-  isVerificationModalOpen = false;
+  isExportDialogOpen = false;
   error: string | null = null;
   
   // Data
   biometrics: IBiometrie[] = [];
   editingBiometric: IBiometrie | null = null;
-  verifyingBiometric: IBiometrie | null = null;
   migrants: IMigrant[] = [];
   
   // Statistics
@@ -116,13 +113,12 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   totalItems = 0;
   totalPages = 0;
 
-  // Backend supported filters (based on API endpoints)
-  migrantUuidFilter = '';
-  typeBiometrieFilter = '';
-  verifieFilter = '';
-  qualiteDonneeFilter = '';
-  chiffreFilter = '';
-  dispositifCaptureFilter = '';
+  // Search filter (as per Go backend)
+  searchTerm = '';
+  
+  // Date filters for export
+  startDate = '';
+  endDate = '';
 
   constructor(
     private fb: FormBuilder,
@@ -148,11 +144,6 @@ export class BiometricsComponent implements OnInit, OnDestroy {
       operateur_capture: ['']
     });
 
-    this.verificationForm = this.fb.group({
-      score_confiance: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
-      operateur_verification: ['', Validators.required]
-    });
-
     // Watch type_biometrie changes to handle finger index requirement
     this.biometricForm.get('type_biometrie')?.valueChanges.subscribe(type => {
       const indexDoigtControl = this.biometricForm.get('index_doigt');
@@ -167,6 +158,7 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.initializeDefaultDates();
     this.loadBiometrics();
     this.loadMigrants();
     this.loadStats();
@@ -177,16 +169,24 @@ export class BiometricsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // Initialize default dates (1 month interval)
+  private initializeDefaultDates(): void {
+    const today = new Date();
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+    
+    this.endDate = today.toISOString().split('T')[0];
+    this.startDate = oneMonthAgo.toISOString().split('T')[0];
+  }
+
   loadBiometrics(): void {
     this.isLoading = true;
     
-    // Use backend supported filters directly
+    // Use search parameter as per Go backend
     this.biometricService.getPaginatedBiometrics(
       this.currentPage, 
       this.pageSize,
-      this.migrantUuidFilter || undefined,
-      this.typeBiometrieFilter || undefined,
-      this.verifieFilter || undefined
+      this.searchTerm || undefined
     )
       .pipe(finalize(() => this.isLoading = false))
       .subscribe({
@@ -244,12 +244,9 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.migrantUuidFilter = '';
-    this.typeBiometrieFilter = '';
-    this.verifieFilter = '';
-    this.qualiteDonneeFilter = '';
-    this.chiffreFilter = '';
-    this.dispositifCaptureFilter = '';
+    this.searchTerm = '';
+    this.startDate = '';
+    this.endDate = '';
     this.currentPage = 1;
     this.loadBiometrics();
   }
@@ -282,12 +279,6 @@ export class BiometricsComponent implements OnInit, OnDestroy {
       operateur_capture: biometric.operateur_capture
     });
     this.isModalOpen = true;
-  }
-
-  openVerificationModal(biometric: IBiometrie): void {
-    this.verifyingBiometric = biometric;
-    this.verificationForm.reset();
-    this.isVerificationModalOpen = true;
   }
 
   // File Operations
@@ -379,35 +370,6 @@ export class BiometricsComponent implements OnInit, OnDestroy {
     }
   }
 
-  verifyBiometric(): void {
-    if (this.verificationForm.valid && this.verifyingBiometric) {
-      this.isSaving = true;
-      const verificationData: IBiometricVerificationData = {
-        score_confiance: this.verificationForm.value.score_confiance / 100, // Convert percentage to decimal
-        operateur_verification: this.verificationForm.value.operateur_verification
-      };
-      
-      this.biometricService.verifyBiometric(this.verifyingBiometric.uuid, verificationData)
-        .pipe(finalize(() => this.isSaving = false))
-        .subscribe({
-          next: (response) => {
-            if (response.status === 'success') {
-              this.showMessage('Données biométriques vérifiées avec succès');
-              this.closeVerificationModal();
-              this.loadBiometrics();
-              this.loadStats();
-            }
-          },
-          error: (error) => {
-            console.error('Error verifying biometric:', error);
-            this.showMessage(error.error?.message || 'Erreur lors de la vérification', 'error');
-          }
-        });
-    } else {
-      this.markFormGroupTouched(this.verificationForm);
-    }
-  }
-
   deleteBiometric(biometric: IBiometrie): void {
     if (confirm(`Êtes-vous sûr de vouloir supprimer les données biométriques de type "${biometric.type_biometrie}" ?`)) {
       this.biometricService.deleteBiometric(biometric.uuid)
@@ -433,16 +395,9 @@ export class BiometricsComponent implements OnInit, OnDestroy {
     this.biometricForm.reset();
   }
 
-  closeVerificationModal(): void {
-    this.isVerificationModalOpen = false;
-    this.verifyingBiometric = null;
-    this.verificationForm.reset();
-  }
-
   // Helper Methods
-  getMigrantName(migrantUuid: string): string {
-    const migrant = this.migrants.find(m => m.uuid === migrantUuid);
-    return migrant ? `${migrant.identite?.nom || ''} ${migrant.identite?.prenom || ''}`.trim() || 'Inconnu' : 'Inconnu';
+  getMigrantNumeroIdentifiant(biometric: IBiometrie): string {
+    return biometric.migrant?.numero_identifiant || 'N/A';
   }
 
   getBiometricTypeLabel(type: string): string {
@@ -458,13 +413,6 @@ export class BiometricsComponent implements OnInit, OnDestroy {
   getFingerIndexLabel(index: number): string {
     const fingerIndex = this.fingerIndexes.find(fi => fi.value === index);
     return fingerIndex ? fingerIndex.label : `Doigt ${index}`;
-  }
-
-  getVerificationStatusColor(biometric: IBiometrie): string {
-    if (biometric.verifie) {
-      return (biometric.score_confiance && biometric.score_confiance >= 80) ? 'success' : 'warn';
-    }
-    return 'accent';
   }
 
   getQualityColor(quality: string): string {
@@ -493,11 +441,6 @@ export class BiometricsComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  canVerifyBiometric(): boolean {
-    // Add your permission logic here
-    return true;
-  }
-
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach(key => {
       const control = formGroup.get(key);
@@ -514,14 +457,27 @@ export class BiometricsComponent implements OnInit, OnDestroy {
 
   // Reset all filters
   resetFilters(): void {
-    this.migrantUuidFilter = '';
-    this.typeBiometrieFilter = '';
-    this.verifieFilter = '';
-    this.qualiteDonneeFilter = '';
-    this.chiffreFilter = '';
-    this.dispositifCaptureFilter = '';
+    this.searchTerm = '';
+    this.initializeDefaultDates();
     this.currentPage = 1;
     this.loadBiometrics();
+  }
+
+  // Open export dialog
+  openExportDialog(): void {
+    this.initializeDefaultDates();
+    this.isExportDialogOpen = true;
+  }
+
+  // Close export dialog
+  closeExportDialog(): void {
+    this.isExportDialogOpen = false;
+  }
+
+  // Export to Excel with date confirmation
+  confirmExportToExcel(): void {
+    this.isExportDialogOpen = false;
+    this.exportToExcel();
   }
 
   // Export to Excel
@@ -529,17 +485,12 @@ export class BiometricsComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.error = null;
 
-    // Préparer les filtres pour l'export
+    // Préparer les filtres pour l'export (dates uniquement)
     const exportFilters: IBiometricFilters = {};
     
-    if (this.migrantUuidFilter) exportFilters.migrant_uuid = this.migrantUuidFilter;
-    if (this.typeBiometrieFilter) exportFilters.type_biometrie = this.typeBiometrieFilter;
-    if (this.qualiteDonneeFilter) exportFilters.qualite_donnee = this.qualiteDonneeFilter;
-    if (this.verifieFilter) exportFilters.verifie = this.verifieFilter;
-    if (this.chiffreFilter) exportFilters.chiffre = this.chiffreFilter;
-    if (this.dispositifCaptureFilter) exportFilters.dispositif_capture = this.dispositifCaptureFilter;
+    if (this.startDate) exportFilters.start_date = this.startDate;
+    if (this.endDate) exportFilters.end_date = this.endDate;
 
-    // Afficher un message d'information pendant l'export
     console.log('Début de l\'export Excel des biométries...');
 
     this.biometricService.exportBiometricsToExcel(exportFilters).subscribe({

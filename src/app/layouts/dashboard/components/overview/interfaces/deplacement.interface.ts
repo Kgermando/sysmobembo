@@ -19,6 +19,13 @@ export interface RepartitionGeographiqueResponse {
   periode_analyse: string;
 }
 
+export interface MotifPieChartResponse {
+  data: ChartDataPoint[];
+  total: number;
+  date_mise_a_jour: string;
+  periode_analyse: string;
+}
+
 export interface VolumeLocalisationIndicateurs {
   nombre_total_pdi: number;
   nombre_total_migrants: number;

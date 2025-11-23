@@ -2,16 +2,11 @@ import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Subject, combineLatest } from 'rxjs';
 import { takeUntil, finalize } from 'rxjs/operators';
 import { 
-  IndicateursDeplacementResponse,
-  AlertesTempsReelResponse,
-  RepartitionGeographiqueResponse,
+  IndicateursDeplacementResponse, 
   ChartDataPoint,
   ChartSeries,
-  RepartitionProvinceStats,
-  EvolutionTemporelleStats,
-  CauseDetailStats,
+  RepartitionProvinceStats, 
   AlertePrecoceStats,
-  ZoneRisqueStats
 } from './interfaces/deplacement.interface';
 import { DeplacementService } from './services/deplacement.service';
 import { ChartComponent, ApexAxisChartSeries, ApexChart, ApexXAxis, ApexTitleSubtitle, ApexDataLabels, ApexStroke, ApexYAxis, ApexLegend, ApexPlotOptions } from 'ng-apexcharts';
@@ -28,6 +23,8 @@ export type ChartOptions = {
   plotOptions: ApexPlotOptions;
   colors: string[];
   dataLabels: ApexDataLabels;
+  labels?: string[];
+  responsive?: any[];
 };
 
 @Component({
@@ -121,54 +118,114 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.causesChartOptions = {
       series: [],
       chart: {
-        type: 'bar',
-        height: 350,
+        type: 'donut',
+        height: 400,
         toolbar: { show: false }
       },
       plotOptions: {
-        bar: {
-          horizontal: false,
-          distributed: true,
-          borderRadius: 8,
-          barHeight: '60%'
+        pie: {
+          donut: {
+            size: '65%',
+            labels: {
+              show: true,
+              name: {
+                show: true,
+                fontSize: '16px',
+                fontWeight: 600,
+                offsetY: -10
+              },
+              value: {
+                show: true,
+                fontSize: '24px',
+                fontWeight: 'bold',
+                offsetY: 5,
+                formatter: function (val) {
+                  return Math.round(parseFloat(val.toString())).toString();
+                }
+              },
+              total: {
+                show: true,
+                label: 'Total',
+                fontSize: '14px',
+                fontWeight: 600,
+                formatter: function (w) {
+                  const total = w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0);
+                  return Math.round(total).toString();
+                }
+              }
+            }
+          }
         }
       },
       dataLabels: {
         enabled: true,
-        formatter: function (val) {
-          // Arrondir à 1 décimale maximum et supprimer les zéros inutiles
-          const roundedVal = Math.round(parseFloat(val.toString()) * 10) / 10;
-          return roundedVal % 1 === 0 ? roundedVal.toString() + '%' : roundedVal.toFixed(1) + '%';
+        formatter: function (val, opts) {
+          const value = opts.w.globals.series[opts.seriesIndex];
+          return value.toString();
         },
         style: {
-          colors: ['#fff'],
-          fontSize: '12px',
-          fontWeight: 'bold'
+          fontSize: '14px',
+          fontWeight: 'bold',
+          colors: ['#fff']
+        },
+        dropShadow: {
+          enabled: false
         }
       },
-      xaxis: {
-        categories: [],
-        title: {
-          text: 'Pourcentage (%)'
-        }
-      },
-      yaxis: {
-        title: {
-          text: 'Causes de déplacement'
-        }
-      },
-      colors: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'],
+      labels: [],
+      colors: ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#FF9F43', '#10AC84', '#5F27CD'],
       title: {
-        text: 'Répartition des causes de déplacement',
+        text: 'Répartition des Motifs de Déplacement',
         align: 'center',
         style: {
-          fontSize: '16px',
-          fontWeight: 'bold'
+          fontSize: '18px',
+          fontWeight: 'bold',
+          color: '#263238'
         }
       },
       legend: {
-        show: false
-      }
+        show: true,
+        position: 'bottom',
+        horizontalAlign: 'center',
+        fontSize: '13px',
+        fontWeight: 500,
+        labels: {
+          colors: '#333'
+        },
+        markers: {
+          width: 12,
+          height: 12,
+          radius: 3
+        },
+        itemMargin: {
+          horizontal: 10,
+          vertical: 5
+        },
+        formatter: function(seriesName, opts) {
+          const value = opts.w.globals.series[opts.seriesIndex];
+          return seriesName + ': ' + value;
+        }
+      },
+      responsive: [
+        {
+          breakpoint: 480,
+          options: {
+            chart: {
+              height: 300
+            },
+            legend: {
+              position: 'bottom',
+              fontSize: '11px'
+            }
+          }
+        }
+      ],
+      stroke: {
+        width: 2,
+        colors: ['#fff']
+      },
+      xaxis: {},
+      yaxis: {}
     };
   }
   
@@ -249,22 +306,29 @@ export class OverviewComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    // Utiliser les 3 endpoints optimisés du backend
+    // Utiliser les 4 endpoints optimisés du backend
     combineLatest([
       this.deplacementService.getIndicateursGeneraux(this.periodeSelectionnee, this.provinceSelectionnee),
       this.deplacementService.getAlertesTempsReel('danger,critical', this.provinceSelectionnee, 7),
-      this.deplacementService.getRepartitionGeographique(this.periodeSelectionnee)
+      this.deplacementService.getRepartitionGeographique(this.periodeSelectionnee),
+      this.deplacementService.getMotifsPieChart(this.periodeSelectionnee, this.provinceSelectionnee)
     ]).pipe(
       takeUntil(this.destroy$),
       finalize(() => this.loading = false)
     ).subscribe({
-      next: ([indicateurs, alertesResponse, repartitionResponse]) => {
+      next: ([indicateurs, alertesResponse, repartitionResponse, motifsResponse]) => {
         this.indicateurs = indicateurs;
         this.alertesRecentes = alertesResponse.alertes_actives || [];
         
         // Utiliser les données de répartition géographique globale pour une vue d'ensemble
         if (repartitionResponse && repartitionResponse.repartition_provinces) {
           this.indicateurs.volume_localisation.repartition_geographique = repartitionResponse.repartition_provinces;
+        }
+        
+        // Utiliser les données du pie chart des motifs directement depuis le backend
+        if (motifsResponse && motifsResponse.data) {
+          this.causesPieData = motifsResponse.data;
+          this.updateCausesChart();
         }
         
         this.preparerDonneesGraphiques();
@@ -320,46 +384,30 @@ export class OverviewComponent implements OnInit, OnDestroy {
 
   /**
    * Prépare le graphique en secteurs des causes
+   * Note: Les données sont maintenant chargées directement depuis le backend via getMotifsPieChart
    */
   private preparerCausesPieChart(): void {
-    if (!this.indicateurs?.causes_deplacements) return;
-
-    const causes = this.indicateurs.causes_deplacements;
-    this.causesPieData = [
-      { name: 'Conflits armés', value: causes.pourcentage_conflits_armes },
-      { name: 'Catastrophes naturelles', value: causes.pourcentage_catastrophes },
-      { name: 'Persécution', value: causes.pourcentage_persecution },
-      { name: 'Violence généralisée', value: causes.pourcentage_violence_generalisee },
-      { name: 'Autres causes', value: causes.pourcentage_autres_causes }
-    ].filter(item => item.value > 0);
-    
-    // Mettre à jour le graphique ApexCharts
-    this.updateCausesChart();
+    // Les données sont déjà chargées dans chargerDonnees() via l'endpoint motifs-pie
+    // Cette méthode est conservée pour la compatibilité mais ne fait plus le calcul manuel
+    if (this.causesPieData.length > 0) {
+      this.updateCausesChart();
+    }
   }
   
   /**
-   * Met à jour le graphique ApexCharts des causes
+   * Met à jour le graphique ApexCharts des causes (Donut)
    */
   private updateCausesChart(): void {
     if (this.causesPieData.length === 0) return;
     
-    const series = [{
-      name: 'Pourcentage',
-      data: this.causesPieData.map(item => {
-        // Arrondir à 1 décimale maximum
-        return Math.round(item.value * 10) / 10;
-      })
-    }];
-    
-    const categories = this.causesPieData.map(item => item.name);
+    // Pour un donut chart, series est un tableau de nombres
+    const series = this.causesPieData.map(item => Math.round(item.value));
+    const labels = this.causesPieData.map(item => item.name);
     
     this.causesChartOptions = {
       ...this.causesChartOptions,
-      series: series,
-      xaxis: {
-        ...this.causesChartOptions.xaxis,
-        categories: categories
-      }
+      series: series as any,
+      labels: labels
     };
   }
 

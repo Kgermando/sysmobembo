@@ -5,7 +5,10 @@ export const TYPE_MOTIF_OPTIONS = [
   { value: 'naturelle', label: 'Catastrophe naturelle' },
   { value: 'familial', label: 'Familial' },
   { value: 'education', label: 'Éducation' },
-  { value: 'sanitaire', label: 'Sanitaire' }
+  { value: 'sanitaire', label: 'Sanitaire' },
+  { value: 'conflit_arme', label: 'Conflit armé' },
+  { value: 'catastrophe_naturelle', label: 'Catastrophe naturelle' },
+  { value: 'violence_generalisee', label: 'Violence généralisée' }
 ];
 
 export const URGENCE_OPTIONS = [
@@ -18,13 +21,6 @@ export const URGENCE_OPTIONS = [
 export const CARACTERE_VOLONTAIRE_OPTIONS = [
   { value: true, label: 'Volontaire' },
   { value: false, label: 'Involontaire' }
-];
-
-export const FACTEURS_EXTERNES = [
-  { key: 'conflit_arme', label: 'Conflit armé' },
-  { key: 'catastrophe_naturelle', label: 'Catastrophe naturelle' },
-  { key: 'persecution', label: 'Persécution' },
-  { key: 'violence_generalisee', label: 'Violence généralisée' }
 ];
 
 // Fonctions utilitaires
@@ -74,11 +70,7 @@ export class MotifDeplacementDataTransformer {
         caractere_volontaire: Boolean(formData.caractere_volontaire),
         urgence: formData.urgence ? this.validateUrgence(formData.urgence) : undefined,
         date_declenchement: this.validateAndTransformDate(formData.date_declenchement),
-        duree_estimee: formData.duree_estimee ? this.validateNumber(formData.duree_estimee) : undefined,
-        conflit_arme: Boolean(formData.conflit_arme),
-        catastrophe_naturelle: Boolean(formData.catastrophe_naturelle),
-        persecution: Boolean(formData.persecution),
-        violence_generalisee: Boolean(formData.violence_generalisee)
+        duree_estimee: formData.duree_estimee ? this.validateNumber(formData.duree_estimee) : undefined
       };
 
       // Validation finale
@@ -104,14 +96,14 @@ export class MotifDeplacementDataTransformer {
   /**
    * Valide le type de motif
    */
-  private static validateTypeMotif(value: any): 'economique' | 'politique' | 'persecution' | 'naturelle' | 'familial' | 'education' | 'sanitaire' {
+  private static validateTypeMotif(value: any): 'economique' | 'politique' | 'persecution' | 'naturelle' | 'familial' | 'education' | 'sanitaire' | 'conflit_arme' | 'catastrophe_naturelle' | 'violence_generalisee' {
     const validTypes = TYPE_MOTIF_OPTIONS.map(opt => opt.value);
     
     if (!validTypes.includes(value)) {
       throw new Error(`Type de motif invalide: ${value}. Types valides: ${validTypes.join(', ')}`);
     }
     
-    return value as 'economique' | 'politique' | 'persecution' | 'naturelle' | 'familial' | 'education' | 'sanitaire';
+    return value as 'economique' | 'politique' | 'persecution' | 'naturelle' | 'familial' | 'education' | 'sanitaire' | 'conflit_arme' | 'catastrophe_naturelle' | 'violence_generalisee';
   }
 
   /**
@@ -202,11 +194,8 @@ export class MotifDeplacementDataTransformer {
       caractere_volontaire: Boolean(motif.caractere_volontaire),
       urgence: motif.urgence || '',
       date_declenchement: motif.date_declenchement ? DateUtils.toInputFormat(motif.date_declenchement) : '',
-      duree_estimee: motif.duree_estimee || null,
-      conflit_arme: Boolean(motif.conflit_arme),
-      catastrophe_naturelle: Boolean(motif.catastrophe_naturelle),
-      persecution: Boolean(motif.persecution),
-      violence_generalisee: Boolean(motif.violence_generalisee)
+      duree_estimee: motif.duree_estimee || null
     };
   }
 }
+

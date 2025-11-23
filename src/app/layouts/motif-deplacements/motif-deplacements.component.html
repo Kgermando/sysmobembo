@@ -80,21 +80,6 @@
           </div>
         </div>
       </div>
-      <div class="col-lg-3 col-md-6 col-sm-6">
-        <div class="card bg-danger text-white">
-          <div class="card-body">
-            <div class="d-flex align-items-center">
-              <div class="flex-grow-1">
-                <h4 class="mb-1 text-white">{{ getFacteurExterneCount('conflit_arme') | number }}</h4>
-                <p class="mb-0 small">Conflits Armés</p>
-              </div>
-              <div class="flex-shrink-0">
-                <i class="ti ti-shield-x fs-2"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
     <!-- /Statistics Cards -->
 
@@ -107,9 +92,19 @@
                 <h4 class="card-title">Liste des Motifs de Déplacement</h4>
               </div>
               <div class="col-auto">
-                <a href="javascript:void(0);" class="btn btn-primary" (click)="openAddOffcanvas()">
-                  <i class="ti ti-plus me-2"></i>Ajouter un motif
-                </a>
+                <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-outline-success" 
+                          (click)="openExportDialog()" 
+                          [disabled]="isLoading"
+                          title="Exporter vers Excel">
+                    <i class="ti ti-file-excel me-1"></i>
+                    <span class="d-none d-md-inline">Exporter Excel</span>
+                    <span class="d-md-none">Excel</span>
+                  </button>
+                  <a href="javascript:void(0);" class="btn btn-primary" (click)="openAddOffcanvas()">
+                    <i class="ti ti-plus me-2"></i>Ajouter un motif
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -202,10 +197,10 @@
                       </div>
                     </div>
 
-                    <!-- Section 3: Filtres par urgence et facteurs -->
+                    <!-- Section 3: Filtres par urgence -->
                     <div class="filter-section mb-4">
                       <h6 class="filter-section-title">
-                        <i class="ti ti-alert-triangle me-2"></i>Urgence et facteurs externes
+                        <i class="ti ti-alert-triangle me-2"></i>Urgence
                       </h6>
                       <div class="row">
                         <div class="col-lg-6 col-md-6">
@@ -216,29 +211,6 @@
                               <option *ngFor="let urgence of urgenceOptions" [value]="urgence.value">{{ urgence.label }}
                               </option>
                             </select>
-                          </div>
-                        </div>
-                        <div class="col-lg-6 col-md-6">
-                          <div class="input-block mb-3">
-                            <label class="form-label">Facteurs externes</label>
-                            <div class="form-check-group">
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox">
-                                <label class="form-check-label">Tourisme</label>
-                              </div> 
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox">
-                                <label class="form-check-label">Conflit armé</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox">
-                                <label class="form-check-label">Catastrophe naturelle</label>
-                              </div>
-                              <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox">
-                                <label class="form-check-label">Persécution</label>
-                              </div> 
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -307,9 +279,6 @@
                         <th class="min-width-150">
                           <strong>Date Déclenchement</strong>
                         </th>
-                        <th class="min-width-180">
-                          <strong>Facteurs Externes</strong>
-                        </th>
                         <th class="min-width-120">
                           <strong>Actions</strong>
                         </th>
@@ -329,7 +298,7 @@
                         </td>
                         <td class="min-width-200">
                           <h6>{{ motif.motif_principal }}</h6>
-                          <p *ngIf="motif.motif_secondaire">{{ motif.motif_secondaire }}</p>
+                          <p *ngIf="motif.motif_secondaire" class="text-muted small">{{ motif.motif_secondaire }}</p>
                         </td>
                         <td class="min-width-120">
                           <span class="badge" [ngClass]="getCaractereBadgeClass(motif.caractere_volontaire)">
@@ -342,14 +311,6 @@
                           </span>
                         </td>
                         <td class="min-width-150">{{ motif.date_declenchement | date:'yyyy-MM-dd' }}</td>
-                        <td class="min-width-180">
-                          <div class="facteurs-list">
-                            <span *ngFor="let facteur of getFacteursExternes(motif)"
-                              class="badge badge-warning badge-sm me-1">
-                              {{ facteur }}
-                            </span>
-                          </div>
-                        </td>
                         <td class="min-width-120">
                           <a class="action-set" href="javascript:void(0);" data-bs-toggle="dropdown">
                             <i class="fa fa-ellipsis-v"></i>
@@ -487,27 +448,6 @@
                   placeholder="Durée estimée en jours">
               </div>
 
-              <!-- Facteurs Externes -->
-              <div class="mb-3">
-                <label class="form-label">Facteurs Externes</label>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" formControlName="conflit_arme">
-                  <label class="form-check-label">Conflit armé</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" formControlName="catastrophe_naturelle">
-                  <label class="form-check-label">Catastrophe naturelle</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" formControlName="persecution">
-                  <label class="form-check-label">Persécution</label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" formControlName="violence_generalisee">
-                  <label class="form-check-label">Violence généralisée</label>
-                </div>
-              </div>
-
               <!-- Description -->
               <div class="mb-3">
                 <label class="form-label">Description</label>
@@ -544,8 +484,7 @@
                     <p><strong>Migrant:</strong> {{ getMigrantName(viewingMotif.migrant_uuid) }}</p>
                     <p><strong>Type de motif:</strong> {{ getTypeMotifLabel(viewingMotif.type_motif) }}</p>
                     <p><strong>Motif principal:</strong> {{ viewingMotif.motif_principal }}</p>
-                    <p *ngIf="viewingMotif.motif_secondaire"><strong>Motif secondaire:</strong> {{
-                      viewingMotif.motif_secondaire }}</p>
+                    <p *ngIf="viewingMotif.motif_secondaire"><strong>Motif secondaire:</strong> {{ viewingMotif.motif_secondaire }}</p>
                     <p><strong>Caractère:</strong> {{ getCaractereVolontaireLabel(viewingMotif.caractere_volontaire) }}
                     </p>
                     <p *ngIf="viewingMotif.urgence"><strong>Urgence:</strong> {{ getUrgenceLabel(viewingMotif.urgence)
@@ -554,16 +493,7 @@
                   <div class="col-md-6">
                     <h6>Contexte</h6>
                     <p><strong>Date de déclenchement:</strong> {{ formatDate(viewingMotif.date_declenchement) }}</p>
-                    <p *ngIf="viewingMotif.duree_estimee"><strong>Durée estimée:</strong> {{ viewingMotif.duree_estimee
-                      }} jours</p>
-
-                    <h6>Facteurs Externes</h6>
-                    <div *ngIf="getFacteursExternes(viewingMotif).length > 0">
-                      <span *ngFor="let facteur of getFacteursExternes(viewingMotif)" class="badge badge-warning me-1">
-                        {{ facteur }}
-                      </span>
-                    </div>
-                    <p *ngIf="getFacteursExternes(viewingMotif).length === 0">Aucun facteur externe</p>
+                    <p *ngIf="viewingMotif.duree_estimee"><strong>Durée estimée:</strong> {{ viewingMotif.duree_estimee }} jours</p>
                   </div>
                 </div>
 
@@ -588,3 +518,89 @@
   </div>
 </div>
 <!-- /Page Wrapper -->
+
+<!-- Export Dialog -->
+<div class="modal fade" id="exportDialog" tabindex="-1" [class.show]="isExportDialogOpen" [style.display]="isExportDialogOpen ? 'block' : 'none'" aria-labelledby="exportDialogLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="exportDialogLabel">
+          <i class="ti ti-file-excel me-2"></i>
+          Exporter les motifs de déplacement
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeExportDialog()" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info border-0">
+          <i class="ti ti-info-circle me-2"></i>
+          Sélectionnez la plage de dates pour filtrer les données à exporter.
+          <br>
+          <small>Par défaut, l'intervalle est défini sur 1 mois.</small>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de début
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="startDate"
+                   placeholder="Date de début">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">
+              <i class="ti ti-calendar me-1"></i>
+              Date de fin
+            </label>
+            <input type="date" 
+                   class="form-control" 
+                   [(ngModel)]="endDate"
+                   placeholder="Date de fin">
+          </div>
+        </div>
+
+        <div class="mt-3 p-3 bg-light rounded">
+          <h6 class="mb-2">
+            <i class="ti ti-clipboard-list me-1"></i>
+            Aperçu de l'export
+          </h6>
+          <ul class="list-unstyled mb-0">
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Période:</strong> 
+              {{ startDate || 'Non définie' }} au {{ endDate || 'Non définie' }}
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Format:</strong> Fichier Excel (.xlsx)
+            </li>
+            <li>
+              <i class="ti ti-check text-success me-2"></i>
+              <strong>Contenu:</strong> Motifs de déplacement + Statistiques
+            </li>
+            <li class="text-muted small mt-2">
+              <i class="ti ti-route me-1"></i>
+              Toutes les informations sur les motifs seront incluses
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeExportDialog()">
+          <i class="ti ti-x me-1"></i>
+          Annuler
+        </button>
+        <button type="button" class="btn btn-success" (click)="confirmExportToExcel()" [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isLoading" class="ti ti-download me-2"></i>
+          {{ isLoading ? 'Export en cours...' : 'Exporter maintenant' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop fade" [class.show]="isExportDialogOpen" *ngIf="isExportDialogOpen"></div>
