@@ -243,7 +243,7 @@
                                                     </div>
                                                     <div>
                                                         <strong>{{ getMigrantName(element.migrant_uuid) }}</strong>
-                                                        <div class="text-muted small">{{ element.migrant_uuid }}</div>
+                                                        <div class="text-muted small">{{ element.migrant?.numero_identifiant || 'N/A' }}</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -297,12 +297,15 @@
                                         <ng-container matColumnDef="date_expiration">
                                             <th mat-header-cell *matHeaderCellDef mat-sort-header class="min-width-150"> Expiration </th>
                                             <td mat-cell *matCellDef="let element" class="min-width-150">
-                                                <div>
+                                                <div *ngIf="element.date_expiration; else noExpiration">
                                                     <div>{{ element.date_expiration | date: 'dd/MM/yyyy' }}</div>
                                                     <div class="text-muted small">
                                                         <i class="ti ti-clock me-1"></i>{{ formatDate(element.date_expiration) }}
                                                     </div>
                                                 </div>
+                                                <ng-template #noExpiration>
+                                                    <span class="text-muted">Aucune</span>
+                                                </ng-template>
                                             </td>
                                         </ng-container>
 
@@ -454,7 +457,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Date d'expiration</label>
-                                    <div>{{ viewingAlert!.date_expiration! }}</div>
+                                    <div>{{ viewingAlert!.date_expiration ? (viewingAlert!.date_expiration | date: 'dd/MM/yyyy') : 'Non définie' }}</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -474,8 +477,7 @@
                             <label class="form-label fw-semibold">Résolution</label>
                             <div class="p-3 bg-light rounded">
                                 <div *ngIf="viewingAlert!.date_resolution" class="mb-2">
-                                    <strong>Date de résolution:</strong> {{ viewingAlert!.date_resolution | date:
-                                    'dd/MM/yyyy' }}
+                                    <strong>Date de résolution:</strong> {{ viewingAlert!.date_resolution | date: 'dd/MM/yyyy HH:mm' }}
                                 </div>
                                 <div *ngIf="viewingAlert!.comment_resolution">
                                     <strong>Commentaire:</strong> {{ viewingAlert!.comment_resolution }}
@@ -487,13 +489,13 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Créée le</label>
-                                    <div>{{ viewingAlert!.created_at | date: 'dd/MM/yyyy' }}</div>
+                                    <div>{{ viewingAlert!.created_at | date: 'dd/MM/yyyy HH:mm' }}</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Modifiée le</label>
-                                    <div>{{ viewingAlert!.updated_at | date: 'dd/MM/yyyy' }}</div>
+                                    <div>{{ viewingAlert!.updated_at | date: 'dd/MM/yyyy HH:mm' }}</div>
                                 </div>
                             </div>
                         </div>

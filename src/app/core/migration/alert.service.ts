@@ -25,9 +25,10 @@ export interface IAlertFormData {
   niveau_gravite: 'info' | 'warning' | 'danger' | 'critical';
   titre: string;
   description: string;
-  date_expiration?: string; // Gardé en string pour les formulaires HTML
-  action_requise?: string;
-  personne_responsable?: string;
+  date_expiration?: string | null; // Format ISO string for API
+  action_requise?: string | null;
+  personne_responsable?: string | null;
+  statut?: 'active' | 'resolved' | 'dismissed' | 'expired';
 }
 
 export interface IAlertFilters {
@@ -90,7 +91,13 @@ export class AlertService {
 
   // Get one alert
   getAlert(uuid: string): Observable<IBackendApiResponse<IAlert>> {
-    return this.http.get<IBackendApiResponse<IAlert>>(`${this.apiUrl}/get/${uuid}`);
+    return this.http.get<IBackendApiResponse<any>>(`${this.apiUrl}/get/${uuid}`)
+      .pipe(
+        map(response => ({
+          ...response,
+          data: DateUtils.parseApiDates(response.data)
+        }))
+      );
   }
 
   // Get alerts by migrant with pagination
@@ -108,7 +115,7 @@ export class AlertService {
     if (filters.statut) params = params.set('statut', filters.statut);
     if (filters.gravite) params = params.set('gravite', filters.gravite);
 
-    return this.http.get<IBackendPaginationResponse<IAlert>>(`${this.apiUrl}/migrant/${migrantUuid}`, { params })
+    return this.http.get<IBackendPaginationResponse<any>>(`${this.apiUrl}/migrant/${migrantUuid}`, { params })
       .pipe(
         map(response => ({
           ...response,
@@ -119,19 +126,51 @@ export class AlertService {
 
   // Create alert
   createAlert(alertData: IAlertFormData): Observable<IBackendApiResponse<IAlert>> {
-    return this.http.post<IBackendApiResponse<IAlert>>(`${this.apiUrl}/create`, alertData);
+    // Clean up empty strings to null for optional fields
+    const cleanedData = {
+      ...alertData,
+      date_expiration: alertData.date_expiration || null,
+      action_requise: alertData.action_requise || null,
+      personne_responsable: alertData.personne_responsable || null
+    };
+    return this.http.post<IBackendApiResponse<any>>(`${this.apiUrl}/create`, cleanedData)
+      .pipe(
+        map(response => ({
+          ...response,
+          data: DateUtils.parseApiDates(response.data)
+        }))
+      );
   }
 
   // Update alert
   updateAlert(uuid: string, alertData: Partial<IAlertFormData>): Observable<IBackendApiResponse<IAlert>> {
-    return this.http.put<IBackendApiResponse<IAlert>>(`${this.apiUrl}/update/${uuid}`, alertData);
+    // Clean up empty strings to null for optional fields
+    const cleanedData = {
+      ...alertData,
+      date_expiration: alertData.date_expiration || null,
+      action_requise: alertData.action_requise || null,
+      personne_responsable: alertData.personne_responsable || null
+    };
+    return this.http.put<IBackendApiResponse<any>>(`${this.apiUrl}/update/${uuid}`, cleanedData)
+      .pipe(
+        map(response => ({
+          ...response,
+          data: DateUtils.parseApiDates(response.data)
+        }))
+      );
   }
 
   // Resolve alert
   resolveAlert(uuid: string, resolutionData: {
     comment_resolution: string;
   }): Observable<IBackendApiResponse<IAlert>> {
-    return this.http.put<IBackendApiResponse<IAlert>>(`${this.apiUrl}/resolve/${uuid}`, resolutionData);
+    return this.http.put<IBackendApiResponse<any>>(`${this.apiUrl}/resolve/${uuid}`, resolutionData)
+      .pipe(
+        map(response => ({
+          ...response,
+          data: DateUtils.parseApiDates(response.data)
+        }))
+      );
   }
 
   // Delete alert

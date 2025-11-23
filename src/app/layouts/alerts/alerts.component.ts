@@ -244,9 +244,9 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
         niveau_gravite: formValue.niveau_gravite as 'info' | 'warning' | 'danger' | 'critical',
         titre: formValue.titre,
         description: formValue.description,
-        date_expiration: formValue.date_expiration || undefined,
-        action_requise: formValue.action_requise || undefined,
-        personne_responsable: formValue.personne_responsable || undefined
+        date_expiration: formValue.date_expiration || null,
+        action_requise: formValue.action_requise || null,
+        personne_responsable: formValue.personne_responsable || null
       };
 
       let response;
@@ -255,11 +255,13 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.alertService.updateAlert(this.editingAlert.uuid, formData)
             .pipe(takeUntil(this.destroy$))
         );
+        this.toastr.success('Alerte modifiée avec succès', 'Succès');
       } else {
         response = await firstValueFrom(
           this.alertService.createAlert(formData)
             .pipe(takeUntil(this.destroy$))
         );
+        this.toastr.success('Alerte créée avec succès', 'Succès');
       }
 
       if (response.status === 'success') {
@@ -270,6 +272,7 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors de l\'enregistrement';
+      this.toastr.error(this.error || undefined, 'Erreur');
       console.error('Erreur lors de l\'enregistrement de l\'alerte:', error);
     } finally {
       this.isSaving = false;
@@ -308,11 +311,13 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
       );
 
       if (response.status === 'success') {
+        this.toastr.success('Alerte supprimée avec succès', 'Succès');
         await this.loadData();
         await this.loadStats();
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors de la suppression';
+      this.toastr.error(this.error || undefined, 'Erreur');
       console.error('Erreur lors de la suppression de l\'alerte:', error);
     }
   }
@@ -329,11 +334,13 @@ export class AlertsComponent implements OnInit, OnDestroy, AfterViewInit {
       );
 
       if (response.status === 'success') {
+        this.toastr.success('Alerte résolue avec succès', 'Succès');
         await this.loadData();
         await this.loadStats();
       }
     } catch (error: any) {
       this.error = error.error?.message || 'Erreur lors de la résolution';
+      this.toastr.error(this.error || undefined, 'Erreur');
       console.error('Erreur lors de la résolution:', error);
     }
   }

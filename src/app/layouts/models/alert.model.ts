@@ -16,12 +16,12 @@ export interface IAlert {
 
     // Statut et traitement
     statut: 'active' | 'resolved' | 'dismissed' | 'expired';
-    date_expiration?: Date | null;
+    date_expiration?: Date | string | null;
     action_requise?: string;
     personne_responsable?: string;
 
     // Métadonnées de traitement
-    date_resolution?: Date | null;
+    date_resolution?: Date | string | null;
     comment_resolution?: string;
 }
 
@@ -29,7 +29,6 @@ export class Alert implements IAlert {
     uuid: string = '';
     created_at: Date = new Date();
     updated_at: Date = new Date();
-    deleted_at?: Date | null = null;
 
     migrant_uuid: string = '';
     migrant?: IMigrant;
@@ -42,11 +41,11 @@ export class Alert implements IAlert {
 
     // Statut et traitement
     statut: 'active' | 'resolved' | 'dismissed' | 'expired' = 'active';
-    date_expiration?: Date | null = null;
+    date_expiration?: Date | string | null = null;
     action_requise?: string = '';
     personne_responsable?: string = '';
 
     // Métadonnées de traitement
-    date_resolution?: Date | null = null;
+    date_resolution?: Date | string | null = null;
     comment_resolution?: string = '';
 }
