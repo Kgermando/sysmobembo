@@ -366,12 +366,27 @@
                       <li class="list-group-item" *ngIf="parsedPassportData.nationalite">
                         <strong>Nationalité:</strong> {{ parsedPassportData.nationalite }}
                       </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.adresse">
+                        <strong>Adresse:</strong> {{ parsedPassportData.adresse }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.profession">
+                        <strong>Profession:</strong> {{ parsedPassportData.profession }}
+                      </li>
                       <li class="list-group-item" *ngIf="parsedPassportData.numero_passeport">
                         <strong>N° Passeport:</strong> {{ parsedPassportData.numero_passeport }}
                       </li>
                       <li class="list-group-item" *ngIf="parsedPassportData.pays_emetteur">
                         <strong>Pays émetteur:</strong> {{ parsedPassportData.pays_emetteur }}
                       </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.autorite_emetteur">
+                        <strong>Autorité émetteur:</strong> {{ parsedPassportData.autorite_emetteur }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.date_emission">
+                        <strong>Date d'émission:</strong> {{ parsedPassportData.date_emission }}
+                      </li>
+                      <li class="list-group-item" *ngIf="parsedPassportData.date_expiration">
+                        <strong>Date d'expiration:</strong> {{ parsedPassportData.date_expiration }}
+                      </li> 
                     </ul>
                   </div>
                 </div>
@@ -534,6 +549,28 @@
                 </div>
               </div>
             </div>
+
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Date d'émission <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="date_emission">
+                <div *ngIf="identiteForm.get('date_emission')?.invalid && identiteForm.get('date_emission')?.touched" 
+                     class="text-danger small">
+                  La date d'émission est requise
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="input-block mb-3">
+                <label class="form-label">Date d'expiration <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" formControlName="date_expiration">
+                <div *ngIf="identiteForm.get('date_expiration')?.invalid && identiteForm.get('date_expiration')?.touched" 
+                     class="text-danger small">
+                  La date d'expiration est requise
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Error display -->
@@ -653,6 +690,16 @@
           <div class="col-12 mb-3">
             <label class="text-muted small">Autorité émetteur</label>
             <p class="fw-semibold">{{ viewingIdentite.autorite_emetteur }}</p>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Date d'émission</label>
+            <p class="fw-semibold">{{ formatDate(viewingIdentite.date_emission) }}</p>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label class="text-muted small">Date d'expiration</label>
+            <p class="fw-semibold">{{ formatDate(viewingIdentite.date_expiration) }}</p>
           </div>
 
           <div class="col-12 mb-3 mt-3">

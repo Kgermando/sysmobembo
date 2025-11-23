@@ -216,6 +216,8 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
       profession: [''],
       pays_emetteur: ['', Validators.required],
       autorite_emetteur: ['', Validators.required],
+      date_emission: ['', Validators.required],
+      date_expiration: ['', Validators.required],
       numero_passeport: ['', Validators.required]
     });
   }
@@ -273,10 +275,12 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       const formData: IIdentiteFormData = this.identiteForm.value;
 
-      // Convertir la date de naissance
+      // Convertir les dates
       const identiteData = {
         ...formData,
-        date_naissance: formData.date_naissance ? new Date(formData.date_naissance).toISOString() : ''
+        date_naissance: formData.date_naissance ? new Date(formData.date_naissance).toISOString() : '',
+        date_emission: formData.date_emission ? new Date(formData.date_emission).toISOString() : '',
+        date_expiration: formData.date_expiration ? new Date(formData.date_expiration).toISOString() : ''
       };
 
       let response;
@@ -348,6 +352,10 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
   private patchFormWithIdentite(identite: IIdentite): void {
     const dateNaissance = identite.date_naissance ? 
       new Date(identite.date_naissance).toISOString().split('T')[0] : '';
+    const dateEmission = identite.date_emission ? 
+      new Date(identite.date_emission).toISOString().split('T')[0] : '';
+    const dateExpiration = identite.date_expiration ? 
+      new Date(identite.date_expiration).toISOString().split('T')[0] : '';
 
     this.identiteForm.patchValue({
       nom: identite.nom,
@@ -361,6 +369,8 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
       profession: identite.profession,
       pays_emetteur: identite.pays_emetteur,
       autorite_emetteur: identite.autorite_emetteur,
+      date_emission: dateEmission,
+      date_expiration: dateExpiration,
       numero_passeport: identite.numero_passeport
     });
   }
@@ -595,6 +605,8 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     if (data.numero_passeport) formData.numero_passeport = data.numero_passeport;
     if (data.pays_emetteur) formData.pays_emetteur = data.pays_emetteur;
     if (data.autorite_emetteur) formData.autorite_emetteur = data.autorite_emetteur;
+    if (data.date_emission) formData.date_emission = data.date_emission;
+    if (data.date_expiration) formData.date_expiration = data.date_expiration;
 
     this.identiteForm.patchValue(formData);
   }

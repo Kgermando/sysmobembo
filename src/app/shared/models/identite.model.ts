@@ -18,6 +18,8 @@ export interface IIdentite {
 
   pays_emetteur: string;
   autorite_emetteur: string;
+  date_emission: Date;
+  date_expiration: Date;
   numero_passeport: string;
 }
  
@@ -33,6 +35,8 @@ export interface IIdentiteFormData {
   profession?: string;
   pays_emetteur: string;
   autorite_emetteur: string;
+  date_emission: string | Date;
+  date_expiration: string | Date;
   numero_passeport: string;
 }
 
