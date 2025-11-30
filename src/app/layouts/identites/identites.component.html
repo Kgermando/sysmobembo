@@ -108,6 +108,14 @@
               </div>
               <div class="col-auto">
                 <div class="d-flex gap-2">
+                  <button type="button" class="btn btn-outline-info" 
+                          (click)="openScannerModal()" 
+                          [disabled]="isLoadingData || isLoading"
+                          title="Scanner un document">
+                    <i class="ti ti-scan me-1"></i>
+                    <span class="d-none d-md-inline">Scanner</span>
+                    <span class="d-md-none"><i class="ti ti-scan"></i></span>
+                  </button>
                   <button type="button" class="btn btn-outline-success" 
                           (click)="openExportDialog()" 
                           [disabled]="isLoadingData || isLoading"
@@ -812,6 +820,170 @@
           <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!isLoading" class="ti ti-download me-2"></i>
           {{ isLoading ? 'Export en cours...' : 'Exporter maintenant' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scanner Modal -->
+<div class="modal fade" id="scannerModal" tabindex="-1" aria-labelledby="scannerModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="scannerModalLabel">
+          <i class="ti ti-scan me-2"></i>
+          Scanner un document
+        </h5>
+        <button type="button" class="btn-close btn-close-white" (click)="closeScannerModal()"></button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Scanner Selection -->
+        <div class="mb-4" *ngIf="availableScanners.length > 0">
+          <label class="form-label fw-bold">
+            <i class="ti ti-printer me-1"></i>
+            Scanner disponible
+          </label>
+          <select class="form-select" [(ngModel)]="selectedScanner" [disabled]="isScanning">
+            <option *ngFor="let scanner of availableScanners" [value]="scanner">
+              {{ scanner }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Error Alert -->
+        <div class="alert alert-danger d-flex align-items-center" *ngIf="scannerError">
+          <i class="ti ti-alert-triangle me-2 fs-4"></i>
+          <div>
+            {{ scannerError }}
+          </div>
+        </div>
+
+        <!-- Success Alert -->
+        <div class="alert alert-success d-flex align-items-center" *ngIf="scannerSuccess && !isProcessingOCR">
+          <i class="ti ti-check-circle me-2 fs-4"></i>
+          <div>
+            {{ scannerSuccess }}
+          </div>
+        </div>
+
+        <!-- No Scanner Found -->
+        <div class="alert alert-warning" *ngIf="availableScanners.length === 0 && !isScanning && !scannerError">
+          <h6 class="mb-2">
+            <i class="ti ti-alert-circle me-2"></i>
+            Aucun scanner détecté
+          </h6>
+          <p class="mb-2">Veuillez vérifier que:</p>
+          <ul class="mb-0">
+            <li>Votre scanner est allumé et connecté au serveur</li>
+            <li>Les pilotes du scanner sont installés</li>
+            <li>Le scanner est bien reconnu par le système</li>
+          </ul>
+          <button type="button" class="btn btn-sm btn-warning mt-3" (click)="loadAvailableScanners()">
+            <i class="ti ti-refresh me-2"></i>Actualiser la liste
+          </button>
+        </div>
+
+        <!-- Scanning Status -->
+        <div class="text-center py-4" *ngIf="isScanning">
+          <div class="spinner-border text-info mb-3" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Scan en cours...</span>
+          </div>
+          <h6 class="text-info">
+            <i class="ti ti-scan me-2"></i>
+            Scan en cours...
+          </h6>
+          <p class="text-muted mb-0">
+            Veuillez placer votre document sur le scanner et patienter
+          </p>
+        </div>
+
+        <!-- OCR Processing Status -->
+        <div class="text-center py-4" *ngIf="isProcessingOCR">
+          <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Extraction en cours...</span>
+          </div>
+          <h6 class="text-primary">
+            <i class="ti ti-file-text me-2"></i>
+            Extraction des données...
+          </h6>
+          <div class="progress mt-3" *ngIf="ocrProgress$ | async as progress" style="height: 25px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" 
+                 [style.width.%]="progress.progress * 100"
+                 [attr.aria-valuenow]="progress.progress * 100" 
+                 aria-valuemin="0" 
+                 aria-valuemax="100">
+              {{ (progress.progress * 100).toFixed(0) }}%
+            </div>
+          </div>
+          <p class="mb-0 mt-2 small text-muted">{{ (ocrProgress$ | async)?.status || 'Initialisation...' }}</p>
+        </div>
+
+        <!-- Scanned Image Preview -->
+        <div class="text-center" *ngIf="scannedImagePreview && !isScanning && !isProcessingOCR">
+          <h6 class="mb-3">
+            <i class="ti ti-photo me-2"></i>
+            Aperçu du document scanné
+          </h6>
+          <div class="border rounded p-2 bg-light">
+            <img [src]="scannedImagePreview" 
+                 class="img-fluid rounded" 
+                 alt="Document scanné" 
+                 style="max-height: 400px;">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" 
+                class="btn btn-secondary" 
+                (click)="closeScannerModal()"
+                [disabled]="isScanning || isProcessingOCR">
+          <i class="ti ti-x me-1"></i>
+          Fermer
+        </button>
+        
+        <!-- Refresh Scanner List Button -->
+        <button type="button" 
+                class="btn btn-warning" 
+                (click)="loadAvailableScanners()"
+                [disabled]="isScanning || isProcessingOCR"
+                *ngIf="!scannedImagePreview">
+          <i class="ti ti-refresh me-1"></i>
+          Actualiser
+        </button>
+
+        <!-- Retry Scan Button -->
+        <button type="button" 
+                class="btn btn-outline-info" 
+                (click)="cancelScanner()"
+                [disabled]="isScanning || isProcessingOCR"
+                *ngIf="scannedImagePreview">
+          <i class="ti ti-reload me-1"></i>
+          Nouveau scan
+        </button>
+
+        <!-- Scan Button -->
+        <button type="button" 
+                class="btn btn-info" 
+                (click)="triggerPhysicalScan()"
+                [disabled]="isScanning || isProcessingOCR || availableScanners.length === 0"
+                *ngIf="!scannedImagePreview">
+          <span *ngIf="isScanning" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isScanning" class="ti ti-scan me-2"></i>
+          {{ isScanning ? 'Scan en cours...' : 'Lancer le scan' }}
+        </button>
+
+        <!-- Use Scanned Image Button -->
+        <button type="button" 
+                class="btn btn-success" 
+                (click)="useScannedImage()"
+                [disabled]="isProcessingOCR"
+                *ngIf="scannedImagePreview && !isProcessingOCR">
+          <i class="ti ti-check me-1"></i>
+          Utiliser cette image
         </button>
       </div>
     </div>

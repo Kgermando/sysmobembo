@@ -22,6 +22,30 @@ export interface IBackendPaginationResponse<T> {
   };
 }
 
+// Interface pour les données d'un fichier scanné
+export interface IScannedFileData {
+  file_path: string;
+  file_name: string;
+  image_base64: string;
+  mime_type: string;
+}
+
+// Interface pour la réponse du scanner
+export interface IScannerResponse {
+  status: string;
+  message: string;
+  data: IScannedFileData;
+}
+
+// Interface pour la liste des scanners
+export interface IScannerListResponse {
+  status: string;
+  data: {
+    scanners: string[];
+    count: number;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -110,6 +134,32 @@ export class IdentiteService {
       params,
       responseType: 'blob'
     });
+  }
+
+  // ==================== SCANNER METHODS ====================
+
+  /**
+   * Scan a document using a physical scanner
+   * Backend will trigger scanner, capture image, and return base64 encoded image
+   */
+  scanDocument(): Observable<IScannerResponse> {
+    return this.http.post<IScannerResponse>(`${this.apiUrl}/scan`, {});
+  }
+
+  /**
+   * Get a scanned file by filename
+   */
+  getScannedFile(filename: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/scanned-file/${filename}`, {
+      responseType: 'blob'
+    });
+  }
+
+  /**
+   * List all available scanners connected to the backend server
+   */
+  listAvailableScanners(): Observable<IScannerListResponse> {
+    return this.http.get<IScannerListResponse>(`${this.apiUrl}/scanners/list`);
   }
 }
 

@@ -35,6 +35,16 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
   ocrErrorMessage: string | null = null;
   showOcrResults = false;
 
+  // Scanner Properties (Physical Scanner)
+  availableScanners: string[] = [];
+  selectedScanner: string | null = null;
+  isScanning = false;
+  isScannerModalOpen = false;
+  scannerError: string | null = null;
+  scannerSuccess: string | null = null;
+  scannedImageBase64: string | null = null;
+  scannedImagePreview: string | null = null;
+
   // Angular Material Table
   dataSource = new MatTableDataSource<IIdentite>();
   displayedColumns: string[] = [
@@ -670,5 +680,211 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!this.identiteStats || !this.identiteStats.par_sexe) return 0;
     const stat = this.identiteStats.par_sexe.find((s: any) => s.sexe === sexe);
     return stat ? stat.count : 0;
+  }
+
+  // ==================== SCANNER FUNCTIONS (Physical Scanner) ====================
+
+  /**
+   * Open the scanner modal and list available scanners
+   */
+  async openScannerModal(): Promise<void> {
+    this.isScannerModalOpen = true;
+    this.scannerError = null;
+    this.scannerSuccess = null;
+    this.scannedImageBase64 = null;
+    this.scannedImagePreview = null;
+    
+    await this.loadAvailableScanners();
+    
+    // Open Bootstrap modal
+    setTimeout(() => {
+      const modalElement = document.getElementById('scannerModal');
+      if (modalElement) {
+        const modal = new (window as any).bootstrap.Modal(modalElement);
+        modal.show();
+      }
+    }, 100);
+  }
+
+  /**
+   * Close scanner modal
+   */
+  closeScannerModal(): void {
+    this.isScannerModalOpen = false;
+    this.scannerError = null;
+    this.scannerSuccess = null;
+    this.isScanning = false;
+    
+    const modalElement = document.getElementById('scannerModal');
+    if (modalElement) {
+      const modal = (window as any).bootstrap.Modal.getInstance(modalElement);
+      if (modal) {
+        modal.hide();
+      }
+    }
+  }
+
+  /**
+   * Load available scanners from backend
+   */
+  async loadAvailableScanners(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.identiteService.listAvailableScanners()
+          .pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success' && response.data) {
+        this.availableScanners = response.data.scanners || [];
+        
+        if (this.availableScanners.length === 0) {
+          this.scannerError = 'Aucun scanner détecté. Veuillez vérifier que votre scanner est connecté et allumé.';
+        } else {
+          // Sélectionner automatiquement le premier scanner
+          this.selectedScanner = this.availableScanners[0];
+        }
+      }
+    } catch (error: any) {
+      console.error('Erreur lors du chargement des scanners:', error);
+      this.scannerError = error.error?.message || 'Impossible de récupérer la liste des scanners.';
+      this.availableScanners = [];
+    }
+  }
+
+  /**
+   * Trigger the physical scanner to scan a document
+   */
+  async triggerPhysicalScan(): Promise<void> {
+    if (this.isScanning) return;
+
+    this.isScanning = true;
+    this.scannerError = null;
+    this.scannerSuccess = null;
+    this.scannedImageBase64 = null;
+    this.scannedImagePreview = null;
+
+    try {
+      console.log('Déclenchement du scan physique...');
+      
+      const response = await firstValueFrom(
+        this.identiteService.scanDocument()
+          .pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.status === 'success' && response.data) {
+        this.scannedImageBase64 = response.data.image_base64;
+        this.scannedImagePreview = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
+        this.scannerSuccess = response.message || 'Document scanné avec succès!';
+        
+        console.log('✅ Scan terminé avec succès');
+        
+        // Auto-process OCR after successful scan
+        await this.processScannedImageWithOCR();
+      }
+    } catch (error: any) {
+      console.error('Erreur lors du scan:', error);
+      
+      if (error.status === 500) {
+        this.scannerError = error.error?.message || 'Erreur du scanner. Vérifiez que le scanner est correctement connecté.';
+      } else if (error.status === 404) {
+        this.scannerError = 'Scanner non trouvé. Veuillez vérifier la connexion.';
+      } else {
+        this.scannerError = error.error?.message || 'Erreur lors du scan du document.';
+      }
+    } finally {
+      this.isScanning = false;
+    }
+  }
+
+  /**
+   * Process the scanned image with OCR
+   */
+  async processScannedImageWithOCR(): Promise<void> {
+    if (!this.scannedImageBase64) {
+      this.ocrErrorMessage = 'Aucune image scannée disponible';
+      return;
+    }
+
+    this.isProcessingOCR = true;
+    this.ocrErrorMessage = null;
+    this.ocrSuccessMessage = null;
+    this.extractedText = null;
+    this.parsedPassportData = null;
+
+    try {
+      // Convert base64 to File object for OCR processing
+      const blob = this.base64ToBlob(this.scannedImageBase64, 'image/jpeg');
+      const file = new File([blob], 'scanned-document.jpg', { type: 'image/jpeg' });
+
+      // Extract text with Tesseract
+      const result = await this.ocrService.extractTextFromImage(file);
+      
+      if (result && result.text) {
+        this.extractedText = result.text;
+        
+        // Parse the extracted text for passport data
+        this.parsedPassportData = this.passportOcrService.parsePassportText(result.text);
+        
+        // Fill form with OCR data
+        this.fillFormWithOCRData(this.parsedPassportData);
+        
+        this.ocrSuccessMessage = 'Données extraites avec succès! Veuillez vérifier et compléter les informations.';
+        this.showOcrResults = true;
+        
+        // Close scanner modal and keep form open
+        this.closeScannerModal();
+        
+        console.log('✅ OCR processing completed successfully');
+      } else {
+        this.ocrErrorMessage = 'Aucun texte détecté dans l\'image scannée';
+      }
+    } catch (error: any) {
+      this.ocrErrorMessage = error.message || 'Erreur lors de l\'extraction des données';
+      console.error('Erreur OCR:', error);
+    } finally {
+      this.isProcessingOCR = false;
+    }
+  }
+
+  /**
+   * Convert base64 string to Blob
+   */
+  private base64ToBlob(base64: string, mimeType: string): Blob {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+  }
+
+  /**
+   * Use the scanned image (close scanner modal and show in OCR section)
+   */
+  useScannedImage(): void {
+    if (this.scannedImagePreview) {
+      // Transfer scanned image to OCR preview
+      this.selectedImagePreview = this.scannedImagePreview;
+      
+      // Close scanner modal
+      this.closeScannerModal();
+      
+      // Scroll to OCR section or open form if not already open
+      console.log('Image scannée transférée vers la section OCR');
+    }
+  }
+
+  /**
+   * Cancel scanner operation
+   */
+  cancelScanner(): void {
+    this.scannedImageBase64 = null;
+    this.scannedImagePreview = null;
+    this.scannerError = null;
+    this.scannerSuccess = null;
+    this.isScanning = false;
   }
 }
