@@ -805,19 +805,30 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
+    // Transfer scanned image to OCR preview section
+    this.selectedImagePreview = this.scannedImagePreview;
+    
+    // Convert base64 to File object for OCR processing
+    const blob = this.base64ToBlob(this.scannedImageBase64, 'image/jpeg');
+    this.selectedImageFile = new File([blob], 'scanned-document.jpg', { type: 'image/jpeg' });
+    
+    // Close scanner modal immediately
+    this.closeScannerModal();
+    
+    // Open the form offcanvas if not already open
+    this.openAddOffcanvas();
+    
+    // Start OCR processing
     this.isProcessingOCR = true;
     this.ocrErrorMessage = null;
     this.ocrSuccessMessage = null;
     this.extractedText = null;
     this.parsedPassportData = null;
+    this.showOcrResults = false;
 
     try {
-      // Convert base64 to File object for OCR processing
-      const blob = this.base64ToBlob(this.scannedImageBase64, 'image/jpeg');
-      const file = new File([blob], 'scanned-document.jpg', { type: 'image/jpeg' });
-
       // Extract text with Tesseract
-      const result = await this.ocrService.extractTextFromImage(file);
+      const result = await this.ocrService.extractTextFromImage(this.selectedImageFile);
       
       if (result && result.text) {
         this.extractedText = result.text;
@@ -830,9 +841,6 @@ export class IdentitesComponent implements OnInit, OnDestroy, AfterViewInit {
         
         this.ocrSuccessMessage = 'Données extraites avec succès! Veuillez vérifier et compléter les informations.';
         this.showOcrResults = true;
-        
-        // Close scanner modal and keep form open
-        this.closeScannerModal();
         
         console.log('✅ OCR processing completed successfully');
       } else {
